@@ -5,7 +5,7 @@
 Sparse-Constrained Optimization via Splicing Iteration (SCOPE) is an algorithm for getting sparse optimal solution of convex loss function, which also can be used for variables selection. Its characteristic is that the optimization objective can be a user-defined function so that the algorithm can be applied to various problems.
 
 Specifically, SCOPE aims to tackle this problem: 
-$$\min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leqslant s,$$
+$$\min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leq s,$$
 where $f(x)$ is a convex loss function and $s$ is the sparsity level. Each element of $x$ can be seen as a variable, and the nonzero elements of $x$ are the selected variables.
 
 ## Install
@@ -61,18 +61,17 @@ where $f(x)$ is a convex loss function and $s$ is the sparsity level. Each eleme
 
 Here, we will take linear regression as an example, introduce the basic usage of SCOPE to solve a variables selection problem.
 
-Suppose we collect $n$ independent observations for a response variable and $p$ explanatory variables, say $y \in R^n$ and $X \in R^{n\times p}$. Let $\epsilon_1, \ldots, \epsilon_n$ be \textit{i.i.d.} zero-mean random noises and $\epsilon = (\epsilon_1, \ldots, \epsilon_n)$, the linear model has a form:
+Suppose we collect $n$ independent observations for a response variable and $p$ explanatory variables, say $y \in R^n$ and $X \in R^{n\times p}$. Let $\epsilon_1, \ldots, \epsilon_n$ be $\textit{i.i.d.}$ zero-mean random noises and $\epsilon = (\epsilon_1, \ldots, \epsilon_n)$, the linear model has a form:
 
-$$y=X \beta^* +\epsilon,$$
+$$y=X \beta^{*} +\epsilon.$$
 
-where $\beta^* \in \R^p$ is the true but unknown coefficients that has $s$~non-zero entries. Learning sparse linear model aims to recover parameters $\beta^*$ and support set $A^* \coloneqq supp(\beta^*)$ from the collected data: $(X, y)$.
 
 First, we need to define a loss function as the optimization objective. 
 
 ### 1. find the loss function in math form
 
 Formalize the problem as a sparse convex optimization problem:
-$$	\argmin_{\beta \in \R^p}L(\beta) \coloneqq \|y-X \beta\|^{2} \textup{ s.t. } \| \beta \|_0 \leq s,$$
+$$	arg\min_{\beta \in R^p}L(\beta) := ||y-X \beta||^{2} s.t. ||\beta||_0 \leq s,$$
 where loss function $L(\beta)$ is our optimization objective. 
 
 ### 2. decide parameters
@@ -185,7 +184,7 @@ Note that `para`(parameters) must be a vector not matrix and `sparsity_level` re
 Sometimes, there are some parameters that need to be optimized but are not imposed by sparse-constrain (i.e., the always selected variables). This kind of parameters is called auxiliary parameters or `aux_para`, which is a useful concept for the convenience. The number of `aux_para` is denoted as `aux_para_size`.
 
 Specifically, denote `para` as $x$ and `aux_para` as $\theta$, then the optimization problem is:
-$$\min_{x\in R^p} f(x) \coloneqq \min_{\theta}l(x,\theta) \text{ s.t. } ||x||_0 \leqslant s,$$
+$$\min_{x\in R^p} f(x) := \min_{\theta}l(x,\theta) s.t.  ||x||_0 \leq s,$$
 where $f(x)$ is the actual objective function but we can set $l(x,\theta)$ as loss function of `ConvexSparseSolver`.
 
 In this case, the following are needed:
@@ -285,17 +284,17 @@ Here are some examples of using SCOPE.
 Logistic regression is a important model to solve classification problem, which is expressed specifically as:
 
 $$
-	P(y = 1 | x) = \frac{1}{1+\exp(-x^T \beta^*)},
+	P(y = 1 | x) = \frac{1}{1+\exp(-x^T \beta)},
+$$  
 $$
+	P(y = 0 | x) = \frac{1}{1+\exp(x^T \beta)},
 $$
-	P(y = 0 | x) = \frac{1}{1+\exp(x^T \beta^*)},
-$$
-where $\beta^*$ is an unknown parameter vector that to be estimated. Since we expect only a few explanatory variables contribute for predicting $y$, we assume $\beta^*$ is sparse vector with sparsity level $s$.
+where $\beta$ is an unknown parameter vector that to be estimated. Since we expect only a few explanatory variables contribute for predicting $y$, we assume $\beta$ is sparse vector with sparsity level $s$.
 
-With $n$ independent data of the explanatory variables $x$ and the response variable $y$, we can estimate $\beta^*$ by minimizing the negative log-likelihood function under sparsity constraint:
+With $n$ independent data of the explanatory variables $x$ and the response variable $y$, we can estimate $\beta$ by minimizing the negative log-likelihood function under sparsity constraint:
 
 $$
-	\argmin_{\beta \in \R^p}L(\beta) \coloneqq -\frac{1}{n}\sum_{i=1}^{n}\left\{y_{i} x_{i}^{T} \beta-\log \left(1+\exp(x_{i}^{T} \beta)\right)\right\}, \textup{ s.t. } \| \beta \|_0 \leq s.
+	arg\min_{\beta \in R^p}L(\beta) := -\frac{1}{n}\sum_{i=1}^{n}\{y_{i} x_{i}^{T} \beta-\log (1+\exp(x_{i}^{T} \beta))\}, s.t.  || \beta ||_0 \leq s.
 $$
 
 Here is Python code for solving sparse logistic regression problem:
@@ -330,11 +329,9 @@ $$
 $$
 where $y$ is an $m$-dimensional response variable, $x$ is $p$-dimensional predictors, $B \in R^{m \times p}$ is the sparse coefficient matrix, $\epsilon$ is an $m$-dimensional random noise variable with zero mean.
 
-With $n$ independent data of the explanatory variables $x$ and the response variable $y$, we can estimate $B^*$ by minimizing the loss function under sparsity constraint:
-$$
-    \argmin_{B \in \R^{m \times p}}L(B) \coloneqq \frac{1}{n}\sum_{i=1}^{n}\|y_{i}-B x_{i}\|_2^2, \textup{ s.t. } \| B \|_{0, 2} \leq s,
-$$
-where $\| B \|_{0, 2}$ is the number of non-zero rows of $B$.
+With $n$ independent data of the explanatory variables $X$ and the response variable $Y$, we can estimate $B^* $ by minimizing the loss function under sparsity constraint:
+$$ arg\min_{B}L(B) := ||Y-B X||^2, s.t.  || B ||_ {0,2} \leq s, $$
+where $|| B ||_ {0, 2}$ is the number of non-zero rows of $B$.
 
 Here is Python code for solving sparse multiple linear regression problem:
 

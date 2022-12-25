@@ -2,7 +2,6 @@ from sklearn.base import BaseEstimator
 import numpy as np
 import importlib
 from .pybind_cabess import pywrap_Universal, UniversalModel, init_spdlog
-from .utilities import check_positive_integer, check_non_negative_integer
 
 
 class ConvexSparseSolver(BaseEstimator):
@@ -267,21 +266,21 @@ class ConvexSparseSolver(BaseEstimator):
 
         # dimensionality
         p = self.dimensionality
-        check_positive_integer(p, "dimensionality")
+        __check_positive_integer(p, "dimensionality")
 
         # sample_size
         n = self.sample_size
-        check_positive_integer(n, "sample_size")
+        __check_positive_integer(n, "sample_size")
 
         # aux_para_size
         m = self.aux_para_size
-        check_non_negative_integer(m, "aux_para_size")
+        __check_non_negative_integer(m, "aux_para_size")
 
         # max_iter
-        check_non_negative_integer(self.max_iter, "max_iter")
+        __check_non_negative_integer(self.max_iter, "max_iter")
 
         # max_exchange_num
-        check_positive_integer(self.max_exchange_num, "max_exchange_num")
+        __check_positive_integer(self.max_exchange_num, "max_exchange_num")
 
         # path_type
         if self.path_type == "seq":
@@ -304,7 +303,7 @@ class ConvexSparseSolver(BaseEstimator):
             raise ValueError('ic_type should be "aic", "bic", "ebic" or "gic"')
 
         # cv
-        check_positive_integer(self.cv, "cv")
+        __check_positive_integer(self.cv, "cv")
         if self.cv > n:
             raise ValueError("cv should not be greater than sample_size")
 
@@ -421,7 +420,7 @@ class ConvexSparseSolver(BaseEstimator):
                 raise ValueError("always_select should be between 0 and dimensionality.")
 
         # thread
-        check_non_negative_integer(self.thread, "thread")
+        __check_non_negative_integer(self.thread, "thread")
 
         # splicing_type
         if self.splicing_type == "halve":
@@ -432,7 +431,7 @@ class ConvexSparseSolver(BaseEstimator):
             raise ValueError('splicing_type should be "halve" or "taper".')
 
         # important_search
-        check_non_negative_integer(self.important_search, "important_search")
+        __check_non_negative_integer(self.important_search, "important_search")
 
         # cv_fold_id
         if self.cv_fold_id is None:
@@ -689,4 +688,11 @@ class ConvexSparseSolver(BaseEstimator):
             lambda arg1, arg2, arg3, arg4: hessian(arg1, arg2, arg3, arg4)
         )
 
-        
+    def __check_positive_integer(var, name: str):
+        if (not isinstance(var, int) or var <= 0):
+            raise ValueError("{} should be an positive integer.".format(name))
+
+
+    def __check_non_negative_integer(var, name: str):
+        if (not isinstance(var, int) or var < 0):
+            raise ValueError("{} should be an non-negative integer.".format(name))    

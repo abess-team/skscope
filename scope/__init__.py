@@ -19,6 +19,5 @@ from .universal import (ConvexSparseSolver)
 __all__ = [
     "make_glm_data",
     "make_multivariate_glm_data",
-    "ConvexSparseSolver",
-    "set_log_level"
+    "ConvexSparseSolver"
 ]

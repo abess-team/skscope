@@ -1,0 +1,10 @@
+# doc
+sphinx
+sphinx-copybutton
+nbsphinx
+sphinx-panels
+jupyter_sphinx
+pydata-sphinx-theme
+matplotlib
+iPython
+sphinx-autoapi

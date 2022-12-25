@@ -1,0 +1,27 @@
+
+:parenttoc: True
+
+Examples
+==========
+
+These are some examples.
+
+(Generalized) Linear Model
+------------------------------
+
+logistic
+~~~~~~~~~~~~
+
+`logistic model`_.
+
+.. _logistic model: logistic.ipynb
+
+multiple_linear
+~~~~~~~~~~~~~~~~~~~~
+
+`multiple_linear model`_.
+
+.. _multiple_linear model: multiple_linear.ipynb
+
+Graphical Models
+--------------------

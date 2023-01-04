@@ -266,21 +266,21 @@ class ConvexSparseSolver(BaseEstimator):
 
         # dimensionality
         p = self.dimensionality
-        __check_positive_integer(p, "dimensionality")
+        self.__check_positive_integer(p, "dimensionality")
 
         # sample_size
         n = self.sample_size
-        __check_positive_integer(n, "sample_size")
+        self.__check_positive_integer(n, "sample_size")
 
         # aux_para_size
         m = self.aux_para_size
-        __check_non_negative_integer(m, "aux_para_size")
+        self.__check_non_negative_integer(m, "aux_para_size")
 
         # max_iter
-        __check_non_negative_integer(self.max_iter, "max_iter")
+        self.__check_non_negative_integer(self.max_iter, "max_iter")
 
         # max_exchange_num
-        __check_positive_integer(self.max_exchange_num, "max_exchange_num")
+        self.__check_positive_integer(self.max_exchange_num, "max_exchange_num")
 
         # path_type
         if self.path_type == "seq":
@@ -303,7 +303,7 @@ class ConvexSparseSolver(BaseEstimator):
             raise ValueError('ic_type should be "aic", "bic", "ebic" or "gic"')
 
         # cv
-        __check_positive_integer(self.cv, "cv")
+        self.__check_positive_integer(self.cv, "cv")
         if self.cv > n:
             raise ValueError("cv should not be greater than sample_size")
 
@@ -420,7 +420,7 @@ class ConvexSparseSolver(BaseEstimator):
                 raise ValueError("always_select should be between 0 and dimensionality.")
 
         # thread
-        __check_non_negative_integer(self.thread, "thread")
+        self.__check_non_negative_integer(self.thread, "thread")
 
         # splicing_type
         if self.splicing_type == "halve":
@@ -431,7 +431,7 @@ class ConvexSparseSolver(BaseEstimator):
             raise ValueError('splicing_type should be "halve" or "taper".')
 
         # important_search
-        __check_non_negative_integer(self.important_search, "important_search")
+        self.__check_non_negative_integer(self.important_search, "important_search")
 
         # cv_fold_id
         if self.cv_fold_id is None:
@@ -688,11 +688,12 @@ class ConvexSparseSolver(BaseEstimator):
             lambda arg1, arg2, arg3, arg4: hessian(arg1, arg2, arg3, arg4)
         )
 
+    @staticmethod
     def __check_positive_integer(var, name: str):
         if (not isinstance(var, int) or var <= 0):
             raise ValueError("{} should be an positive integer.".format(name))
 
-
+    @staticmethod
     def __check_non_negative_integer(var, name: str):
         if (not isinstance(var, int) or var < 0):
             raise ValueError("{} should be an non-negative integer.".format(name))    

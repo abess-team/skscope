@@ -1,20 +1,20 @@
 import numpy as np
 from sklearn.preprocessing import StandardScaler
 
-def __sample(p, k):
+def sample(p, k):
     full = np.arange(p)
     select = sorted(np.random.choice(full, k, replace=False))
     return select
 
 
-def __sparse_beta_generator(p, Nonzero, k, M):
+def sparse_beta_generator(p, Nonzero, k, M):
     Tbeta = np.zeros([p, M])
-    beta_value = __beta_generator(k, M)
+    beta_value = beta_generator(k, M)
     Tbeta[Nonzero, :] = beta_value
     return Tbeta
 
 
-def __beta_generator(k, M):
+def beta_generator(k, M):
     # # strong_num <- 3
     # # moderate_num <- 7
     # # weak_num <- 5
@@ -33,7 +33,7 @@ def __beta_generator(k, M):
     weak_signal = np.random.normal(0, 2, weak_num * M).reshape(weak_num, M)
     beta_value = np.concatenate((strong_signal, moderate_signal, weak_signal))
 
-    beta_value = beta_value[__sample(k, k), :]
+    beta_value = beta_value[sample(k, k), :]
 
     # beta_value = np.random.normal(size=(k, M))
     return beta_value
@@ -206,7 +206,7 @@ class make_glm_data:
             scaler.fit(x)
             x = scaler.transform(x)
             
-        nonzero = __sample(p, k)
+        nonzero = sample(p, k)
         Tbeta = np.zeros(p)
         sign = np.random.choice([1, -1], k)
 
@@ -431,16 +431,16 @@ class make_multivariate_glm_data:
 
         if sparse_ratio is not None:
             sparse_size = int((1 - sparse_ratio) * n * p)
-            position = __sample(n * p, sparse_size)
+            position = sample(n * p, sparse_size)
             print(position)
             for i in range(sparse_size):
                 X[int(position[i] / p), position[i] % p] = 0
 
-        Nonzero = __sample(p, k)
+        Nonzero = sample(p, k)
         # Nonzero = np.array([0, 1, 2])
         # Nonzero[:k] = 1
         if coef_ is None:
-            Tbeta = __sparse_beta_generator(p, Nonzero, k, M)
+            Tbeta = sparse_beta_generator(p, Nonzero, k, M)
         else:
             Tbeta = coef_
 

@@ -59,7 +59,10 @@ endif()
 
 # build extension
 pybind11_extension(pybind_cabess)
-pybind11_strip(pybind_cabess)
+if(NOT ${CMAKE_BUILD_TYPE} MATCHES Debug|RelWithDebInfo)
+    # Strip unnecessary sections of the binary on Linux/macOS
+    pybind11_strip(pybind_cabess)
+endif()
 
 set_target_properties(pybind_cabess PROPERTIES CXX_VISIBILITY_PRESET "hidden"
                                                CUDA_VISIBILITY_PRESET "hidden")

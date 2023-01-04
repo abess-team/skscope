@@ -550,7 +550,7 @@ class ConvexSparseSolver(BaseEstimator):
         else:
             return self.coef_
     
-    def get_selected_variables(self):
+    def get_support_set(self):
         r""" 
         Get the index of selected variables which is the non-zero parameters.
         """

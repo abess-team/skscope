@@ -147,7 +147,8 @@ setup(
         "pandas",
         "scipy",
         "scikit-learn>=0.24",
-        "jax"
+        "jax",
+        "nlopt",
     ],
     license="GPL-3",
     url="https://abess.readthedocs.io",

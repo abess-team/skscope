@@ -4,6 +4,8 @@ requires = [
     "wheel",
     "pybind11[global]",
     "cmake>=3.12",
+    "jax",
+    "nlopt",
 
     # use oldest-supported-numpy which provides the oldest numpy version with
     # wheels on PyPI (it is a similar operation used in scikit-learn)

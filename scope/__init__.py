@@ -12,12 +12,11 @@ __author__ = ("Jin Zhu, Kangkang Jiang, "
               "Junxian Zhu, Xueqin Wang")
               
 
-from .datasets import (make_glm_data, make_multivariate_glm_data)
-from .universal import (ConvexSparseSolver)
+from .solver import (ScopeSolver, GrahtpSolver, GraspSolver)
 
 
 __all__ = [
-    "make_glm_data",
-    "make_multivariate_glm_data",
-    "ConvexSparseSolver"
+    "ScopeSolver",
+    "GrahtpSolver",
+    "GraspSolver",
 ]

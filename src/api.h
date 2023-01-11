@@ -107,29 +107,7 @@ using namespace Rcpp;
  * positive integer.
  * @return result list.
  */
-List abessGLM_API(Eigen::MatrixXd x, Eigen::MatrixXd y, int n, int p, int normalize_type, Eigen::VectorXd weight,
-                  int algorithm_type, int model_type, int max_iter, int exchange_num, int path_type, bool is_warm_start,
-                  int ic_type, double ic_coef, int Kfold, Eigen::VectorXi sequence, Eigen::VectorXd lambda_seq,
-                  int s_min, int s_max, double lambda_min, double lambda_max, int nlambda, int screening_size,
-                  Eigen::VectorXi g_index, Eigen::VectorXi always_select, int primary_model_fit_max_iter,
-                  double primary_model_fit_epsilon, bool early_stop, bool approximate_Newton, int thread,
-                  bool covariance_update, bool sparse_matrix, int splicing_type, int sub_search,
-                  Eigen::VectorXi cv_fold_id, Eigen::VectorXi A_init);
 
-List abessPCA_API(Eigen::MatrixXd x, int n, int p, int normalize_type, Eigen::VectorXd weight, Eigen::MatrixXd sigma,
-                  int max_iter, int exchange_num, int path_type, bool is_warm_start, int ic_type, double ic_coef,
-                  int Kfold, Eigen::MatrixXi sequence, int s_min, int s_max, int screening_size,
-                  Eigen::VectorXi g_index, Eigen::VectorXi always_select, bool early_stop, int thread,
-                  bool sparse_matrix, int splicing_type, int sub_search, Eigen::VectorXi cv_fold_id, int pca_num,
-                  Eigen::VectorXi A_init);
-
-List abessRPCA_API(Eigen::MatrixXd x, int n, int p, int max_iter, int exchange_num, int path_type, bool is_warm_start,
-                   int ic_type, double ic_coef, Eigen::VectorXi sequence,
-                   Eigen::VectorXd lambda_seq,  // rank of L
-                   int s_min, int s_max, double lambda_min, double lambda_max, int nlambda, int screening_size,
-                   int primary_model_fit_max_iter, double primary_model_fit_epsilon, Eigen::VectorXi g_index,
-                   Eigen::VectorXi always_select, bool early_stop, int thread, bool sparse_matrix, int splicing_type,
-                   int sub_search, Eigen::VectorXi A_init);
 
 /**
  * @brief The main function of universal-abess fremework
@@ -148,6 +126,6 @@ List abessRPCA_API(Eigen::MatrixXd x, int n, int p, int max_iter, int exchange_n
 List abessUniversal_API(ExternData data, UniversalModel model, int model_size, int sample_size, int aux_para_size, int max_iter, int exchange_num, int path_type,
     bool is_warm_start, int ic_type, double ic_coef, int Kfold, Eigen::VectorXi sequence, Eigen::VectorXd lambda_seq, int s_min, int s_max,
     int screening_size, Eigen::VectorXi g_index, Eigen::VectorXi always_select, int thread, int splicing_type, int sub_search,
-    Eigen::VectorXi cv_fold_id, Eigen::VectorXi A_init);
+    Eigen::VectorXi cv_fold_id, Eigen::VectorXi A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init);
 #endif
 #endif  // SRC_API_H

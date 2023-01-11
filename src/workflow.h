@@ -76,7 +76,7 @@ template <class T1, class T2, class T3, class T4>
 List abessWorkflow(T4 &x, T1 &y, int n, int p, int normalize_type, Eigen::VectorXd weight, int algorithm_type,
                    int path_type, bool is_warm_start, int ic_type, double ic_coef, int Kfold, Parameters parameters,
                    int screening_size, Eigen::VectorXi g_index, bool early_stop, int thread, bool sparse_matrix,
-                   Eigen::VectorXi &cv_fold_id, Eigen::VectorXi &A_init,
+                   Eigen::VectorXi &cv_fold_id, Eigen::VectorXi &A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init,
                    vector<Algorithm<T1, T2, T3, T4> *> algorithm_list) {
 #ifndef R_BUILD
     std::srand(123);
@@ -130,8 +130,7 @@ List abessWorkflow(T4 &x, T1 &y, int n, int p, int normalize_type, Eigen::Vector
         // sequentical search
 #pragma omp parallel for
         for (int i = 0; i < Kfold; i++) {
-            sequential_path_cv<T1, T2, T3, T4>(data, algorithm_list[i], metric, parameters, early_stop, i, A_init,
-                                               result_list[i]);
+            sequential_path_cv<T1, T2, T3, T4>(data, algorithm_list[i], metric, parameters, early_stop, i, A_init, beta_init, coef0_init, result_list[i]);
         }
     } else {
         // if (algorithm_type == 5 || algorithm_type == 3)
@@ -144,7 +143,7 @@ List abessWorkflow(T4 &x, T1 &y, int n, int p, int normalize_type, Eigen::Vector
         // }
 
         // golden section search
-        gs_path<T1, T2, T3, T4>(data, algorithm_list, metric, parameters, A_init, result_list);
+        gs_path<T1, T2, T3, T4>(data, algorithm_list, metric, parameters, A_init, beta_init, coef0_init, result_list);
     }
 
     for (int k = 0; k < Kfold; k++) {

@@ -3,14 +3,14 @@
 SCOPE
 =================================
 
-Sparse-Constrained Optimization via Splicing Iteration (SCOPE) is an algorithm for getting sparse optimal solution of convex loss function, which also can be used for variables selection. Its characteristic is that the optimization objective can be a user-defined function so that the algorithm can be applied to various problems.
+Sparse-Constrained Optimization via Splicing Iteration (SCOPE) is an algorithm for getting sparse optimal solution of convex objective function, which also can be used for variables selection. Its characteristic is that the optimization objective can be a user-defined function so that the algorithm can be applied to various problems.
 
 Specifically, SCOPE aims to tackle this problem: 
 
 .. math:: 
    \min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leq s,
 
-where :math:`f(x)` is a convex loss function and :math:`s` is the sparsity level. Each element of :math:`x` can be seen as a variable, and the nonzero elements of :math:`x` are the selected variables.
+where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity level. Each element of :math:`x` can be seen as a variable, and the nonzero elements of :math:`x` are the selected variables.
 
 .. raw:: html
 
@@ -108,7 +108,7 @@ Video Guide
 
 Main Features
 -------------
-* **User-defined loss function**: The loss function can be a user-defined function, which can be applied to various problems.
+* **User-defined objective function**: The objective function can be a user-defined function, which can be applied to various problems.
 * **Fast**: The algorithm is fast and can be applied to large-scale problems.
 * **Easy to use**: The algorithm is easy to use and can be applied to various problems.
 

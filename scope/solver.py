@@ -739,22 +739,21 @@ class GrahtpSolver(BaseSolver):
                 x_new = np.zeros(self.dimensionality)
                 x_new[support_new] = x_bias[support_new]
             else:
+                def opt_f(x, gradient):
+                    x_full = np.zeros(self.dimensionality)
+                    x_full[support_new] = x
+                    if gradient.size > 0:
+                        gradient[:] = gradient(x_full, support_new)
+                    return objective(x_full)
+
+                opt = nlopt.opt(nlopt.LD_SLSQP, self.sparsity)
+                opt.set_min_objective(opt_f)
+                opt.set_ftol_rel(0.001)
+                x_new = np.zeros(self.dimensionality)
                 try:
-
-                    def opt_f(x, gradient):
-                        x_full = np.zeros(self.dimensionality)
-                        x_full[support_new] = x
-                        if gradient.size > 0:
-                            gradient[:] = gradient(x_full, data, support_new)
-                        return objective(x_full, data)
-
-                    opt = nlopt.opt(nlopt.LD_SLSQP, self.sparsity)
-                    opt.set_min_objective(opt_f)
-                    opt.set_ftol_rel(0.001)
-                    x_new = np.zeros(self.dimensionality)
                     x_new[support_new] = opt.optimize(x_bias[support_new])
                 except RuntimeError:
-                    raise
+                    x_new[support_new] = opt.last_optimize_result()
             # terminating condition
             if np.all(set(support_old) == set(support_new)):
                 break
@@ -822,21 +821,21 @@ class GraspSolver(BaseSolver):
             support_new = np.unique(np.append(Omega, x_old.nonzero()[0])) 
             
             # minimize 
-            try:
-                def opt_f(x, gradient):
-                    x_full = np.zeros(self.dimensionality)
-                    x_full[support_new] = x
-                    if gradient.size > 0:
-                        gradient[:] = gradient(x_full, support_new)
-                    return objective(x_full)    
+            def opt_f(x, gradient):
+                x_full = np.zeros(self.dimensionality)
+                x_full[support_new] = x
+                if gradient.size > 0:
+                    gradient[:] = gradient(x_full, support_new)
+                return objective(x_full)    
 
-                opt = nlopt.opt(nlopt.LD_SLSQP, support_new.size)
-                opt.set_min_objective(opt_f)
-                opt.set_ftol_rel(0.001)
-                x_tem = np.zeros(self.dimensionality)
+            opt = nlopt.opt(nlopt.LD_SLSQP, support_new.size)
+            opt.set_min_objective(opt_f)
+            opt.set_ftol_rel(0.001)
+            x_tem = np.zeros(self.dimensionality)
+            try:
                 x_tem[support_new] = opt.optimize(x_old[support_new])
             except RuntimeError:
-                raise
+                x_tem[support_new] = opt.last_optimize_result()
             
             # prune estimate
             x_supp = np.argpartition(np.abs(x_tem), -self.sparsity)[-self.sparsity:]
@@ -853,3 +852,8 @@ class GraspSolver(BaseSolver):
         
         self.params = x_new
         self.value_objective = objective(x_new)
+
+class IHTSolver(GrahtpSolver):
+    def __init__(self, *args, **kwargs):
+        super.__init__(self, *args, **kwargs)
+        self.fast = True

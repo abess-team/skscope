@@ -11,6 +11,7 @@
 
 #include "Algorithm.h"
 #include "AlgorithmUniversal.h"
+#include "NloptParams.h"
 #include "utilities.h"
 #include "workflow.h"
 #include "api.h"
@@ -22,7 +23,7 @@ using namespace std;
 
 
 
-List abessUniversal_API(ExternData data, UniversalModel model, int model_size, int sample_size, int aux_para_size, int max_iter, int exchange_num, int path_type,
+List abessUniversal_API(ExternData data, UniversalModel model, NloptParams nlopt_solver, int model_size, int sample_size, int aux_para_size, int max_iter, int exchange_num, int path_type,
     bool is_warm_start, int ic_type, double ic_coef, int Kfold, Eigen::VectorXi sequence, Eigen::VectorXd lambda_seq, int s_min, int s_max,
     int screening_size, Eigen::VectorXi g_index, Eigen::VectorXi always_select, int thread, int splicing_type, int sub_search,
     Eigen::VectorXi cv_fold_id, Eigen::VectorXi A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init)
@@ -40,7 +41,7 @@ List abessUniversal_API(ExternData data, UniversalModel model, int model_size, i
 #endif
 
     SPDLOG_DEBUG("SCOPE begin!");
-    UniversalData x(model_size, sample_size, data, &model); // UniversalData is just like a matrix.
+    UniversalData x(model_size, sample_size, data, &model, &nlopt_solver); // UniversalData is just like a matrix.
     MatrixXd y = MatrixXd::Zero(sample_size, aux_para_size); // Invalid variable, create it just for interface compatibility
     int normalize_type = 0; // offer normalized data if need
     VectorXd weight = VectorXd::Ones(sample_size);  // only can be implemented inside the model

@@ -6,8 +6,8 @@ using namespace std;
 using Eigen::Map;
 using Eigen::Matrix;
 
-UniversalData::UniversalData(Eigen::Index model_size, Eigen::Index sample_size, ExternData& data, UniversalModel* model)
-    : model(model), sample_size(sample_size), model_size(model_size), effective_size(model_size)
+UniversalData::UniversalData(Eigen::Index model_size, Eigen::Index sample_size, ExternData& data, UniversalModel* model, NloptParams* nlopt_solver)
+    : model(model), nlopt_solver(nlopt_solver), sample_size(sample_size), model_size(model_size), effective_size(model_size)
 {
     this->effective_para_index = VectorXi::LinSpaced(model_size, 0, model_size - 1);
     this->data = shared_ptr<ExternData>(new ExternData(data));

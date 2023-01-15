@@ -10,19 +10,13 @@
 #ifndef SRC_UTILITIES_H
 #define SRC_UTILITIES_H
 
-#ifndef R_BUILD
-
 #include <Eigen/Eigen>
 #include <unsupported/Eigen/MatrixFunctions>
-
-#else
-#include <RcppEigen.h>
-#endif
-
 #include <type_traits>
 #include <cfloat>
-#include <iostream>
-#include "UniversalData.h"
+//#include <iostream>
+class UniversalData;
+
 #ifndef	SPDLOG_ACTIVE_LEVEL
     #ifndef NDEBUG
         #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG

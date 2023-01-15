@@ -8,12 +8,12 @@
 #include "utilities.h"
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, double, double, double>
-pywrap_Universal(ExternData data, UniversalModel model, int model_size, int sample_size,int aux_para_size, int max_iter,
+pywrap_Universal(ExternData data, UniversalModel model, NloptParams nlopt_solver, int model_size, int sample_size,int aux_para_size, int max_iter,
     int exchange_num, int path_type, bool is_warm_start, int ic_type, double ic_coef, int Kfold, Eigen::VectorXi sequence, 
     Eigen::VectorXd lambda_seq, int s_min, int s_max, int screening_size, Eigen::VectorXi g_index, Eigen::VectorXi always_select, 
     int thread, int splicing_type, int sub_search, Eigen::VectorXi cv_fold_id, Eigen::VectorXi A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init)
 {
-    List mylist = abessUniversal_API(data, model, model_size, sample_size, aux_para_size, max_iter, exchange_num,
+    List mylist = abessUniversal_API(data, model, nlopt_solver, model_size, sample_size, aux_para_size, max_iter, exchange_num,
         path_type, is_warm_start, ic_type, ic_coef, Kfold, sequence, lambda_seq, s_min, s_max,
         screening_size, g_index, always_select, thread, splicing_type, sub_search, cv_fold_id, A_init, beta_init, coef0_init);
     Eigen::VectorXd beta;
@@ -41,4 +41,5 @@ PYBIND11_MODULE(pybind_cabess, m) {
         .def("set_deleter", &UniversalModel::set_deleter)
         .def("set_init_para", &UniversalModel::set_init_para);
     m.def("init_spdlog", &init_spdlog);
+    pybind11::class_<NloptParams>(m, "NloptParams").def(pybind11::init<int, const char *, double, double, double, double, double, unsigned, unsigned>());
 }

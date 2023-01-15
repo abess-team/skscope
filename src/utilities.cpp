@@ -2,22 +2,19 @@
 // Created by jiangkangkang on 2020/3/9.
 //
 
-#ifndef R_BUILD
+
 #include <Eigen/Eigen>
 #include <unsupported/Eigen/MatrixFunctions>
 
-#else
 
-#include <RcppEigen.h>
-
-#endif
 
 #include <string.h>
 
 #include <algorithm>
 #include <random>
-#include <iostream>
+//#include <iostream>
 #include "utilities.h"
+#include "UniversalData.h"
 
 using namespace std;
 using namespace Eigen;

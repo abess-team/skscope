@@ -1,11 +1,5 @@
 #include "AlgorithmUniversal.h"
-
-#ifdef R_BUILD
-// [[Rcpp::depends(nloptr)]]
-#include <nloptrAPI.h>
-#else
 #include <nlopt.h> 
-#endif
 
 using namespace std;
 using namespace Eigen;
@@ -28,7 +22,8 @@ bool abessUniversal::primary_model_fit(UniversalData& active_data, MatrixXd& y, 
     optim_para.tail(active_para.size()) = active_para;
     nlopt_function f = active_data.get_nlopt_function(this->lambda_level);
 
-    nlopt_opt opt = nlopt_create(NLOPT_LD_LBFGS, optim_size);
+    //nlopt_opt opt = nlopt_create(NLOPT_LD_LBFGS, optim_size);
+    nlopt_opt opt = active_data.nlopt_create(optim_size);
     nlopt_set_min_objective(opt, f, &active_data);
     nlopt_result result = nlopt_optimize(opt, optim_para.data(), &value); // positive return values means success
     nlopt_destroy(opt);

@@ -1,20 +1,16 @@
-#ifndef SRC_UNIVERSALDATA_H
-#define SRC_UNIVERSALDATA_H
+# pragma once
 
-#ifdef R_BUILD
-#include <RcppEigen.h>
-// [[Rcpp::depends(RcppEigen)]]
-// struct ExternData {}; //TODO
-#else
 #include <Eigen/Eigen>
 #include <pybind11/pybind11.h>
 using ExternData = pybind11::object;
 #include <memory>
 #include <utility>
-#endif
+
 
 #include <functional>
 #include <autodiff/forward/dual.hpp>
+
+#include "NloptParams.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -42,6 +38,7 @@ class UniversalData {
     //                  Its size(effective_size) is match for the length of effective_para_index
 private:
     UniversalModel* model;
+    NloptParams* nlopt_solver;
     Eigen::Index sample_size;
     double lambda = 0.;  // L2 penalty coef for nlopt
     Eigen::Index model_size; // length of complete_para
@@ -50,7 +47,7 @@ private:
     std::shared_ptr<ExternData> data; // statistic data from user
 public:
     UniversalData() = default;
-    UniversalData(Eigen::Index model_size, Eigen::Index sample_size, ExternData& data, UniversalModel* model);
+    UniversalData(Eigen::Index model_size, Eigen::Index sample_size, ExternData& data, UniversalModel* model, NloptParams* nlopt_solver);
     UniversalData slice_by_para(const VectorXi& target_para_index); // used in util func X_seg() and slice()
 
     Eigen::Index rows() const; // getter of sample_size
@@ -61,7 +58,8 @@ public:
     double loss(const VectorXd& effective_para, const VectorXd& aux_para, double lambda); // compute the loss with effective_para
     double gradient(const VectorXd& effective_para, const VectorXd& aux_para, Eigen::Map<VectorXd>& gradient, double lambda); // compute the gradient of effective_para
     void hessian(const VectorXd& effective_para, const VectorXd& aux_para, VectorXd& gradient, MatrixXd& hessian, Eigen::Index index, Eigen::Index size, double lambda); // compute the hessian of sequence from index to (index+size-1) in effective_para                
-    void init_para(VectorXd & active_para, VectorXd & aux_para);  // init para and aux_para, default is not change.                                                                                                          
+    void init_para(VectorXd & active_para, VectorXd & aux_para);  // init para and aux_para, default is not change.                                                                                        
+    nlopt_opt nlopt_create(unsigned dim) {return this->nlopt_solver->create(dim);}                
 };
 
 class UniversalModel{
@@ -81,7 +79,7 @@ private:
     function <ExternData(ExternData const& old_data, VectorXi const& target_sample_index)> slice_by_sample;
     function <void(ExternData const* p)> deleter = [](ExternData const* p) { delete p; };
     function <pair<VectorXd, VectorXd>(VectorXd & para, VectorXd & aux_para, ExternData const& data, VectorXi const& active_para_index)> init_para = nullptr;
-    //TODO: constraints
+
 public:
     // register callback function
     void set_loss_of_model(function <double(VectorXd const&, VectorXd const&, ExternData const&)> const&);
@@ -93,4 +91,3 @@ public:
     void set_deleter(function <void(ExternData const&)> const&);
     void set_init_para(function <pair<VectorXd, VectorXd>(VectorXd const&, VectorXd const&, ExternData const&, VectorXi const&)> const&);
 };
-#endif //SRC_UNIVERSALDATA_H

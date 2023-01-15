@@ -123,7 +123,7 @@ using namespace Rcpp;
 #ifdef R_BUILD
 
 #else
-List abessUniversal_API(ExternData data, UniversalModel model, int model_size, int sample_size, int aux_para_size, int max_iter, int exchange_num, int path_type,
+List abessUniversal_API(ExternData data, UniversalModel model, NloptParams nlopt_solver, int model_size, int sample_size, int aux_para_size, int max_iter, int exchange_num, int path_type,
     bool is_warm_start, int ic_type, double ic_coef, int Kfold, Eigen::VectorXi sequence, Eigen::VectorXd lambda_seq, int s_min, int s_max,
     int screening_size, Eigen::VectorXi g_index, Eigen::VectorXi always_select, int thread, int splicing_type, int sub_search,
     Eigen::VectorXi cv_fold_id, Eigen::VectorXi A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init);

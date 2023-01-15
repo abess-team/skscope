@@ -1,4 +1,6 @@
 tem_*
+tem.*
+.vscode/**
 
 ###################################################
 # https://github.com/github/gitignore/blob/main/Python.gitignore

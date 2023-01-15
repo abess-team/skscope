@@ -1,7 +1,8 @@
 from .BaseSolver import BaseSolver
 import numpy as np
 import importlib
-from .pybind_cabess import pywrap_Universal, UniversalModel, init_spdlog
+import nlopt
+from .pybind_cabess import pywrap_Universal, UniversalModel, init_spdlog, NloptParams
 
 
 class ScopeSolver(BaseSolver):
@@ -87,6 +88,13 @@ class ScopeSolver(BaseSolver):
         Max number of multithreads. Only used for cross-validation.
         - If thread = 0, the maximum number of threads supported by
           the device will be used.
+    + console_log_level : str, optional, default="off"
+        The level of output log to console, which can be "off", "error", "warning", "debug". For example, if it's "warning", only error and warning log will be output to console.
+    + file_log_level : str, optional, default="off"
+        The level of output log to file, which can be "off", "error", "warning", "debug". For example, if 
+        it's "off", no log will be output to file.
+    + log_file_name : str, optional, default="logs/scope.log"
+        The name (relative path) of log file, which is used to store the log information.
 
     Attributes
     ----------
@@ -126,6 +134,7 @@ class ScopeSolver(BaseSolver):
         sample_size=1,
         always_select=None,
         group=None,
+        nlopt_solver=None,
         warm_start=True,
         important_search=128,
         screening_size=-1,
@@ -141,6 +150,7 @@ class ScopeSolver(BaseSolver):
         cv_fold_id=None,
         regular_coef=0.0,
         thread=1,
+        console_log_level="off", file_log_level="off", log_file_name="logs/scope.log"
     ):
         self.model = UniversalModel()
         self.dimensionality = dimensionality
@@ -164,47 +174,23 @@ class ScopeSolver(BaseSolver):
         self.group = group
         self.warm_start = warm_start
         self.thread = thread
+        
+        # nlopt
+        if nlopt_solver is None:
+            nlopt_solver = nlopt.opt(nlopt.LD_LBFGS, 1)
+        
+        self.nlopt_params = NloptParams(
+            nlopt_solver.get_algorithm(),
+            nlopt_solver.get_algorithm_name(),
+            nlopt_solver.get_stopval(),
+            nlopt_solver.get_ftol_rel(),
+            nlopt_solver.get_ftol_abs(),
+            nlopt_solver.get_xtol_rel(),
+            nlopt_solver.get_maxtime(),
+            nlopt_solver.get_population(),
+            nlopt_solver.get_vector_storage(),
+        )
 
-    def solve(self, 
-        objective, 
-        init_support_set=None,
-        init_params=None,
-        init_aux_params=None,
-        gradient=None,
-        hessian=None,
-        autodiff=False,
-        data=None,
-        console_log_level="off", file_log_level="off", log_file_name="logs/scope.log"):
-        r"""
-        Set the optimization objective and begin to solve
-
-        Parameters
-        ----------
-        + objective : function('params': array, ('aux_params': array), ('data': custom class)) ->  float 
-            Defined the objective of optimization, must be written in JAX if gradient and hessian are not provided.
-            If `autodiff` is `True`, `objective` can be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
-        + init_support_set : array-like of int, optional, default=[]
-            The index of the variables in initial active set.
-        + init_params : array-like of float, optional, default is an all-zero vector
-            An initial value of parameters.
-        + init_aux_params : array-like of float, optional, default is an all-zero vector
-            An initial value of auxiliary parameters.
-        + gradient : function('params': array, 'aux_params': array, 'data': custom class, 'compute_index': array) -> array
-            Defined the gradient of objective function, return the gradient of `aux_params` and the parameters in `compute_index`.
-        + hessian : function('params': array, 'aux_params': array, 'data': custom class, 'compute_index': array) -> 2D array
-            Defined the hessian of objective function, return the hessian matrix of the parameters in `compute_index`.
-        + autodiff : bool, optional, default=False
-            If `autodiff` is `True`, `objective` must be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
-        + data : custom class, optional, default=None
-            Any class which is match to objective function. It can cantain all data that objective should be known, like samples, responses, weights, etc.
-        + console_log_level : str, optional, default="off"
-            The level of output log to console, which can be "off", "error", "warning", "debug". For example, if it's "warning", only error and warning log will be output to console.
-        + file_log_level : str, optional, default="off"
-            The level of output log to file, which can be "off", "error", "warning", "debug". For example, if 
-            it's "off", no log will be output to file.
-        + log_file_name : str, optional, default="logs/scope.log"
-            The name (relative path) of log file, which is used to store the log information.
-        """
         # log level
         if console_log_level == "off":
             console_log_level = 6
@@ -237,6 +223,38 @@ class ScopeSolver(BaseSolver):
 
         init_spdlog(console_log_level, file_log_level, log_file_name)
 
+    def solve(self, 
+        objective, 
+        init_support_set=None,
+        init_params=None,
+        init_aux_params=None,
+        gradient=None,
+        hessian=None,
+        autodiff=False,
+        data=None,):
+        r"""
+        Set the optimization objective and begin to solve
+
+        Parameters
+        ----------
+        + objective : function('params': array, ('aux_params': array), ('data': custom class)) ->  float 
+            Defined the objective of optimization, must be written in JAX if gradient and hessian are not provided.
+            If `autodiff` is `True`, `objective` can be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
+        + init_support_set : array-like of int, optional, default=[]
+            The index of the variables in initial active set.
+        + init_params : array-like of float, optional, default is an all-zero vector
+            An initial value of parameters.
+        + init_aux_params : array-like of float, optional, default is an all-zero vector
+            An initial value of auxiliary parameters.
+        + gradient : function('params': array, 'aux_params': array, 'data': custom class, 'compute_index': array) -> array
+            Defined the gradient of objective function, return the gradient of `aux_params` and the parameters in `compute_index`.
+        + hessian : function('params': array, 'aux_params': array, 'data': custom class, 'compute_index': array) -> 2D array
+            Defined the hessian of objective function, return the hessian matrix of the parameters in `compute_index`.
+        + autodiff : bool, optional, default=False
+            If `autodiff` is `True`, `objective` must be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
+        + data : custom class, optional, default=None
+            Any class which is match to objective function. It can cantain all data that objective should be known, like samples, responses, weights, etc.
+        """
         # dimensionality
         p = self.dimensionality
         self.__check_positive_integer(p, "dimensionality")
@@ -460,6 +478,7 @@ class ScopeSolver(BaseSolver):
         result = pywrap_Universal(
             data,
             self.model,
+            self.nlopt_params,
             p,
             n,
             m,

@@ -50,7 +50,9 @@ class TestScopeSolver:
     
     @staticmethod
     def test_nlopt_solver():
-        solver = ScopeSolver(P, K, nlopt_solver=nlopt.opt(nlopt.LD_SLSQP, 10))
+        solver = nlopt.opt(nlopt.LD_SLSQP, 1)
+        solver.set_ftol_rel(0.001)
+        solver = ScopeSolver(P, K, nlopt_solver=solver)
         solver.solve(linear_model)
         params = solver.get_params() 
         

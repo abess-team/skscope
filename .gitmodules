@@ -1,3 +1,6 @@
 [submodule "pybind11"]
 	path = pybind11
 	url = git@github.com:pybind/pybind11.git
+[submodule "nlopt"]
+	path = nlopt
+	url = git@github.com:stevengj/nlopt.git

@@ -171,12 +171,13 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
-    python_requires='>=3.6',
+    ## there is no wheel version available for nlopt with python 3.11 now
+    python_requires='>=3.7,<3.11', 
     ext_modules=[CMakeExtension("scope.pybind_cabess")],
     cmdclass={"build_ext": CMakeBuild}
 )

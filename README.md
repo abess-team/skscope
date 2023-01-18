@@ -6,25 +6,40 @@ Specifically, SCOPE aims to tackle this problem:
 $$\min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leq s,$$
 where $f(x)$ is a convex objective function and $s$ is the sparsity level. Each element of $x$ can be seen as a variable, and the nonzero elements of $x$ are the selected variables.
 
-## Prerequisites
-+ A compiler with C++11 support (see https://github.com/pybind/pybind11#supported-compilers)
-+ CMake >= 3.12
+## Building the package from source
 
-## Install
+### Prerequisites
++ A compiler with C++17 support 
++ Pip 10+ or CMake >= 3.14
+
+### Install
 
     ```bash
-    git clone git@github.com:abess-team/scope.git
+    git clone git@github.com:abess-team/scope.git --recurse-submodules
     pip install ./scope
     ```
 
-## Building the documentation
+### Building the documentation
 
     ```bash
     cd scope/docs
     pip install -r requirements.txt
     make html
     ```
-## First sample
+
+See the document for more installation details.
+
+## Test
+
+### pytest
+
+    ```bash
+    pip install pytest
+    pytest scope/pytest
+    ```
+
+
+### First sample
 
 ```python
     from scope import ScopeSolver

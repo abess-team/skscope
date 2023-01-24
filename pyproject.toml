@@ -3,11 +3,6 @@ requires = [
     "setuptools>=42",
     "wheel",
     "cmake>=3.14",
-
-    # use oldest-supported-numpy which provides the oldest numpy version with
-    # wheels on PyPI (it is a similar operation used in scikit-learn)
-    #
-    # see: https://github.com/scipy/oldest-supported-numpy/blob/main/setup.cfg
     "oldest-supported-numpy"
 ]
 

@@ -135,29 +135,27 @@ setup(
     name='scope',
     version=package_info['__version__'],
     author=package_info['__author__'],
-    author_email="zhuj37@mail2.sysu.edu.cn",
-    maintainer="Junhao Huang",
-    maintainer_email="huangjh256@mail2.sysu.edu.cn",
+    author_email="homura@mail.ustc.edu.cn",
+    maintainer="Zezhi Wang",
+    maintainer_email="homura@mail.ustc.edu.cn",
     packages=find_packages(),
     description="scope: Sparse-Constrained Optimization via Splicing Iteration",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     install_requires=[
         "numpy",
-        "pandas",
-        "scipy",
         "scikit-learn>=0.24",
         "jax",
-        "nlopt",
+        "nlopt==2.7.1",
     ],
     license="GPL-3",
-    url="https://abess.readthedocs.io",
-    download_url="https://pypi.python.org/pypi/abess",
-    project_urls={
-        "Bug Tracker": "https://github.com/abess-team/abess/issues",
-        "Documentation": "https://abess.readthedocs.io",
-        "Source Code": "https://github.com/abess-team/abess",
-    },
+    #url="https://abess.readthedocs.io",
+    #download_url="https://pypi.python.org/pypi/abess",
+    #project_urls={
+    #    "Bug Tracker": "https://github.com/abess-team/abess/issues",
+    #    "Documentation": "https://abess.readthedocs.io",
+    #    "Source Code": "https://github.com/abess-team/abess",
+    #},
     classifiers=[
         "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",
@@ -178,6 +176,6 @@ setup(
     ],
     ## there is no wheel version available for nlopt with python 3.11 now
     python_requires='>=3.7,<3.11', 
-    ext_modules=[CMakeExtension("scope.pybind_cabess")],
+    ext_modules=[CMakeExtension("scope._scope")],
     cmdclass={"build_ext": CMakeBuild}
 )

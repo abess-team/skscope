@@ -162,12 +162,12 @@ class Algorithm {
 
     void update_exchange_num(int exchange_num) { this->exchange_num = exchange_num; }
 
-    virtual void update_tau(int train_n, int N) {
-        if (train_n == 1) {
+    virtual void update_tau(int n, int p) {
+        if (n == 1) {
             this->tau = 0.0;
         } else {
             this->tau =
-                0.01 * (double)this->sparsity_level * log((double)N) * log(log((double)train_n)) / (double)train_n;
+                0.01 * (double)this->sparsity_level * log((double)p) * log(log((double)n)) / (double)n;
         }
     }
 

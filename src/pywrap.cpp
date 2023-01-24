@@ -29,7 +29,7 @@ pywrap_Universal(ExternData data, UniversalModel model, NloptParams nlopt_solver
     return std::make_tuple(beta, aux_para, train_loss, test_loss, ic);
 }
 
-PYBIND11_MODULE(pybind_cabess, m) {
+PYBIND11_MODULE(_scope, m) {
     m.def("pywrap_Universal", &pywrap_Universal);
     pybind11::class_<UniversalModel>(m, "UniversalModel").def(pybind11::init<>())
         .def("set_loss_of_model", &UniversalModel::set_loss_of_model)

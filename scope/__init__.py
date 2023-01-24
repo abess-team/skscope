@@ -6,17 +6,17 @@
 # @File    : __init__.py
 
 __version__ = "0.0.1"
-__author__ = ("Jin Zhu, Kangkang Jiang, "
-              "Junhao Huang, Yanhang Zhang, "
-              "Yanhang Zhang, Shiyun Lin, "
+__author__ = ("Zezhi Wang, Jin Zhu,"
+              "Kangkang Jiang, Junhao Huang,"
               "Junxian Zhu, Xueqin Wang")
               
 
-from .solver import (ScopeSolver, GrahtpSolver, GraspSolver)
+from .solver import (ScopeSolver, GrahtpSolver, GraspSolver, IHTSolver)
 
 
 __all__ = [
     "ScopeSolver",
     "GrahtpSolver",
     "GraspSolver",
+    "IHTSolver",
 ]

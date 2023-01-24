@@ -2,7 +2,7 @@ from .BaseSolver import BaseSolver
 import numpy as np
 import importlib
 import nlopt
-from .pybind_cabess import pywrap_Universal, UniversalModel, init_spdlog, NloptParams
+from ._scope import pywrap_Universal, UniversalModel, init_spdlog, NloptParams
 
 
 class ScopeSolver(BaseSolver):

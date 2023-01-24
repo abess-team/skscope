@@ -67,3 +67,7 @@ See the document for more installation details.
     print("Estimated parameter:\n", params)
     print("True parameter:\n", true_params)
 ```
+
+## Compare with SOTA methods
+
+![](/docs/img/compare.png)

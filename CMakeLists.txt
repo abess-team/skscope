@@ -5,7 +5,7 @@ if(CCACHE_PROGRAM)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
 endif()
 
-project(pybind_cabess LANGUAGES CXX)
+project(_scope LANGUAGES CXX)
 
 # environment variables
 set(CMAKE_CXX_STANDARD 17)
@@ -36,26 +36,26 @@ add_subdirectory(nlopt)
 
 # sources
 aux_source_directory(src SOURCES)
-pybind11_add_module(pybind_cabess MODULE ${SOURCES})
+pybind11_add_module(_scope MODULE ${SOURCES})
 
 # links
-target_include_directories(pybind_cabess PRIVATE include
+target_include_directories(_scope PRIVATE include
                                                  src)
-target_link_libraries(pybind_cabess PRIVATE pybind11::module 
+target_link_libraries(_scope PRIVATE pybind11::module 
                                             pybind11::opt_size 
                                             pybind11::lto
                                             pybind11::windows_extras
                                             nlopt)
 if(OpenMP_CXX_FOUND)
-    target_link_libraries(pybind_cabess PRIVATE OpenMP::OpenMP_CXX)
+    target_link_libraries(_scope PRIVATE OpenMP::OpenMP_CXX)
 endif()
 
 # build extension
-pybind11_extension(pybind_cabess)
+pybind11_extension(_scope)
 if(NOT ${CMAKE_BUILD_TYPE} MATCHES Debug|RelWithDebInfo)
     # Strip unnecessary sections of the binary on Linux/macOS
-    pybind11_strip(pybind_cabess)
+    pybind11_strip(_scope)
 endif()
 
-set_target_properties(pybind_cabess PROPERTIES CXX_VISIBILITY_PRESET "hidden"
+set_target_properties(_scope PROPERTIES CXX_VISIBILITY_PRESET "hidden"
                                                CUDA_VISIBILITY_PRESET "hidden")

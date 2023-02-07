@@ -566,14 +566,14 @@ class Algorithm {
             this->sacrifice(X, X_A, y, beta, beta_A, coef0, A, I, weights, g_index, g_size, N, A_ind, bd, U, U_ind, 0);
             // A_init
             for (int i = 0; i < A.size(); i++) {
-                bd(A(i)) = DBL_MAX - 1;
+                bd(A(i)) = DBL_MAX / 2;
             }
             // alway_select
             for (int i = 0; i < this->always_select.size(); i++) {
                 bd(this->always_select(i)) = DBL_MAX;
             }
         }
-
+        
         // get Active-set A according to max_k bd
         Eigen::VectorXi A_new = max_k(bd, this->sparsity_level);
 

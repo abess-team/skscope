@@ -41,45 +41,50 @@ bool abessUniversal::primary_model_fit(UniversalData& active_data, MatrixXd& y, 
 void abessUniversal::sacrifice(UniversalData& data, UniversalData& XA, MatrixXd& y, VectorXd& para, VectorXd& beta_A, VectorXd& aux_para, VectorXi& A, VectorXi& I, VectorXd& weights, VectorXi& g_index, VectorXi& g_size, int g_num, VectorXi& A_ind, VectorXd& sacrifice, VectorXi& U, VectorXi& U_ind, int num)
 {
     SPDLOG_DEBUG("sacrifice begin");
-    for (int i = 0; i < A.size(); i++) {
-        VectorXd gradient_group(g_size(A[i]));
-        MatrixXd hessian_group(g_size(A[i]), g_size(A[i]));
-        data.hessian(para, aux_para, gradient_group, hessian_group, g_index(A[i]), g_size(A[i]), this->lambda_level);
-        if (g_size(A[i]) == 1) { // optimize for frequent degradation situations
-            sacrifice(A[i]) = para(g_index(A[i])) * para(g_index(A[i])) * hessian_group(0, 0);
+    int size, index;
+    for (auto group_index : A) {
+        size = g_size(group_index);
+        index = g_index(group_index);
+        VectorXd gradient_group(size);
+        MatrixXd hessian_group(size, size);
+        data.hessian(para, aux_para, gradient_group, hessian_group, index, size, this->lambda_level);
+        if (size == 1) { // optimize for frequent degradation situations
+            sacrifice(group_index) = para(index) * para(index) * hessian_group(0, 0);
         }
         else {
-            sacrifice(A[i]) = para.segment(g_index(A[i]), g_size(A[i])).transpose() * hessian_group * para.segment(g_index(A[i]), g_size(A[i]));
-            sacrifice(A[i]) /= g_size(A[i]);
+            sacrifice(group_index) = para.segment(index, size).transpose() * hessian_group * para.segment(index, size);
+            sacrifice(group_index) /= size;
         }
     }
-    for (int i = 0; i < I.size(); i++) {
-        VectorXd gradient_group(g_size(I[i]));
-        MatrixXd hessian_group(g_size(I[i]), g_size(I[i]));
-        data.hessian(para, aux_para, gradient_group, hessian_group, g_index(I[i]), g_size(I[i]), this->lambda_level);
-        if (g_size(I[i]) == 1) { // Optimize for degradation situations, it often happens
+    for (auto group_index : I) {
+        size = g_size(group_index);
+        index = g_index(group_index);
+        VectorXd gradient_group(size);
+        MatrixXd hessian_group(size, size);
+        data.hessian(para, aux_para, gradient_group, hessian_group, index, size, this->lambda_level);
+        if (size == 1) { // optimize for frequent degradation situations
             if (hessian_group(0, 0) < this->enough_small) {
-                SPDLOG_ERROR("hessian is not positive definite:\n{}", hessian_group(0, 0));
-                sacrifice(I[i]) = DBL_MAX; // TODO
+                SPDLOG_ERROR("there exists a submatrix of hessian which is not positive definite!\nactive set is{}\nactive params are {}\ngroup index is {}, hessian is {}", data.get_effective_para_index().transpose(),para.transpose(), index, hessian_group(0,0));
+                sacrifice(group_index) = gradient_group(0, 0) * gradient_group(0, 0);
             }
             else {
-                sacrifice(I[i]) = gradient_group(0, 0) * gradient_group(0, 0) / hessian_group(0, 0);
+                sacrifice(group_index) = gradient_group(0, 0) * gradient_group(0, 0) / hessian_group(0, 0);
             }
         }
         else {
             LLT<MatrixXd> hessian_group_llt(hessian_group);
             if (hessian_group_llt.info() == NumericalIssue){
-                SPDLOG_ERROR("hessian is not positive definite:\n{}", hessian_group);
-                sacrifice(I[i]) = DBL_MAX; // TODO
+                SPDLOG_ERROR("there exists a submatrix of hessian which is not positive definite!\nactive set is {}\nactive params are {}\ngroup index is {}\nhessian is {}", data.get_effective_para_index().transpose(), para.transpose(), VectorXi::LinSpaced(size, index, size + index - 1), hessian_group);
+                sacrifice(group_index) = gradient_group.squaredNorm();
             }
             else{
-                MatrixXd inv_hessian_group = hessian_group_llt.solve(MatrixXd::Identity(g_size(i), g_size(i)));
-                sacrifice(I[i]) = gradient_group.transpose() * inv_hessian_group * gradient_group;
-                sacrifice(I[i]) /= g_size(I[i]);
+                MatrixXd inv_hessian_group = hessian_group_llt.solve(MatrixXd::Identity(size, size));
+                sacrifice(group_index) = gradient_group.transpose() * inv_hessian_group * gradient_group;
+                sacrifice(group_index) /= size;
             }
         }
     }
-    SPDLOG_DEBUG("sacrifice end");
+    SPDLOG_DEBUG("sacrifice end with {}", sacrifice.transpose());
     return;
 }
 

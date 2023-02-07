@@ -456,33 +456,5 @@ void add_weight(Eigen::SparseMatrix<double> &x, Eigen::MatrixXd &y, Eigen::Vecto
 template <class T1,class T2, class T3>
 void add_weight(T1& x, T2& y, T3& weights) {};
 
-/**
- * @brief get a segment from a Eigen vector, there are two implementations for different version of Eigen.
- */
-template <class VECTOR>
-void segment_Eigen(VECTOR const& vec, VECTOR & segment, Eigen::VectorXi const& index){
-    #if EIGEN_MAJOR_VERSION >= 4
-        segment = vec(index);
-    #else
-        segment.resize(index.size()); 
-        for (Eigen::Index i = 0; i < index.size(); i++) {
-            segment(i) = vec(index(i));
-        }
-    #endif
-}
-
-/**
- * @brief assignment a segment to a Eigen vector, there are two implementations for different version of Eigen.
- */
-template <class VECTOR>
-void assignment_Eigen(VECTOR & vec, VECTOR const& segment, Eigen::VectorXi const& index){
-    #if EIGEN_MAJOR_VERSION >= 4
-        vec(index) = segment;
-    #else
-        for (Eigen::Index i = 0; i < index.size(); i++) {
-            vec(index(i)) = segment(i);
-        }
-    #endif
-}
 
 #endif  // SRC_UTILITIES_H

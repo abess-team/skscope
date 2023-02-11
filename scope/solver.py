@@ -1,7 +1,8 @@
-from .BaseSolver import BaseSolver
+from .base_solver import BaseSolver
 import numpy as np
-import importlib
 import nlopt
+import jax
+from jax import numpy as jnp
 from ._scope import pywrap_Universal, UniversalModel, init_spdlog, NloptParams
 
 
@@ -15,7 +16,7 @@ class ScopeSolver(BaseSolver):
     + dimensionality : int
         Dimension of the optimization problem, which is also the total number of variables that will be considered to select or not, denoted as p.
     + sparsity : int or array-like, optional, default=None
-        The sparsity level, which is the number of nonzero elements of the optimal solution, denoted as s. If sparsity is an array-like, it should be a list of integers. 
+        The sparsity level, which is the number of nonzero elements of the optimal solution, denoted as s. If sparsity is an array-like, it should be a list of integers.
         default is `range(min(n, int(n/(log(log(n))log(p)))))`
         Used only when path_type = "seq".
     + aux_params_size : int, optional, default=0
@@ -25,7 +26,7 @@ class ScopeSolver(BaseSolver):
         sample size, only used in the selection of support size, denoted as n.
     + always_select : array-like, optional, default=[]
         An array contains the indexes of variables which must be selected.
-        Its effect is simillar to see these variables as auxiliary variables and set `aux_params_size`. 
+        Its effect is simillar to see these variables as auxiliary variables and set `aux_params_size`.
     + group : array-like with shape (p,), optional, default=range(p)
         The group index for each variable, and it must be an incremental integer array starting from 0 without gap.
         The variables in the same group must be adjacent, and they will be selected together or not.
@@ -35,7 +36,7 @@ class ScopeSolver(BaseSolver):
     + warm_start : bool, optional, default=True
         When tuning the optimal parameter combination, whether to use the last solution as a warm start to accelerate the iterative convergence of the splicing algorithm.
     + important_search : int, optional, default=128
-        The number of important variables which need be splicing. 
+        The number of important variables which need be splicing.
         This is used to reduce the computational cost. If it's too large, it would greatly increase runtime.
     + screening_size : int, optional, default=-1
         The number of variables remaining after the screening before variables select. Screening is used to reduce the computational cost.
@@ -91,7 +92,7 @@ class ScopeSolver(BaseSolver):
     + console_log_level : str, optional, default="off"
         The level of output log to console, which can be "off", "error", "warning", "debug". For example, if it's "warning", only error and warning log will be output to console.
     + file_log_level : str, optional, default="off"
-        The level of output log to file, which can be "off", "error", "warning", "debug". For example, if 
+        The level of output log to file, which can be "off", "error", "warning", "debug". For example, if
         it's "off", no log will be output to file.
     + log_file_name : str, optional, default="logs/scope.log"
         The name (relative path) of log file, which is used to store the log information.
@@ -121,36 +122,34 @@ class ScopeSolver(BaseSolver):
       117(52):33117-33123, 2020.
     """
 
-    # attributes
-    aux_params = None
-    eval_objective = None
-    train_objective = None
-
     def __init__(
         self,
         dimensionality,
         sparsity=None,
-        aux_params_size=0,
         sample_size=1,
+        *,
         always_select=None,
-        group=None,
         nlopt_solver=None,
+        max_iter=20,
+        ic_type="gic",
+        ic_coef=1.0,
+        cv=1,
+        cv_fold_id=None,
+        aux_params_size=0,
+        group=None,
         warm_start=True,
         important_search=128,
         screening_size=-1,
-        max_iter=20,
         max_exchange_num=5,
         splicing_type="halve",
         path_type="seq",
         gs_lower_bound=0,
         gs_higher_bound=None,
-        ic_type="gic",
-        ic_coef=1.0,
-        cv=1,
-        cv_fold_id=None,
         regular_coef=0.0,
         thread=1,
-        console_log_level="off", file_log_level="off", log_file_name="logs/scope.log"
+        console_log_level="off",
+        file_log_level="off",
+        log_file_name="logs/scope.log",
     ):
         self.model = UniversalModel()
         self.dimensionality = dimensionality
@@ -174,11 +173,10 @@ class ScopeSolver(BaseSolver):
         self.group = group
         self.warm_start = warm_start
         self.thread = thread
-        
-        # nlopt
+
         if nlopt_solver is None:
             nlopt_solver = nlopt.opt(nlopt.LD_LBFGS, 1)
-        
+
         self.nlopt_params = NloptParams(
             nlopt_solver.get_algorithm(),
             nlopt_solver.get_algorithm_name(),
@@ -200,10 +198,16 @@ class ScopeSolver(BaseSolver):
             console_log_level = 3
         elif console_log_level == "debug":
             console_log_level = 1
-        elif isinstance(console_log_level, int) and console_log_level >= 0 and console_log_level <= 6:
+        elif (
+            isinstance(console_log_level, int)
+            and console_log_level >= 0
+            and console_log_level <= 6
+        ):
             pass
         else:
-            raise ValueError("console_log_level must be in 'off', 'error', 'warning', 'debug'")
+            raise ValueError(
+                "console_log_level must be in 'off', 'error', 'warning', 'debug'"
+            )
 
         if file_log_level == "off":
             file_log_level = 6
@@ -213,31 +217,39 @@ class ScopeSolver(BaseSolver):
             file_log_level = 3
         elif file_log_level == "debug":
             file_log_level = 1
-        elif isinstance(file_log_level, int) and file_log_level >= 0 and file_log_level <= 6:
+        elif (
+            isinstance(file_log_level, int)
+            and file_log_level >= 0
+            and file_log_level <= 6
+        ):
             pass
         else:
-            raise ValueError("file_log_level must be in 'off', 'error', 'warning', 'debug'")
+            raise ValueError(
+                "file_log_level must be in 'off', 'error', 'warning', 'debug'"
+            )
 
         if not isinstance(log_file_name, str):
             raise ValueError("log_file_name must be a string")
 
         init_spdlog(console_log_level, file_log_level, log_file_name)
 
-    def solve(self, 
-        objective, 
+    def solve(
+        self,
+        objective,
         init_support_set=None,
         init_params=None,
         init_aux_params=None,
         gradient=None,
         hessian=None,
         autodiff=False,
-        data=None,):
+        data=None,
+    ):
         r"""
         Set the optimization objective and begin to solve
 
         Parameters
         ----------
-        + objective : function('params': array, ('aux_params': array), ('data': custom class)) ->  float 
+        + objective : function('params': array, ('aux_params': array), ('data': custom class)) ->  float
             Defined the objective of optimization, must be written in JAX if gradient and hessian are not provided.
             If `autodiff` is `True`, `objective` can be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
         + init_support_set : array-like of int, optional, default=[]
@@ -255,23 +267,19 @@ class ScopeSolver(BaseSolver):
         + data : custom class, optional, default=None
             Any class which is match to objective function. It can cantain all data that objective should be known, like samples, responses, weights, etc.
         """
-        # dimensionality
         p = self.dimensionality
-        self.__check_positive_integer(p, "dimensionality")
+        BaseSolver._check_positive_integer(p, "dimensionality")
 
-        # sample_size
         n = self.sample_size
-        self.__check_positive_integer(n, "sample_size")
+        BaseSolver._check_positive_integer(n, "sample_size")
 
-        # aux_params_size
         m = self.aux_params_size
-        self.__check_non_negative_integer(m, "aux_params_size")
+        BaseSolver._check_non_negative_integer(m, "aux_params_size")
 
-        # max_iter
-        self.__check_non_negative_integer(self.max_iter, "max_iter")
+        BaseSolver._check_non_negative_integer(self.max_iter, "max_iter")
 
         # max_exchange_num
-        self.__check_positive_integer(self.max_exchange_num, "max_exchange_num")
+        BaseSolver._check_positive_integer(self.max_exchange_num, "max_exchange_num")
 
         # path_type
         if self.path_type == "seq":
@@ -294,7 +302,7 @@ class ScopeSolver(BaseSolver):
             raise ValueError('ic_type should be "aic", "bic", "ebic" or "gic"')
 
         # cv
-        self.__check_positive_integer(self.cv, "cv")
+        BaseSolver._check_positive_integer(self.cv, "cv")
         if self.cv > n:
             raise ValueError("cv should not be greater than sample_size")
 
@@ -307,7 +315,9 @@ class ScopeSolver(BaseSolver):
             if group.ndim > 1:
                 raise ValueError("Group should be an 1D array of integers.")
             if group.size != p:
-                raise ValueError("The length of group should be equal to dimensionality.")
+                raise ValueError(
+                    "The length of group should be equal to dimensionality."
+                )
             group_num = len(np.unique(group))
             if group[0] != 0:
                 raise ValueError("Group should start from 0.")
@@ -408,10 +418,12 @@ class ScopeSolver(BaseSolver):
             if len(always_select) > 0 and (
                 always_select[0] < 0 or always_select[-1] >= group_num
             ):
-                raise ValueError("always_select should be between 0 and dimensionality.")
+                raise ValueError(
+                    "always_select should be between 0 and dimensionality."
+                )
 
         # thread
-        self.__check_non_negative_integer(self.thread, "thread")
+        BaseSolver._check_non_negative_integer(self.thread, "thread")
 
         # splicing_type
         if self.splicing_type == "halve":
@@ -422,7 +434,9 @@ class ScopeSolver(BaseSolver):
             raise ValueError('splicing_type should be "halve" or "taper".')
 
         # important_search
-        self.__check_non_negative_integer(self.important_search, "important_search")
+        BaseSolver._check_non_negative_integer(
+            self.important_search, "important_search"
+        )
 
         # cv_fold_id
         if self.cv_fold_id is None:
@@ -456,7 +470,9 @@ class ScopeSolver(BaseSolver):
         else:
             init_params = np.array(init_params, dtype=float)
             if init_params.shape != (p,):
-                raise ValueError("The length of init_params must match `dimensionality`!")
+                raise ValueError(
+                    "The length of init_params must match `dimensionality`!"
+                )
 
         # init_aux_params
         if init_aux_params is None:
@@ -464,7 +480,9 @@ class ScopeSolver(BaseSolver):
         else:
             init_aux_params = np.array(init_aux_params, dtype=float)
             if init_aux_params.shape != (m,):
-                raise ValueError("The length of init_aux_params must match `aux_params_size`!")
+                raise ValueError(
+                    "The length of init_aux_params must match `aux_params_size`!"
+                )
 
         # set optimization objective
         if autodiff:
@@ -472,8 +490,10 @@ class ScopeSolver(BaseSolver):
         elif gradient is not None and hessian is not None:
             self.__set_objective_custom(objective, gradient, hessian)
         else:
-            objective = ScopeSolver.__objective_decorator(objective, self.aux_params_size)
-            self.__set_objective_jax(objective)    
+            objective = ScopeSolver.__objective_decorator(
+                objective, self.aux_params_size
+            )
+            self.__set_objective_jax(objective)
 
         result = pywrap_Universal(
             data,
@@ -506,10 +526,20 @@ class ScopeSolver(BaseSolver):
         )
 
         self.params = result[0]
+        self.support_set = np.nonzero(self.params)[0]
         self.aux_params = result[1].squeeze()
         self.train_objective = result[2]
-        self.eval_objective = result[4] if self.cv==1 else result[3]
+        self.eval_objective = result[4] if self.cv == 1 else result[3]
         self.value_objective = objective(self.params, self.aux_params, data)
+
+    def get_params(self):
+        r"""
+        Get the solution of optimization, include the parameters and auxiliary parameters (if exists).
+        """
+        if self.aux_params_size is not None and self.aux_params_size > 0:
+            return self.params, self.aux_params
+        else:
+            return self.params
 
     def set_split_method(self, spliter, deleter=None):
         r"""
@@ -528,7 +558,7 @@ class ScopeSolver(BaseSolver):
                 def __init__(self, X, y):
                     self.X = X
                     self.y = y
-            
+
             solver = ScopeSolver(dimensionality=5, cv=10)
             solver.set_split_method(lambda data, index:  Data(data.x[index, :], data.y[index]))
         """
@@ -545,7 +575,7 @@ class ScopeSolver(BaseSolver):
         + func : function {'params': array-like, 'aux_params': array-like, 'data': custom class, 'active_index': array-like, 'return': tuple of array-like}
             - `params` and `aux_params` are the default initialization of parameters and auxiliary parameters.
             - `data` is the training set of sub-problem.
-            - `active_index` is the index of parameters needed initialization, the parameters not in `active_index` must be zeros. 
+            - `active_index` is the index of parameters needed initialization, the parameters not in `active_index` must be zeros.
             - The function should return a tuple of array-like, the first element is the initialization of parameters and the second element is the initialization of auxiliary parameters.
         """
         self.model.set_init_params(func)
@@ -554,16 +584,22 @@ class ScopeSolver(BaseSolver):
         if objective.__code__.co_argcount == 3:
             return objective
         elif objective.__code__.co_argcount == 2 and aux_params_size > 0:
+
             def __objective(params, aux_params, data):
-                    return objective(params, aux_params)
+                return objective(params, aux_params)
+
             return __objective
         elif objective.__code__.co_argcount == 2 and aux_params_size == 0:
+
             def __objective(params, aux_params, data):
-                    return objective(params, data)
+                return objective(params, data)
+
             return __objective
         elif objective.__code__.co_argcount == 1:
+
             def __objective(params, aux_params, data):
                 return objective(params)
+
             return __objective
         else:
             raise ValueError("The objective function should have 1, 2 or 3 arguments.")
@@ -578,7 +614,7 @@ class ScopeSolver(BaseSolver):
         """
         self.model.set_loss_of_model(objective_overloaded)
         self.model.set_gradient_autodiff(objective_overloaded)
-        self.model.set_hessian_autodiff(objective_overloaded)        
+        self.model.set_hessian_autodiff(objective_overloaded)
 
     def __set_objective_jax(self, objective):
         r"""
@@ -593,7 +629,7 @@ class ScopeSolver(BaseSolver):
         --------
             import jax.numpy as jnp
             from abess import ScopeSolver
-            
+
             class CustomData:
                 def __init__(self, x, y):
                     self.x = x
@@ -604,16 +640,13 @@ class ScopeSolver(BaseSolver):
 
             def linear_with_intercept(params, aux_params, data):
                 return jnp.sum(jnp.square(data.x @ params + aux_params - data.y))
-            
+
             solver1 = ScopeSolver(10)
             solver1.set_objective_jax(linear_no_intercept)
 
             solver2 = ScopeSolver(10, aux_params_size=1)
             solver2.set_objective_jax(linear_with_intercept)
         """
-        jax = importlib.import_module("jax")
-        jnp = importlib.import_module("jax.numpy")
-
         # the function for differential
         def func_(params_compute, aux_params, params, ind, data):
             params_complete = params.at[ind].set(params_compute)
@@ -626,7 +659,11 @@ class ScopeSolver(BaseSolver):
             return np.array(
                 jnp.append(
                     *jax.grad(func_, (1, 0))(
-                        params_compute_j, aux_params_j, params_j, compute_params_index, data
+                        params_compute_j,
+                        aux_params_j,
+                        params_j,
+                        compute_params_index,
+                        data,
                     )
                 )
             )
@@ -644,7 +681,7 @@ class ScopeSolver(BaseSolver):
         self.model.set_loss_of_model(objective)
         self.model.set_gradient_user_defined(grad_)
         self.model.set_hessian_user_defined(hessian_)
-    
+
     def __set_objective_custom(self, objective, gradient, hessian):
         r"""
         Register objective function and its gradient and hessian as callback function.
@@ -671,7 +708,7 @@ class ScopeSolver(BaseSolver):
             model.set_objective_custom(objective=objective, gradient=grad, hessian=hess)
         """
         self.model.set_loss_of_model(objective)
-        # NOTE: Perfect Forwarding of grad and hess is neccessary for func written in Pybind11_Cpp code 
+        # NOTE: Perfect Forwarding of grad and hess is neccessary for func written in Pybind11_Cpp code
         self.model.set_gradient_user_defined(
             lambda arg1, arg2, arg3, arg4: gradient(arg1, arg2, arg3, arg4)
         )
@@ -680,199 +717,150 @@ class ScopeSolver(BaseSolver):
             lambda arg1, arg2, arg3, arg4: hessian(arg1, arg2, arg3, arg4)
         )
 
-    @staticmethod
-    def __check_positive_integer(var, name: str):
-        if (not isinstance(var, int) or var <= 0):
-            raise ValueError("{} should be an positive integer.".format(name))
-
-    @staticmethod
-    def __check_non_negative_integer(var, name: str):
-        if (not isinstance(var, int) or var < 0):
-            raise ValueError("{} should be an non-negative integer.".format(name))    
-
 class GrahtpSolver(BaseSolver):
-    def __init__(self,
+    def __init__(
+        self,
         dimensionality,
-        sparsity,
-        fast=False,
-        final_support_size=-1,
-        init_params=None,
+        sparsity = None,
+        sample_size = 1,
+        *,
         step_size=0.005,
-        max_iter=100,
+        nlopt_solver = None,
+        max_iter = 100,
+        ic_type = "aic",
+        ic_coef = 1.0,
+        metric_method = None,
+        cv = 1,
+        split_data_method = None,
+        random_state = None,
     ):
-        self.dimensionality=dimensionality
-        self.sparsity=sparsity
-        self.fast=fast
-        self.final_support_size=final_support_size
-        self.init_params=init_params
-        self.step_size=step_size
-        self.max_iter=max_iter
+        self.fast = False # fast version of GraHTP is actually IHT 
+        self.step_size = step_size
+        super().__init__(
+            dimensionality = dimensionality,
+            sparsity = sparsity,
+            sample_size = sample_size,
+            nlopt_solver = nlopt_solver,
+            max_iter = max_iter,
+            ic_type = ic_type,
+            ic_coef = ic_coef,
+            metric_method = metric_method,
+            cv = cv,
+            split_data_method = split_data_method,
+            random_state = random_state,
+        )
 
-    def solve(self, 
-        objective, 
-        gradient=None,
+    def _solve(
+        self,
+        sparsity,
+        objective,
+        gradient,
+        init_support_set,
+        init_params,
+        data,
     ):
-        nlopt = importlib.import_module("nlopt")
-            
-        if gradient is None:
-            jax = importlib.import_module("jax")
-            jnp = importlib.import_module("jax.numpy")
-
-            loss_fn_jax = objective
-            objective = lambda x: loss_fn_jax(x).item()
-
-            def func_(para_compute, para, index):
-                para_complete = para.at[index].set(para_compute)
-                return loss_fn_jax(para_complete)
-
-            def gradient(para, compute_para_index):
-                para_j = jnp.array(para)
-                para_compute_j = jnp.array(para[compute_para_index])
-                return np.array(
-                    jax.jacfwd(
-                        func_
-                    )(  ## forward mode automatic differentiation is faster than reverse mode
-                        para_compute_j, para_j, compute_para_index
-                    )
-                )
-
-        if self.init_params is None:
-            self.init_params = np.zeros(self.dimensionality)
-
-        if final_support_size < 0:
-            final_support_size = self.sparsity
-
         # init
-        x_old = self.init_params
-        support_old = np.argpartition(np.abs(x_old), -self.sparsity)[
-            -self.sparsity:
-        ]  # the index of self.sparsity largest entries
+        params = init_params
+        support_old = np.array([], dtype="int32")
+
+        # !!carefully change names of variables
+        # self, objective, gradient, support_new, data come from closure
+        def opt_fn(x, grad):
+            x_full = np.zeros(self.dimensionality)
+            x_full[support_new] = x
+            if grad.size > 0:
+                grad[:] = gradient(x_full, data, support_new)
+            return objective(x_full, data)
 
         for iter in range(self.max_iter):
             # S1: gradient descent
-            x_bias = x_old - self.step_size * gradient(x_old, np.arange(self.dimensionality))
+            params_bias = params - self.step_size * gradient(
+                params, data, np.arange(self.dimensionality)
+            )
             # S2: Gradient Hard Thresholding
-            support_new = np.argpartition(np.abs(x_bias), -self.sparsity)[-self.sparsity:]
-            # S3: debise
-            if self.fast:
-                x_new = np.zeros(self.dimensionality)
-                x_new[support_new] = x_bias[support_new]
-            else:
-                def opt_f(x, gradient):
-                    x_full = np.zeros(self.dimensionality)
-                    x_full[support_new] = x
-                    if gradient.size > 0:
-                        gradient[:] = gradient(x_full, support_new)
-                    return objective(x_full)
-
-                opt = nlopt.opt(nlopt.LD_SLSQP, self.sparsity)
-                opt.set_min_objective(opt_f)
-                opt.set_ftol_rel(0.001)
-                x_new = np.zeros(self.dimensionality)
-                try:
-                    x_new[support_new] = opt.optimize(x_bias[support_new])
-                except RuntimeError:
-                    x_new[support_new] = opt.last_optimize_result()
+            support_new = np.argpartition(np.abs(params_bias), -sparsity)[-sparsity:]
             # terminating condition
             if np.all(set(support_old) == set(support_new)):
                 break
-            x_old = x_new
-            support_old = support_new
+            else:
+                support_old = support_new
+            # S3: debise
+            params = np.zeros(self.dimensionality)
+            if self.fast:   
+                params[support_new] = params_bias[support_new]
+            else:
+                params[support_new], _ = self._cache_nlopt(opt_fn, params_bias[support_new])
 
-        final_support = np.argpartition(np.abs(x_new), -final_support_size)[
-            -final_support_size:
-        ]
-        final_estimator = np.zeros(self.dimensionality)
-        final_estimator[final_support] = x_new[final_support]
+        # final optimization for IHT
+        if self.fast:
+            params[support_new], _ = self._cache_nlopt(opt_fn, params[support_new])
 
-        self.params = final_estimator
-        self.value_objective = objective(final_estimator)        
+        return params, support_new
+
 
 class GraspSolver(BaseSolver):
-    def __init__(self,
-        dimensionality,
+    
+    ## inherited the constructor of BaseSolver
+    
+    def _solve(
+        self,
         sparsity,
-        max_iter=100,
+        objective,
+        gradient,
+        init_support_set,
+        init_params,
+        data,
     ):
-        self.dimensionality=dimensionality
-        self.sparsity=sparsity
-        self.max_iter=max_iter
-    
-    def solve(self, 
-        objective=None, 
-        gradient=None,
-    ):
-        nlopt = importlib.import_module("nlopt")
-
-        if gradient is None:
-            jax = importlib.import_module("jax")
-            jnp = importlib.import_module("jax.numpy")
-
-            loss_fn_jax = objective
-            objective = lambda x: loss_fn_jax(x).item()
-
-            def func_(para_compute, para, index):
-                para_complete = para.at[index].set(para_compute)
-                return loss_fn_jax(para_complete)
-
-            def gradient(para, compute_para_index):
-                para_j = jnp.array(para)
-                para_compute_j = jnp.array(para[compute_para_index])
-                return np.array(
-                    jax.jacfwd(func_)( ## forward mode automatic differentiation is faster than reverse mode
-                        para_compute_j, para_j, compute_para_index
-                    )
-                )
         # init
-        x_old = np.zeros(self.dimensionality)
-    
+        params = init_params
+        support_old = np.array([], dtype="int32")
+
+        # !!carefully change names of variables
+        # self, objective, gradient, support_new, data come from closure
+        def opt_fn(x, grad):
+            x_full = np.zeros(self.dimensionality)
+            x_full[support_new] = x
+            if grad.size > 0:
+                grad[:] = gradient(x_full, data, support_new)
+            return objective(x_full, data)
+
         for iter in range(self.max_iter):
-            # compute local gradient 
-            z = gradient(x_old, np.arange(self.dimensionality))
+            # compute local gradient
+            z = gradient(params, data, np.arange(self.dimensionality))
 
             # identify directions
-            if 2*self.sparsity < self.dimensionality:
-                Omega = [idx for idx in np.argpartition(np.abs(z), -2*self.sparsity)[-2*self.sparsity:] if z[idx] != 0.0] # supp of top 2k largest absolute values of gradient
+            if 2 * sparsity < self.dimensionality:
+                Omega = [
+                    idx
+                    for idx in np.argpartition(np.abs(z), -2 * sparsity)[
+                        -2 * sparsity :
+                    ]
+                    if z[idx] != 0.0
+                ]  # supp of top 2k largest absolute values of gradient
             else:
-                Omega = np.nonzero(z)[0] # supp(z)
+                Omega = np.nonzero(z)[0]  # supp(z)
 
             # merge supports
-            support_new = np.unique(np.append(Omega, x_old.nonzero()[0])) 
+            support_new = np.unique(np.append(Omega, params.nonzero()[0]))
             
-            # minimize 
-            def opt_f(x, gradient):
-                x_full = np.zeros(self.dimensionality)
-                x_full[support_new] = x
-                if gradient.size > 0:
-                    gradient[:] = gradient(x_full, support_new)
-                return objective(x_full)    
-
-            opt = nlopt.opt(nlopt.LD_SLSQP, support_new.size)
-            opt.set_min_objective(opt_f)
-            opt.set_ftol_rel(0.001)
-            x_tem = np.zeros(self.dimensionality)
-            try:
-                x_tem[support_new] = opt.optimize(x_old[support_new])
-            except RuntimeError:
-                x_tem[support_new] = opt.last_optimize_result()
-            
-            # prune estimate
-            x_supp = np.argpartition(np.abs(x_tem), -self.sparsity)[-self.sparsity:]
-            x_new = np.zeros(self.dimensionality)
-            x_new[x_supp] = x_tem[x_supp]
-
-            # update
-            x_old = x_new
-            support_old = support_new
-
             # terminating condition
             if np.all(set(support_old) == set(support_new)):
                 break
-        
-        self.params = x_new
-        self.value_objective = objective(x_new)
+            else:
+                support_old = support_new
+            # minimize
+            params_bias = np.zeros(self.dimensionality)
+            params_bias[support_new], _ = self._cache_nlopt(opt_fn, params[support_new])
 
+            # prune estimate
+            support_set = np.argpartition(np.abs(params_bias), -sparsity)[-sparsity:]
+            params = np.zeros(self.dimensionality)
+            params[support_set] = params_bias[support_set]
+
+        return params, support_set
+
+   
 class IHTSolver(GrahtpSolver):
     def __init__(self, *args, **kwargs):
-        super.__init__(self, *args, **kwargs)
-        self.fast = True
+        super().__init__(*args, **kwargs)
+        self.fast = True # IHT is actually fast version of GraHTP 

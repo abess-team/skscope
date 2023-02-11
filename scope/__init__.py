@@ -12,6 +12,7 @@ __author__ = ("Zezhi Wang, Jin Zhu,"
               
 
 from .solver import (ScopeSolver, GrahtpSolver, GraspSolver, IHTSolver)
+from .base_solver import BaseSolver
 
 
 __all__ = [
@@ -19,4 +20,5 @@ __all__ = [
     "GrahtpSolver",
     "GraspSolver",
     "IHTSolver",
+    "base_solver"
 ]

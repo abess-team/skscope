@@ -4,7 +4,7 @@
 #include <cstring>
 #include "utilities.h"
 
-class NloptParams
+class NloptConfig
 {
 private:
     nlopt_algorithm algorithm; 
@@ -16,7 +16,7 @@ private:
     unsigned population;
     unsigned vector_storage;
 public:
-    NloptParams(int algo_num, const char * algo_name, double stopval, double ftol_rel, double ftol_abs, double xtol_rel, double maxtime, unsigned population, unsigned vector_storage) : algorithm(static_cast<nlopt_algorithm>(algo_num)), stopval(stopval), ftol_rel(ftol_rel), xtol_rel(xtol_rel), maxtime(maxtime), population(population), vector_storage(vector_storage){
+    NloptConfig(int algo_num, const char * algo_name, double stopval, double ftol_rel, double ftol_abs, double xtol_rel, double maxtime, unsigned population, unsigned vector_storage) : algorithm(static_cast<nlopt_algorithm>(algo_num)), stopval(stopval), ftol_rel(ftol_rel), xtol_rel(xtol_rel), maxtime(maxtime), population(population), vector_storage(vector_storage){
         if(std::strcmp(nlopt_algorithm_name(algorithm), algo_name) != 0){
             SPDLOG_ERROR("nlopt algorithm's setting failed! Maybe the version of nlopt doesn't match.\nThis is the specified algorithm: {0}\nBut this algorithm will be used: {1}", algo_name, nlopt_algorithm_name(algorithm));
         }

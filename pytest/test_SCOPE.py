@@ -21,8 +21,7 @@ def test_common(model, solver_creator):
     
     """
     solver = solver_creator(model["n_features"], model["n_informative"])
-    solver.solve(model["loss"])
-    params = solver.get_params() 
+    params = solver.solve(model["loss"])
     
     assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
 
@@ -36,13 +35,18 @@ def test_nlopt_solver(model, solver_creator):
     nlopt_solver.set_ftol_rel(0.001)
 
     solver = solver_creator(model["n_features"], model["n_informative"], nlopt_solver=nlopt_solver)
-    solver.solve(model["loss"])
-    params = solver.get_params() 
+    params = solver.solve(model["loss"])
     
     assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
 
-def test_config():
-    pass
+@pytest.mark.parametrize("model", models)
+@pytest.mark.parametrize("solver_creator", solvers)
+def test_config(model, solver_creator):
+    solver = solver_creator(model["n_features"], model["n_informative"])
+    solver.set_config(**solver.get_config())
+    params = solver.solve(model["loss"])
+    
+    assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
 
 def test_ic():
     pass

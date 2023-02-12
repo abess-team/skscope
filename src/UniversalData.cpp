@@ -6,7 +6,7 @@ using namespace std;
 using Eigen::Map;
 using Eigen::Matrix;
 
-UniversalData::UniversalData(Eigen::Index model_size, Eigen::Index sample_size, ExternData& data, UniversalModel* model, NloptParams* nlopt_solver)
+UniversalData::UniversalData(Eigen::Index model_size, Eigen::Index sample_size, ExternData& data, UniversalModel* model, NloptConfig* nlopt_solver)
     : model(model), nlopt_solver(nlopt_solver), sample_size(sample_size), model_size(model_size), effective_size(model_size)
 {
     this->effective_para_index = VectorXi::LinSpaced(model_size, 0, model_size - 1);
@@ -190,7 +190,7 @@ void UniversalModel::set_deleter(function<void(ExternData const&)> const& f)
     }
 }
 
-void UniversalModel::set_init_para(function <pair<VectorXd, VectorXd>(VectorXd const&, VectorXd const&, ExternData const&, VectorXi const&)> const& f)
+void UniversalModel::set_init_params_of_sub_optim(function <pair<VectorXd, VectorXd>(VectorXd const&, VectorXd const&, ExternData const&, VectorXi const&)> const& f)
 {
     init_para = f;
 }

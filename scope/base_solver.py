@@ -32,7 +32,7 @@ class BaseSolver(BaseEstimator):
         sparsity = None,
         sample_size = 1,
         *,
-        nlopt_solver = None,
+        nlopt_solver = nlopt.opt(nlopt.LD_LBFGS, 1),
         max_iter = 100,
         ic_type = "aic",
         ic_coef = 1.0,
@@ -51,21 +51,7 @@ class BaseSolver(BaseEstimator):
         self.cv = cv
         self.split_data_method = split_data_method
         self.random_state = random_state
-
-        if nlopt_solver is None:
-            nlopt_solver = nlopt.opt(nlopt.LD_LBFGS, 1)
-
-        self.nlopt_params = {
-            "algorithm" : nlopt_solver.get_algorithm(),
-            "algorithm_name" : nlopt_solver.get_algorithm_name(),
-            "stopval" : nlopt_solver.get_stopval(),
-            "ftol_rel" : nlopt_solver.get_ftol_rel(),
-            "ftol_abs" : nlopt_solver.get_ftol_abs(),
-            "xtol_rel" : nlopt_solver.get_xtol_rel(),
-            "maxtime" : nlopt_solver.get_maxtime(),
-            "population" : nlopt_solver.get_population(),
-            "vector_storage" : nlopt_solver.get_vector_storage(),
-        }
+        self.nlopt_solver = nlopt_solver
         
     def get_config(self, deep=True):
         return super().get_params(deep)
@@ -251,6 +237,8 @@ class BaseSolver(BaseEstimator):
             self.value_of_objective = loss_fn(self.params, data)
             self.eval_objective = cv_eval[best_sparsity]
 
+        return self.params
+
     def _metric(
         self,
         value_of_objective: float,
@@ -368,17 +356,17 @@ class BaseSolver(BaseEstimator):
                 best_loss = loss
                 best_params = np.copy(x)
             return loss
-        
-        nlopt_solver = nlopt.opt(self.nlopt_params["algorithm"], init_params.size)
-        if nlopt_solver.get_algorithm_name() != self.nlopt_params["algorithm_name"]:
+
+        nlopt_solver = nlopt.opt(self.nlopt_solver.get_algorithm(), init_params.size)
+        if nlopt_solver.get_algorithm_name() != self.nlopt_solver.get_algorithm_name():
             raise ValueError("The algorithm of nlopt_solver is invalid.")
-        nlopt_solver.set_stopval(self.nlopt_params["stopval"])
-        nlopt_solver.set_ftol_rel(self.nlopt_params["ftol_rel"])
-        nlopt_solver.set_ftol_abs(self.nlopt_params["ftol_abs"])
-        nlopt_solver.set_xtol_rel(self.nlopt_params["xtol_rel"])
-        nlopt_solver.set_maxtime(self.nlopt_params["maxtime"])
-        nlopt_solver.set_population(self.nlopt_params["population"])
-        nlopt_solver.set_vector_storage(self.nlopt_params["vector_storage"])
+        nlopt_solver.set_stopval(self.nlopt_solver.get_stopval())
+        nlopt_solver.set_ftol_rel(self.nlopt_solver.get_ftol_rel())
+        nlopt_solver.set_ftol_abs(self.nlopt_solver.get_ftol_abs())
+        nlopt_solver.set_xtol_rel(self.nlopt_solver.get_xtol_rel())
+        nlopt_solver.set_maxtime(self.nlopt_solver.get_maxtime())
+        nlopt_solver.set_population(self.nlopt_solver.get_population())
+        nlopt_solver.set_vector_storage(self.nlopt_solver.get_vector_storage())
         nlopt_solver.set_min_objective(cache_opt_fn)
 
         try:
@@ -387,24 +375,16 @@ class BaseSolver(BaseEstimator):
         except RuntimeError:
             return best_params, best_loss
 
-
-    def get_params(self):
+    def get_result(self):
         r"""
-        Get the solution of optimization.
+        Get the solution of optimization, include the parameters ...
         """
-        return self.params
-
-    def get_support_set(self):
-        r"""
-        Get the index of selected variables which is the non-zero parameters.
-        """
-        return self.support_set
-
-    def get_value_of_objective(self):
-        r"""
-        Get the value of the objective function on the solution.
-        """
-        return self.value_of_objective
+        return {
+            "params": self.params,
+            "support_set": self.support_set,
+            "value_of_objective": self.value_of_objective,
+            "eval_objective": self.eval_objective,
+        }
 
     @staticmethod
     def _check_positive_integer(var, name: str):

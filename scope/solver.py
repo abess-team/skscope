@@ -1,12 +1,13 @@
 from .base_solver import BaseSolver
+from sklearn.base import BaseEstimator
 import numpy as np
 import nlopt
 import jax
 from jax import numpy as jnp
-from ._scope import pywrap_Universal, UniversalModel, init_spdlog, NloptParams
+from ._scope import pywrap_Universal, UniversalModel, init_spdlog, NloptConfig
 
 
-class ScopeSolver(BaseSolver):
+class ScopeSolver(BaseEstimator):
     r"""
     Get sparse optimal solution of convex objective function by sparse-Constrained Optimization via Splicing Iteration (SCOPE) algorithm, which also can be used for variables selection.
     Specifically, ScopeSolver aims to tackle this problem: min_{x} f(x) s.t. ||x||_0 <= s, where f(x) is a convex objective function and s is the sparsity level. Each element of x can be seen as a variable, and the nonzero elements of x are the selected variables.
@@ -108,7 +109,7 @@ class ScopeSolver(BaseSolver):
         If cv>1, it stores the test objective under cross-validation.
     train_objective : float
         The objective on training data.
-    value_objective: float
+    value_of_objective: float
         The value of objective function on the solution.
     Examples
     --------
@@ -129,14 +130,17 @@ class ScopeSolver(BaseSolver):
         sample_size=1,
         *,
         always_select=None,
-        nlopt_solver=None,
+        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
         max_iter=20,
         ic_type="gic",
         ic_coef=1.0,
         cv=1,
+        split_method=None,
+        deleter=None,
         cv_fold_id=None,
         aux_params_size=0,
         group=None,
+        init_params_of_sub_optim=None,
         warm_start=True,
         important_search=128,
         screening_size=-1,
@@ -153,42 +157,43 @@ class ScopeSolver(BaseSolver):
     ):
         self.model = UniversalModel()
         self.dimensionality = dimensionality
-        self.aux_params_size = aux_params_size
-        self.sample_size = sample_size
-        self.max_iter = max_iter
-        self.max_exchange_num = max_exchange_num
-        self.splicing_type = splicing_type
-        self.path_type = path_type
         self.sparsity = sparsity
-        self.gs_lower_bound = gs_lower_bound
-        self.gs_higher_bound = gs_higher_bound
+        self.sample_size = sample_size
+        
+        self.always_select = always_select
+        self.nlopt_solver = nlopt_solver
+        self.max_iter = max_iter
         self.ic_type = ic_type
         self.ic_coef = ic_coef
         self.cv = cv
+        self.split_method = split_method
+        self.deleter = deleter
         self.cv_fold_id = cv_fold_id
-        self.regular_coef = regular_coef
-        self.always_select = always_select
-        self.screening_size = screening_size
-        self.important_search = important_search
+        self.aux_params_size = aux_params_size
         self.group = group
+        self.init_params_of_sub_optim = init_params_of_sub_optim
         self.warm_start = warm_start
+        self.important_search = important_search
+        self.screening_size = screening_size
+        self.max_exchange_num = max_exchange_num
+        self.splicing_type = splicing_type
+        self.path_type = path_type
+        self.gs_lower_bound = gs_lower_bound
+        self.gs_higher_bound = gs_higher_bound
+        self.regular_coef = regular_coef
         self.thread = thread
+        self.console_log_level = console_log_level
+        self.file_log_level = file_log_level
+        self.log_file_name = log_file_name
 
-        if nlopt_solver is None:
-            nlopt_solver = nlopt.opt(nlopt.LD_LBFGS, 1)
+    def get_config(self, deep=True):
+        return super().get_params(deep)
 
-        self.nlopt_params = NloptParams(
-            nlopt_solver.get_algorithm(),
-            nlopt_solver.get_algorithm_name(),
-            nlopt_solver.get_stopval(),
-            nlopt_solver.get_ftol_rel(),
-            nlopt_solver.get_ftol_abs(),
-            nlopt_solver.get_xtol_rel(),
-            nlopt_solver.get_maxtime(),
-            nlopt_solver.get_population(),
-            nlopt_solver.get_vector_storage(),
-        )
+    def set_config(self, **params):
+        return super().set_params(**params)
 
+    @staticmethod
+    def _set_log_level(console_log_level, file_log_level, log_file_name):
         # log level
         if console_log_level == "off":
             console_log_level = 6
@@ -267,6 +272,20 @@ class ScopeSolver(BaseSolver):
         + data : custom class, optional, default=None
             Any class which is match to objective function. It can cantain all data that objective should be known, like samples, responses, weights, etc.
         """
+        ScopeSolver._set_log_level(self.file_log_level, self.console_log_level, self.log_file_name)
+
+        nlopt_config = NloptConfig(
+            self.nlopt_solver.get_algorithm(),
+            self.nlopt_solver.get_algorithm_name(),
+            self.nlopt_solver.get_stopval(),
+            self.nlopt_solver.get_ftol_rel(),
+            self.nlopt_solver.get_ftol_abs(),
+            self.nlopt_solver.get_xtol_rel(),
+            self.nlopt_solver.get_maxtime(),
+            self.nlopt_solver.get_population(),
+            self.nlopt_solver.get_vector_storage(),
+        )
+
         p = self.dimensionality
         BaseSolver._check_positive_integer(p, "dimensionality")
 
@@ -451,6 +470,9 @@ class ScopeSolver(BaseSolver):
                 raise ValueError(
                     "The number of different masks should be equal to `cv`."
                 )
+        
+        self.__set_split_method()
+        self.__set_init_params_of_sub_optim()
 
         # init_support_set
         if init_support_set is None:
@@ -498,7 +520,7 @@ class ScopeSolver(BaseSolver):
         result = pywrap_Universal(
             data,
             self.model,
-            self.nlopt_params,
+            nlopt_config,
             p,
             n,
             m,
@@ -530,18 +552,24 @@ class ScopeSolver(BaseSolver):
         self.aux_params = result[1].squeeze()
         self.train_objective = result[2]
         self.eval_objective = result[4] if self.cv == 1 else result[3]
-        self.value_objective = objective(self.params, self.aux_params, data)
+        self.value_of_objective = objective(self.params, self.aux_params, data)
 
-    def get_params(self):
+        return self.params
+
+    def get_result(self):
         r"""
-        Get the solution of optimization, include the parameters and auxiliary parameters (if exists).
+        Get the solution of optimization, include the parameters and auxiliary parameters ...
         """
-        if self.aux_params_size is not None and self.aux_params_size > 0:
-            return self.params, self.aux_params
-        else:
-            return self.params
-
-    def set_split_method(self, spliter, deleter=None):
+        return {
+            "params": self.params,
+            "support_set": self.support_set,
+            "value_of_objective": self.value_of_objective,
+            "aux_params": self.aux_params,
+            "train_objective": self.train_objective,
+            "eval_objective": self.eval_objective,
+        }
+        
+    def __set_split_method(self):
         r"""
         Register `spliter` as a callback function to split data into training set and validation set for cross-validation.
 
@@ -562,11 +590,10 @@ class ScopeSolver(BaseSolver):
             solver = ScopeSolver(dimensionality=5, cv=10)
             solver.set_split_method(lambda data, index:  Data(data.x[index, :], data.y[index]))
         """
-        self.model.set_slice_by_sample(spliter)
-        if deleter is not None:
-            self.model.set_deleter(deleter)
+        self.model.set_slice_by_sample(self.split_method)
+        self.model.set_deleter(self.deleter)
 
-    def set_init_params_of_sub_optim(self, func):
+    def __set_init_params_of_sub_optim(self):
         r"""
         Register a callback function to initialize parameters and auxiliary parameters for each sub-problem of optimization.
 
@@ -578,7 +605,7 @@ class ScopeSolver(BaseSolver):
             - `active_index` is the index of parameters needed initialization, the parameters not in `active_index` must be zeros.
             - The function should return a tuple of array-like, the first element is the initialization of parameters and the second element is the initialization of auxiliary parameters.
         """
-        self.model.set_init_params(func)
+        self.model.set_init_params_of_sub_optim(self.init_params_of_sub_optim)
 
     def __objective_decorator(objective, aux_params_size):
         if objective.__code__.co_argcount == 3:
@@ -725,7 +752,7 @@ class GrahtpSolver(BaseSolver):
         sample_size = 1,
         *,
         step_size=0.005,
-        nlopt_solver = None,
+        nlopt_solver = nlopt.opt(nlopt.LD_LBFGS, 1),
         max_iter = 100,
         ic_type = "aic",
         ic_coef = 1.0,
@@ -861,6 +888,34 @@ class GraspSolver(BaseSolver):
 
    
 class IHTSolver(GrahtpSolver):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(
+        self,
+        dimensionality,
+        sparsity = None,
+        sample_size = 1,
+        *,
+        step_size=0.005,
+        nlopt_solver = nlopt.opt(nlopt.LD_LBFGS, 1),
+        max_iter = 100,
+        ic_type = "aic",
+        ic_coef = 1.0,
+        metric_method = None,
+        cv = 1,
+        split_data_method = None,
+        random_state = None,
+    ):
+        super().__init__(
+            dimensionality = dimensionality,
+            sparsity  = sparsity,
+            sample_size  = sample_size,
+            step_size = step_size,
+            nlopt_solver = nlopt_solver,
+            max_iter  = max_iter,
+            ic_type = ic_type,
+            ic_coef  = ic_coef,
+            metric_method  = metric_method,
+            cv  = cv,
+            split_data_method  = split_data_method,
+            random_state  = random_state,
+        )
         self.fast = True # IHT is actually fast version of GraHTP 

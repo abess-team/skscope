@@ -10,7 +10,7 @@ using ExternData = pybind11::object;
 #include <functional>
 #include <autodiff/forward/dual.hpp>
 
-#include "NloptParams.h"
+#include "NloptConfig.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -38,7 +38,7 @@ class UniversalData {
     //                  Its size(effective_size) is match for the length of effective_para_index
 private:
     UniversalModel* model;
-    NloptParams* nlopt_solver;
+    NloptConfig* nlopt_solver;
     Eigen::Index sample_size;
     double lambda = 0.;  // L2 penalty coef for nlopt
     Eigen::Index model_size; // length of complete_para
@@ -47,7 +47,7 @@ private:
     std::shared_ptr<ExternData> data; // statistic data from user
 public:
     UniversalData() = default;
-    UniversalData(Eigen::Index model_size, Eigen::Index sample_size, ExternData& data, UniversalModel* model, NloptParams* nlopt_solver);
+    UniversalData(Eigen::Index model_size, Eigen::Index sample_size, ExternData& data, UniversalModel* model, NloptConfig* nlopt_solver);
     UniversalData slice_by_para(const VectorXi& target_para_index); // used in util func X_seg() and slice()
 
     Eigen::Index rows() const; // getter of sample_size
@@ -89,5 +89,5 @@ public:
     void set_hessian_user_defined(function <MatrixXd(VectorXd const&, VectorXd const&, ExternData const&, VectorXi const&)> const&);
     void set_slice_by_sample(function <ExternData(ExternData const&, VectorXi const&)> const&);
     void set_deleter(function <void(ExternData const&)> const&);
-    void set_init_para(function <pair<VectorXd, VectorXd>(VectorXd const&, VectorXd const&, ExternData const&, VectorXi const&)> const&);
+    void set_init_params_of_sub_optim(function <pair<VectorXd, VectorXd>(VectorXd const&, VectorXd const&, ExternData const&, VectorXi const&)> const&);
 };

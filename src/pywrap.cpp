@@ -8,7 +8,7 @@
 #include "utilities.h"
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, double, double, double>
-pywrap_Universal(ExternData data, UniversalModel model, NloptParams nlopt_solver, int model_size, int sample_size,int aux_para_size, int max_iter,
+pywrap_Universal(ExternData data, UniversalModel model, NloptConfig nlopt_solver, int model_size, int sample_size,int aux_para_size, int max_iter,
     int exchange_num, int path_type, bool is_warm_start, int ic_type, double ic_coef, int Kfold, Eigen::VectorXi sequence, 
     Eigen::VectorXd lambda_seq, int s_min, int s_max, int screening_size, Eigen::VectorXi g_index, Eigen::VectorXi always_select, 
     int thread, int splicing_type, int sub_search, Eigen::VectorXi cv_fold_id, Eigen::VectorXi A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init)
@@ -39,7 +39,7 @@ PYBIND11_MODULE(_scope, m) {
         .def("set_hessian_user_defined", &UniversalModel::set_hessian_user_defined)
         .def("set_slice_by_sample", &UniversalModel::set_slice_by_sample)
         .def("set_deleter", &UniversalModel::set_deleter)
-        .def("set_init_para", &UniversalModel::set_init_para);
+        .def("set_init_params_of_sub_optim", &UniversalModel::set_init_params_of_sub_optim);
     m.def("init_spdlog", &init_spdlog);
-    pybind11::class_<NloptParams>(m, "NloptParams").def(pybind11::init<int, const char *, double, double, double, double, double, unsigned, unsigned>());
+    pybind11::class_<NloptConfig>(m, "NloptConfig").def(pybind11::init<int, const char *, double, double, double, double, double, unsigned, unsigned>());
 }

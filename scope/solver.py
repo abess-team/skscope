@@ -132,7 +132,7 @@ class ScopeSolver(BaseEstimator):
         always_select=None,
         nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
         max_iter=20,
-        ic_type="gic",
+        ic_type="aic",
         ic_coef=1.0,
         cv=1,
         split_method=None,
@@ -547,7 +547,7 @@ class ScopeSolver(BaseEstimator):
             init_aux_params,
         )
 
-        self.params = result[0]
+        self.params = np.array(result[0])
         self.support_set = np.nonzero(self.params)[0]
         self.aux_params = result[1].squeeze()
         self.train_objective = result[2]
@@ -758,7 +758,7 @@ class GrahtpSolver(BaseSolver):
         ic_coef = 1.0,
         metric_method = None,
         cv = 1,
-        split_data_method = None,
+        split_method = None,
         random_state = None,
     ):
         self.fast = False # fast version of GraHTP is actually IHT 
@@ -773,7 +773,7 @@ class GrahtpSolver(BaseSolver):
             ic_coef = ic_coef,
             metric_method = metric_method,
             cv = cv,
-            split_data_method = split_data_method,
+            split_method = split_method,
             random_state = random_state,
         )
 
@@ -786,6 +786,8 @@ class GrahtpSolver(BaseSolver):
         init_params,
         data,
     ):
+        if sparsity == 0:
+            return np.zeros(self.dimensionality), np.array([], dtype="int32")
         # init
         params = init_params
         support_old = np.array([], dtype="int32")
@@ -838,6 +840,8 @@ class GraspSolver(BaseSolver):
         init_params,
         data,
     ):
+        if sparsity == 0:
+            return np.zeros(self.dimensionality), np.array([], dtype="int32")
         # init
         params = init_params
         support_old = np.array([], dtype="int32")
@@ -901,7 +905,7 @@ class IHTSolver(GrahtpSolver):
         ic_coef = 1.0,
         metric_method = None,
         cv = 1,
-        split_data_method = None,
+        split_method = None,
         random_state = None,
     ):
         super().__init__(
@@ -915,7 +919,7 @@ class IHTSolver(GrahtpSolver):
             ic_coef  = ic_coef,
             metric_method  = metric_method,
             cv  = cv,
-            split_data_method  = split_data_method,
+            split_method  = split_method,
             random_state  = random_state,
         )
         self.fast = True # IHT is actually fast version of GraHTP 

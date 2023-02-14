@@ -23,7 +23,7 @@ class BaseSolver(BaseEstimator):
         metric_method: Callable = None,
             (loss: float, p: int, s: int, n: int) -> float
         cv: int = 1,
-        split_data_method: Callable[[Any, ArrayLike], Any] | None = None,
+        split_method: Callable[[Any, ArrayLike], Any] | None = None,
         random_state: int | np.random.RandomState | None  = None,
     """
 
@@ -38,7 +38,7 @@ class BaseSolver(BaseEstimator):
         ic_coef = 1.0,
         metric_method = None,
         cv = 1,
-        split_data_method = None,
+        split_method = None,
         random_state = None,
     ):
         self.dimensionality = dimensionality
@@ -49,7 +49,7 @@ class BaseSolver(BaseEstimator):
         self.ic_coef = ic_coef
         self.metric_method = metric_method
         self.cv = cv
-        self.split_data_method = split_data_method
+        self.split_method = split_method
         self.random_state = random_state
         self.nlopt_solver = nlopt_solver
         
@@ -129,14 +129,15 @@ class BaseSolver(BaseEstimator):
                 raise ValueError("cv should not be greater than sample_size")
             if data is None:
                 raise ValueError("data should be provided when cv > 1")
-            if self.split_data_method is None:
-                raise ValueError("split_data_method should be provided when cv > 1")
+            if self.split_method is None:
+                raise ValueError("split_method should be provided when cv > 1")
             kf = KFold(
                 n_splits=self.cv, shuffle=True, random_state=self.random_state
             ).split(np.zeros(self.sample_size))
-            # self.cv_fold_id = np.zeros(self.sample_size)
-            # for i, (_, fold_id) in enumerate(kf.split(np.zeros(self.sample_size))):
-            #    self.cv_fold_id[fold_id] = i
+
+            self.cv_fold_id = np.zeros(self.sample_size)
+            for i, (_, fold_id) in enumerate(kf):
+               self.cv_fold_id[fold_id] = i
 
         if init_support_set is None:
             init_support_set = np.array([], dtype="int32")
@@ -218,16 +219,18 @@ class BaseSolver(BaseEstimator):
             cache_init_support_set = {}
             cache_init_params = {}
             for s in self.sparsity:
-                for train_index, test_index in kf:
+                for i in range(self.cv):
+                    train_index = np.where(self.cv_fold_id != i)[0]
+                    test_index = np.where(self.cv_fold_id == i)[0]
                     init_params, init_support_set = self._solve(
                         s,
                         loss_fn,
                         loss_grad,
                         init_support_set,
                         init_params,
-                        self.split_data_method(data, train_index),
+                        self.split_method(data, train_index),
                     ) ## warm start: use results of previous sparsity as initial value
-                    cv_eval[s] += loss_fn(init_params, self.split_data_method(data, test_index))
+                    cv_eval[s] += loss_fn(init_params, self.split_method(data, test_index))
                 cache_init_support_set[s] = init_support_set
                 cache_init_params[s] = init_params
             best_sparsity = min(cv_eval, key=cv_eval.get)
@@ -310,6 +313,9 @@ class BaseSolver(BaseEstimator):
         support_set: Sequence[int]
             The index of selected variables which is the non-zero parameters.
         """
+        if sparsity == 0:
+            return np.zeros(self.dimensionality), np.array([], dtype=int)
+
         if math.comb(self.dimensionality, sparsity) > self.max_iter:
             raise ValueError(
                 "The number of subsets is too large, please reduce the sparsity, dimensionality or increase max_iter."

@@ -15,6 +15,14 @@ class CreateTestModel:
 
         def linear_model(params):
             return jnp.sum(jnp.square(Y - X @ params))
+        
+        data = {"X" : X, "Y" : Y}
+
+        def linear_model_data(params, data):
+            return jnp.sum(jnp.square(data["Y"] - data["X"] @ params))
+
+        def split_method(data, index):
+            return {"X" : data["X"][index,], "Y" : data["Y"][index]}
 
         return {
             "n_samples": self.N,
@@ -22,11 +30,9 @@ class CreateTestModel:
             "n_informative": self.K,
             "params": true_params,
             "loss": linear_model,
-            "loss_data": None,
-            "data": None,
-            "split_method": None,
-            "grad": None,
-            "hess": None,
+            "loss_data": linear_model_data,
+            "data": data,
+            "split_method": split_method,
             "loss_jit": None,
             "grad_jit": None,
             "hess_jit": None,

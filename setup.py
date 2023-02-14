@@ -139,7 +139,7 @@ setup(
     maintainer="Zezhi Wang",
     maintainer_email="homura@mail.ustc.edu.cn",
     packages=find_packages(),
-    description="scope: Sparse-Constrained Optimization via Splicing Iteration",
+    description="scope: Sparsity-Constraint OPtimization via itErative-algorithms",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     install_requires=[

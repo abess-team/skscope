@@ -12,9 +12,9 @@ solvers_no_scope = (BaseSolver, GrahtpSolver, GraspSolver, IHTSolver)
 
 @pytest.mark.parametrize("model", models)
 @pytest.mark.parametrize("solver_creator", solvers)
-def test_common(model, solver_creator):
+def test_base(model, solver_creator):
     """
-    Common cases: 
+    Basic cases: 
         - only one sparisty level
         - use jax for automatic differentiation
         - without jit
@@ -48,11 +48,21 @@ def test_config(model, solver_creator):
     
     assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
 
-def test_ic():
-    pass
+@pytest.mark.parametrize("model", models)
+@pytest.mark.parametrize("solver_creator", solvers)
+def test_aic(model, solver_creator):
+    solver = solver_creator(model["n_features"])
+    params = solver.solve(model["loss"])
+    
+    assert params.size == model["n_features"]
 
-def test_cv():
-    pass
+@pytest.mark.parametrize("model", models)
+@pytest.mark.parametrize("solver_creator", solvers)
+def test_cv(model, solver_creator):
+    solver = solver_creator(model["n_features"], sample_size = model["n_samples"], cv = 5, split_method = model["split_method"])
+    params = solver.solve(model["loss_data"], data = model["data"])
+
+    assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
 
 def test_grad():
     pass

@@ -14,7 +14,8 @@
 #include <unsupported/Eigen/MatrixFunctions>
 #include <type_traits>
 #include <cfloat>
-//#include <iostream>
+
+
 class UniversalData;
 
 #ifndef	SPDLOG_ACTIVE_LEVEL
@@ -50,6 +51,7 @@ constexpr int PCA_MODEL = 7;
 constexpr int GAMMA_MODEL = 8;
 constexpr int ORDINAL_MODEL = 9;
 constexpr int RPCA_MODEL = 10;
+
 
 void init_spdlog(int console_log_level, int file_log_level, const char* log_file_name);
 

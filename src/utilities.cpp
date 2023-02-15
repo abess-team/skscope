@@ -19,6 +19,8 @@
 using namespace std;
 using namespace Eigen;
 
+std::mt19937 GLOBAL_RNG(1);
+
 Eigen::VectorXi find_ind(Eigen::VectorXi &L, Eigen::VectorXi &gindex, Eigen::VectorXi &gsize, int beta_size, int N) {
     if (L.size() == N) {
         return Eigen::VectorXi::LinSpaced(beta_size, 0, beta_size - 1);
@@ -156,9 +158,7 @@ Eigen::VectorXi diff_union(Eigen::VectorXi A, Eigen::VectorXi &B, Eigen::VectorX
 Eigen::VectorXi min_k(Eigen::VectorXd &vec, int k, bool sort_by_value) {
     Eigen::VectorXi ind = Eigen::VectorXi::LinSpaced(vec.size(), 0, vec.size() - 1);  // [0 1 2 3 ... N-1]
     // shuffle index to avoid repeat results when there are several equal values in vec
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::shuffle(ind.data(), ind.data() + ind.size(), rng);
+    std::shuffle(ind.data(), ind.data() + ind.size(), GLOBAL_RNG);
 
     auto rule = [vec](int i, int j) -> bool { return vec(i) < vec(j); };              // sort rule
     std::nth_element(ind.data(), ind.data() + k, ind.data() + ind.size(), rule);
@@ -174,9 +174,7 @@ Eigen::VectorXi min_k(Eigen::VectorXd &vec, int k, bool sort_by_value) {
 Eigen::VectorXi max_k(Eigen::VectorXd &vec, int k, bool sort_by_value) {
     Eigen::VectorXi ind = Eigen::VectorXi::LinSpaced(vec.size(), 0, vec.size() - 1);  // [0 1 2 3 ... N-1]
     // shuffle index to avoid repeat results when there are several equal values in vec
-    std::random_device rd;
-    std::mt19937 rng(rd());
-    std::shuffle(ind.data(), ind.data() + ind.size(), rng);
+    std::shuffle(ind.data(), ind.data() + ind.size(), GLOBAL_RNG);
     
     auto rule = [vec](int i, int j) -> bool { return vec(i) > vec(j); };              // sort rule
     std::nth_element(ind.data(), ind.data() + k, ind.data() + ind.size(), rule);

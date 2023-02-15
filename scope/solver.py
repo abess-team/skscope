@@ -1,3 +1,4 @@
+from sklearn.model_selection import KFold
 from .base_solver import BaseSolver
 from sklearn.base import BaseEstimator
 import numpy as np
@@ -151,6 +152,7 @@ class ScopeSolver(BaseEstimator):
         gs_higher_bound=None,
         regular_coef=0.0,
         thread=1,
+        random_state=None,
         console_log_level="off",
         file_log_level="off",
         log_file_name="logs/scope.log",
@@ -182,6 +184,7 @@ class ScopeSolver(BaseEstimator):
         self.gs_higher_bound = gs_higher_bound
         self.regular_coef = regular_coef
         self.thread = thread
+        self.random_state = random_state
         self.console_log_level = console_log_level
         self.file_log_level = file_log_level
         self.log_file_name = log_file_name
@@ -458,18 +461,27 @@ class ScopeSolver(BaseEstimator):
         )
 
         # cv_fold_id
-        if self.cv_fold_id is None:
-            cv_fold_id = np.array([], dtype="int32")
+        if self.cv > 1:
+            if self.cv_fold_id is None:
+                kf = KFold(
+                    n_splits=self.cv, shuffle=True, random_state=self.random_state
+                ).split(np.zeros(self.sample_size))
+
+                self.cv_fold_id = np.zeros(self.sample_size)
+                for i, (_, fold_id) in enumerate(kf):
+                    self.cv_fold_id[fold_id] = i
+            else:
+                cv_fold_id = np.array(cv_fold_id, dtype="int32")
+                if cv_fold_id.ndim > 1:
+                    raise ValueError("group should be an 1D array of integers.")
+                if cv_fold_id.size != n:
+                    raise ValueError("The length of group should be equal to X.shape[0].")
+                if len(set(cv_fold_id)) != self.cv:
+                    raise ValueError(
+                        "The number of different masks should be equal to `cv`."
+                    )
         else:
-            cv_fold_id = np.array(cv_fold_id, dtype="int32")
-            if cv_fold_id.ndim > 1:
-                raise ValueError("group should be an 1D array of integers.")
-            if cv_fold_id.size != n:
-                raise ValueError("The length of group should be equal to X.shape[0].")
-            if len(set(cv_fold_id)) != self.cv:
-                raise ValueError(
-                    "The number of different masks should be equal to `cv`."
-                )
+            self.cv_fold_id = np.array([], dtype="int32")
         
         self.__set_split_method()
         self.__set_init_params_of_sub_optim()
@@ -541,7 +553,7 @@ class ScopeSolver(BaseEstimator):
             self.thread,
             splicing_type,
             self.important_search,
-            cv_fold_id,
+            self.cv_fold_id,
             init_support_set,
             init_params,
             init_aux_params,
@@ -744,6 +756,7 @@ class ScopeSolver(BaseEstimator):
             lambda arg1, arg2, arg3, arg4: hessian(arg1, arg2, arg3, arg4)
         )
 
+
 class GrahtpSolver(BaseSolver):
     def __init__(
         self,
@@ -890,7 +903,7 @@ class GraspSolver(BaseSolver):
 
         return params, support_set
 
-   
+
 class IHTSolver(GrahtpSolver):
     def __init__(
         self,

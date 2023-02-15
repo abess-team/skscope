@@ -108,50 +108,23 @@ class Metric {
     //   this->cv_initial_coef0[k] = coef0;
     // }
 
-    void set_cv_train_test_mask(Data<T1, T2, T3, T4> &data, int n, Eigen::VectorXi &cv_fold_id) {
-        Eigen::VectorXi index_list(n);
-        std::vector<int> index_vec((unsigned int)n);
+    void set_cv_train_test_mask(Data<T1, T2, T3, T4> &data, int n, Eigen::VectorXi &cv_fold_id) {   
+        Eigen::VectorXi index_list = Eigen::VectorXi::LinSpaced(n, 0, n - 1);
+        auto rule = [&cv_fold_id](int i, int j) -> bool { return cv_fold_id(i) < cv_fold_id(j); };
+        std::sort(index_list.data(), index_list.data() + index_list.size(), rule);
+
+        int k = 0, st = 0, ed = 1;
         std::vector<Eigen::VectorXi> group_list((unsigned int)this->Kfold);
-        for (int i = 0; i < n; i++) {
-            index_vec[i] = i;
+        while (k < this->Kfold && ed < n) {
+            int mask = cv_fold_id(index_list(st));
+            while (ed < n && mask == cv_fold_id(index_list(ed))) ed++;
+
+            group_list[k] = index_list.segment(st, ed - st);
+            st = ed;
+            ed++;
+            k++;
         }
-
-        if (cv_fold_id.size() == 0) {
-            // std::random_device rd;
-            std::mt19937 g(123);
-            std::shuffle(index_vec.begin(), index_vec.end(), g);
-
-            for (int i = 0; i < n; i++) {
-                index_list(i) = index_vec[i];
-            }
-
-            Eigen::VectorXd loss_list(this->Kfold);
-            int group_size = int(n / this->Kfold);
-            for (int k = 0; k < (this->Kfold - 1); k++) {
-                group_list[k] = index_list.segment(int(k * group_size), group_size);
-            }
-            group_list[this->Kfold - 1] =
-                index_list.segment(int((this->Kfold - 1) * group_size), n - int(int(this->Kfold - 1) * group_size));
-        } else {
-            // given cv_fold_id
-            auto rule = [cv_fold_id](int i, int j) -> bool { return cv_fold_id(i) < cv_fold_id(j); };
-            std::sort(index_vec.begin(), index_vec.end(), rule);
-
-            for (int i = 0; i < n; i++) {
-                index_list(i) = index_vec[i];
-            }
-
-            int k = 0, st = 0, ed = 1;
-            while (k < this->Kfold && ed < n) {
-                int mask = cv_fold_id(index_list(st));
-                while (ed < n && mask == cv_fold_id(index_list(ed))) ed++;
-
-                group_list[k] = index_list.segment(st, ed - st);
-                st = ed;
-                ed++;
-                k++;
-            }
-        }
+        
         for (int k = 0; k < this->Kfold; k++) {
             std::sort(group_list[k].data(), group_list[k].data() + group_list[k].size());
         }

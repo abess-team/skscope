@@ -3,7 +3,8 @@ from sklearn.model_selection import KFold
 import numpy as np
 import jax
 import nlopt
-import math  
+import math
+
 
 class BaseSolver(BaseEstimator):
     """
@@ -27,23 +28,26 @@ class BaseSolver(BaseEstimator):
         random_state: int | np.random.RandomState | None  = None,
     """
 
-    def __init__(self,    
+    def __init__(
+        self,
         dimensionality,
-        sparsity = None,
-        sample_size = 1,
+        sparsity=None,
+        sample_size=1,
         *,
-        nlopt_solver = nlopt.opt(nlopt.LD_LBFGS, 1),
-        max_iter = 100,
-        ic_type = "aic",
-        ic_coef = 1.0,
-        metric_method = None,
-        cv = 1,
-        split_method = None,
-        random_state = None,
+        always_select=[],
+        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        max_iter=100,
+        ic_type="aic",
+        ic_coef=1.0,
+        metric_method=None,
+        cv=1,
+        split_method=None,
+        random_state=None,
     ):
         self.dimensionality = dimensionality
         self.sample_size = sample_size
         self.sparsity = sparsity
+        self.always_select = always_select
         self.max_iter = max_iter
         self.ic_type = ic_type
         self.ic_coef = ic_coef
@@ -52,7 +56,7 @@ class BaseSolver(BaseEstimator):
         self.split_method = split_method
         self.random_state = random_state
         self.nlopt_solver = nlopt_solver
-        
+
     def get_config(self, deep=True):
         return super().get_params(deep)
 
@@ -62,10 +66,10 @@ class BaseSolver(BaseEstimator):
     def solve(
         self,
         objective,
-        gradient = None,        
-        init_support_set = None,
-        init_params = None,
-        data = None,
+        gradient=None,
+        init_support_set=None,
+        init_params=None,
+        data=None,
     ):
         r"""
         Set the optimization objective and begin to solve
@@ -87,34 +91,42 @@ class BaseSolver(BaseEstimator):
         BaseSolver._check_positive_integer(self.sample_size, "sample_size")
         BaseSolver._check_non_negative_integer(self.max_iter, "max_iter")
 
+        # always_select
+        self.always_select = np.unique(np.array(self.always_select, dtype="int32"))
+        if self.always_select.size > 0 and (
+            self.always_select[0] < 0 or self.always_select[-1] >= self.dimensionality
+        ):
+            raise ValueError("always_select should be between 0 and dimensionality.")
+
+        # default sparsity level
+        force_min_sparsity = self.always_select.size
+        default_max_sparsity = max(
+            force_min_sparsity,
+            self.dimensionality
+            if self.dimensionality <= 5
+            else int(
+                self.dimensionality
+                / np.log(np.log(self.dimensionality))
+                / np.log(self.dimensionality)
+            ),
+        )
+
+        # sparsity
         if self.sparsity == None:
-            if self.sample_size == 1 or self.dimensionality == 1:
-                self.sparsity = np.array([0, 1], dtype="int32")
-            else:
-                self.sparsity = np.array(
-                    range(
-                        max(
-                            1,
-                            min(
-                                self.dimensionality,
-                                int(
-                                    self.sample_size
-                                    / np.log(np.log(self.sample_size))
-                                    / np.log(self.dimensionality)
-                                ),
-                            ),
-                        )
-                    ),
-                    dtype="int32",
-                )
+            self.sparsity = np.arange(
+                force_min_sparsity,
+                default_max_sparsity + 1,
+                dtype="int32",
+            )
         else:
-            if isinstance(self.sparsity, (int, float)):
-                self.sparsity = np.array([self.sparsity], dtype="int32")
-            else:
-                self.sparsity = np.array(self.sparsity, dtype="int32")
-            self.sparsity = np.sort(np.unique(self.sparsity))
-            if self.sparsity[0] < 0 or self.sparsity[-1] > self.dimensionality:
-                raise ValueError("All sparsity should be between 0 and dimensionality")
+            self.sparsity = np.unique(np.array(self.sparsity, dtype="int32"))
+            if (
+                self.sparsity[0] < force_min_sparsity
+                or self.sparsity[-1] >= self.dimensionality
+            ):
+                raise ValueError(
+                    "All sparsity should be between 0 (when `always_select` is default) and dimensionality."
+                )
 
         BaseSolver._check_positive_integer(self.cv, "cv")
         if self.cv == 1:
@@ -137,7 +149,7 @@ class BaseSolver(BaseEstimator):
 
             self.cv_fold_id = np.zeros(self.sample_size)
             for i, (_, fold_id) in enumerate(kf):
-               self.cv_fold_id[fold_id] = i
+                self.cv_fold_id[fold_id] = i
 
         if init_support_set is None:
             init_support_set = np.array([], dtype="int32")
@@ -168,45 +180,47 @@ class BaseSolver(BaseEstimator):
             elif objective.__code__.co_argcount == 2:
                 loss_fn = objective
             else:
-                raise ValueError(
-                    "objective should be a function of 1 or 2 argument."
-                )
+                raise ValueError("objective should be a function of 1 or 2 argument.")
 
             if gradient.__code__.co_argcount == 2:
-                loss_grad = lambda params, data, compute_index: gradient(params, compute_index)
+                loss_grad = lambda params, data, compute_index: gradient(
+                    params, compute_index
+                )
             elif gradient.__code__.co_argcount == 3:
                 loss_grad = gradient
             else:
-                raise ValueError(
-                    "gradient should be a function of 2 or 3 argument."
-                )
-        else: ## if gradient is not provided, use JAX to compute gradient
+                raise ValueError("gradient should be a function of 2 or 3 argument.")
+        else:  ## if gradient is not provided, use JAX to compute gradient
             if objective.__code__.co_argcount == 1:
                 loss_fn = lambda params, data: objective(params).item()
+
                 def loss_grad(params, data, compute_index):
                     return np.array(jax.grad(objective)(params))[compute_index]
+
             elif objective.__code__.co_argcount == 2:
                 loss_fn = lambda params, data: objective(params, data).item()
+
                 def loss_grad(params, data, compute_index):
                     return np.array(jax.grad(objective)(params, data))[compute_index]
+
             else:
                 raise ValueError(
                     "objective should be a function of 1 argument written by JAX when gradient isn't offered."
-                )                
+                )
 
         if self.cv == 1:
             is_first_loop: bool = True
             for s in self.sparsity:
                 init_params, init_support_set = self._solve(
                     s, loss_fn, loss_grad, init_support_set, init_params, data
-                ) ## warm start: use results of previous sparsity as initial value
+                )  ## warm start: use results of previous sparsity as initial value
                 value_of_objective = loss_fn(init_params, data)
                 eval = self._metric(
-                        value_of_objective,
-                        self.ic_type,
-                        s,
-                        self.sample_size,
-                    )
+                    value_of_objective,
+                    self.ic_type,
+                    s,
+                    self.sample_size,
+                )
                 if is_first_loop or eval < self.eval_objective:
                     is_first_loop = False
                     self.params = init_params
@@ -214,7 +228,7 @@ class BaseSolver(BaseEstimator):
                     self.value_of_objective = value_of_objective
                     self.eval_objective = eval
 
-        else: # self.cv > 1
+        else:  # self.cv > 1
             cv_eval = {s: 0.0 for s in self.sparsity}
             cache_init_support_set = {}
             cache_init_params = {}
@@ -229,14 +243,21 @@ class BaseSolver(BaseEstimator):
                         init_support_set,
                         init_params,
                         self.split_method(data, train_index),
-                    ) ## warm start: use results of previous sparsity as initial value
-                    cv_eval[s] += loss_fn(init_params, self.split_method(data, test_index))
+                    )  ## warm start: use results of previous sparsity as initial value
+                    cv_eval[s] += loss_fn(
+                        init_params, self.split_method(data, test_index)
+                    )
                 cache_init_support_set[s] = init_support_set
                 cache_init_params[s] = init_params
             best_sparsity = min(cv_eval, key=cv_eval.get)
             self.params, self.support_set = self._solve(
-                    best_sparsity, loss_fn, loss_grad, cache_init_support_set[best_sparsity], cache_init_params[best_sparsity], data
-                )
+                best_sparsity,
+                loss_fn,
+                loss_grad,
+                cache_init_support_set[best_sparsity],
+                cache_init_params[best_sparsity],
+                data,
+            )
             self.value_of_objective = loss_fn(self.params, data)
             self.eval_objective = cv_eval[best_sparsity]
 
@@ -256,7 +277,12 @@ class BaseSolver(BaseEstimator):
         ebic: 2L + s * (log(n) + 2 * log(p))
         """
         if self.metric_method is not None:
-            return self.metric_method(value_of_objective, self.dimensionality, effective_params_num, train_size)
+            return self.metric_method(
+                value_of_objective,
+                self.dimensionality,
+                effective_params_num,
+                train_size,
+            )
 
         if method == "aic":
             return 2 * value_of_objective + 2 * effective_params_num
@@ -315,22 +341,35 @@ class BaseSolver(BaseEstimator):
         """
         if sparsity == 0:
             return np.zeros(self.dimensionality), np.array([], dtype=int)
+        if sparsity < self.always_select.size:
+            raise ValueError(
+                "The number of always selected variables is larger than the sparsity."
+            )
 
-        if math.comb(self.dimensionality, sparsity) > self.max_iter:
+        if (
+            math.comb(
+                self.dimensionality - self.always_select.size,
+                sparsity - self.always_select.size,
+            )
+            > self.max_iter
+        ):
             raise ValueError(
                 "The number of subsets is too large, please reduce the sparsity, dimensionality or increase max_iter."
             )
 
-        def all_subsets(p, s):
-            def helper(start, s, curr_selection):
+        def all_subsets(p: int, s: int, always_select: np.ndarray = np.zeros(0)):
+            universal_set = np.setdiff1d(np.arange(p), always_select)
+            p = p - always_select.size
+            s = s - always_select.size
+            def helper(start: int, s: str, curr_selection: np.ndarray):
                 if s == 0:
                     yield curr_selection
                 else:
-                    for i in range(start, p-s+1):
-                        yield from helper(i+1, s-1, curr_selection + [i])
-            
-            yield from helper(0, s, [])
-        
+                    for i in range(start, p - s + 1):
+                        yield from helper(i + 1, s - 1, np.append(curr_selection, universal_set[i]))
+
+            yield from helper(0, s, always_select)
+
         # !!carefully change names of variables
         # self, objective, gradient, support_set, data come from closure
         def opt_fn(x, grad):
@@ -340,8 +379,8 @@ class BaseSolver(BaseEstimator):
                 grad[:] = gradient(x_full, data, support_set)
             return objective(x_full, data)
 
-        result = {"params" : None, "support_set" : None, "value_of_objective" : math.inf}
-        for support_set in all_subsets(self.dimensionality, sparsity):
+        result = {"params": None, "support_set": None, "value_of_objective": math.inf}
+        for support_set in all_subsets(self.dimensionality, sparsity, self.always_select):
             opt_params, loss = self._cache_nlopt(opt_fn, init_params[support_set])
             if loss < result["value_of_objective"]:
                 params = np.zeros(self.dimensionality)
@@ -349,12 +388,13 @@ class BaseSolver(BaseEstimator):
                 result["params"] = params
                 result["support_set"] = support_set
                 result["value_of_objective"] = loss
-        
+
         return result["params"], result["support_set"]
 
     def _cache_nlopt(self, opt_fn, init_params):
         best_loss = math.inf
         best_params = None
+
         def cache_opt_fn(x, grad):
             nonlocal best_loss, best_params
             loss = opt_fn(x, grad)

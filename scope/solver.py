@@ -130,7 +130,7 @@ class ScopeSolver(BaseEstimator):
         sparsity=None,
         sample_size=1,
         *,
-        always_select=None,
+        always_select=[],
         nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
         max_iter=20,
         ic_type="aic",
@@ -148,7 +148,7 @@ class ScopeSolver(BaseEstimator):
         max_exchange_num=5,
         splicing_type="halve",
         path_type="seq",
-        gs_lower_bound=0,
+        gs_lower_bound=None,
         gs_higher_bound=None,
         regular_coef=0.0,
         thread=1,
@@ -161,7 +161,7 @@ class ScopeSolver(BaseEstimator):
         self.dimensionality = dimensionality
         self.sparsity = sparsity
         self.sample_size = sample_size
-        
+
         self.always_select = always_select
         self.nlopt_solver = nlopt_solver
         self.max_iter = max_iter
@@ -275,7 +275,9 @@ class ScopeSolver(BaseEstimator):
         + data : custom class, optional, default=None
             Any class which is match to objective function. It can cantain all data that objective should be known, like samples, responses, weights, etc.
         """
-        ScopeSolver._set_log_level(self.file_log_level, self.console_log_level, self.log_file_name)
+        ScopeSolver._set_log_level(
+            self.file_log_level, self.console_log_level, self.log_file_name
+        )
 
         nlopt_config = NloptConfig(
             self.nlopt_solver.get_algorithm(),
@@ -302,14 +304,6 @@ class ScopeSolver(BaseEstimator):
 
         # max_exchange_num
         BaseSolver._check_positive_integer(self.max_exchange_num, "max_exchange_num")
-
-        # path_type
-        if self.path_type == "seq":
-            path_type = 1
-        elif self.path_type == "gs":
-            path_type = 2
-        else:
-            raise ValueError("path_type should be 'seq' or 'gs'")
 
         # ic_type
         if self.ic_type == "aic":
@@ -351,36 +345,83 @@ class ScopeSolver(BaseEstimator):
                 [np.where(group == i)[0][0] for i in range(group_num)], dtype="int32"
             )
 
-        # sparsity
-        if self.path_type == "gs":
-            sparsity = np.array([0], dtype="int32")
-        else:
-            if self.sparsity == None:
-                if n == 1 or group_num == 1:
-                    sparsity = np.array([0, 1], dtype="int32")
-                else:
-                    sparsity = np.array(
-                        range(
-                            max(
-                                1,
-                                min(
-                                    group_num,
-                                    int(n / np.log(np.log(n)) / np.log(group_num)),
-                                ),
-                            )
-                        ),
-                        dtype="int32",
-                    )
+        # always_select
+        always_select = np.unique(np.array(self.always_select, dtype="int32"))
+        if always_select.size > 0 and (
+            always_select[0] < 0 or always_select[-1] >= group_num
+        ):
+            raise ValueError("always_select should be between 0 and dimensionality.")
+
+        # default sparsity level
+        force_min_sparsity = always_select.size
+        default_max_sparsity = max(
+            force_min_sparsity,
+            group_num
+            if group_num <= 5
+            else int(group_num / np.log(np.log(group_num)) / np.log(group_num)),
+        )
+
+        # path_type
+        if self.path_type == "seq":
+            path_type = 1
+            gs_lower_bound, gs_higher_bound = 0, 0
+            if self.sparsity is None:
+                sparsity = np.arange(
+                    force_min_sparsity,
+                    default_max_sparsity + 1,
+                    dtype="int32",
+                )
             else:
-                if isinstance(self.sparsity, (int, float)):
-                    sparsity = np.array([self.sparsity], dtype="int32")
-                else:
-                    sparsity = np.array(self.sparsity, dtype="int32")
-                sparsity = np.sort(np.unique(sparsity))
-                if sparsity[0] < 0 or sparsity[-1] > group_num:
+                sparsity = np.unique(np.array(self.sparsity, dtype="int32"))
+                if sparsity.size == 0:
+                    raise ValueError("sparsity should not be empty.")
+                if sparsity[0] < force_min_sparsity or sparsity[-1] >= group_num:
                     raise ValueError(
-                        "All sparsity should be between 0 and dimensionality"
+                        "All sparsity should be between 0 (when `always_select` is default) and dimensionality (when `group` is default)."
                     )
+        elif self.path_type == "gs":
+            path_type = 2
+            sparsity = np.array(0, dtype="int32")
+            if self.gs_lower_bound is None:
+                gs_lower_bound = force_min_sparsity
+            else:
+                BaseSolver._check_non_negative_integer(
+                    self.gs_lower_bound, "gs_lower_bound"
+                )
+                gs_lower_bound = self.gs_lower_bound
+
+            if self.gs_higher_bound is None:
+                gs_higher_bound = default_max_sparsity
+            else:
+                BaseSolver._check_non_negative_integer(
+                    self.gs_higher_bound, "gs_higher_bound"
+                )
+                gs_higher_bound = self.gs_higher_bound
+
+            if gs_lower_bound < force_min_sparsity or gs_higher_bound >= group_num:
+                raise ValueError(
+                    "gs_lower_bound and gs_higher_bound should be between 0 (when `always_select` is default) and dimensionality (when `group` is default)."
+                )
+            if gs_lower_bound > gs_higher_bound:
+                raise ValueError(
+                    "gs_higher_bound should be larger than gs_lower_bound."
+                )
+        else:
+            raise ValueError("path_type should be 'seq' or 'gs'")
+
+        # screening_size
+        if self.screening_size == -1:
+            screening_size = -1
+        elif self.screening_size == 0:
+            screening_size = max(sparsity[-1], gs_higher_bound, default_max_sparsity)
+        else:
+            screening_size = self.screening_size
+            if screening_size > group_num or screening_size < max(
+                sparsity[-1], gs_higher_bound
+            ):
+                raise ValueError(
+                    "screening_size should be between max(sparsity) and dimensionality."
+                )
 
         # regular_coef
         if self.regular_coef == None:
@@ -392,57 +433,6 @@ class ScopeSolver(BaseEstimator):
                 regular_coef = np.array(self.regular_coef, dtype=float)
             if any(regular_coef < 0.0):
                 raise ValueError("regular_coef should be positive.")
-
-        # gs_bound
-        if self.path_type == "seq":
-            gs_lower_bound = gs_higher_bound = 0
-        else:
-            if self.gs_lower_bound is None:
-                gs_lower_bound = 0
-            else:
-                gs_lower_bound = self.gs_lower_bound
-            if self.gs_higher_bound is None:
-                gs_higher_bound = min(
-                    group_num, int(n / (np.log(np.log(n)) * np.log(group_num)))
-                )
-            else:
-                gs_higher_bound = self.gs_higher_bound
-            if gs_lower_bound > gs_higher_bound:
-                raise ValueError(
-                    "gs_higher_bound should be larger than gs_lower_bound."
-                )
-
-        # screening_size
-        if self.screening_size == -1:
-            screening_size = -1
-        elif self.screening_size == 0:
-            screening_size = min(
-                group_num,
-                max(
-                    max(sparsity[-1], gs_higher_bound),
-                    int(n / (np.log(np.log(n)) * np.log(group_num))),
-                ),
-            )
-        else:
-            screening_size = self.screening_size
-            if screening_size > group_num or screening_size < max(
-                sparsity[-1], gs_higher_bound
-            ):
-                raise ValueError(
-                    "screening_size should be between max(sparsity) and dimensionality."
-                )
-
-        # always_select
-        if self.always_select is None:
-            always_select = np.array([], dtype="int32")
-        else:
-            always_select = np.sort(np.array(self.always_select, dtype="int32"))
-            if len(always_select) > 0 and (
-                always_select[0] < 0 or always_select[-1] >= group_num
-            ):
-                raise ValueError(
-                    "always_select should be between 0 and dimensionality."
-                )
 
         # thread
         BaseSolver._check_non_negative_integer(self.thread, "thread")
@@ -475,14 +465,16 @@ class ScopeSolver(BaseEstimator):
                 if cv_fold_id.ndim > 1:
                     raise ValueError("group should be an 1D array of integers.")
                 if cv_fold_id.size != n:
-                    raise ValueError("The length of group should be equal to X.shape[0].")
+                    raise ValueError(
+                        "The length of group should be equal to X.shape[0]."
+                    )
                 if len(set(cv_fold_id)) != self.cv:
                     raise ValueError(
                         "The number of different masks should be equal to `cv`."
                     )
         else:
             self.cv_fold_id = np.array([], dtype="int32")
-        
+
         self.__set_split_method()
         self.__set_init_params_of_sub_optim()
 
@@ -580,7 +572,7 @@ class ScopeSolver(BaseEstimator):
             "train_objective": self.train_objective,
             "eval_objective": self.eval_objective,
         }
-        
+
     def __set_split_method(self):
         r"""
         Register `spliter` as a callback function to split data into training set and validation set for cross-validation.
@@ -761,33 +753,35 @@ class GrahtpSolver(BaseSolver):
     def __init__(
         self,
         dimensionality,
-        sparsity = None,
-        sample_size = 1,
+        sparsity=None,
+        sample_size=1,
         *,
+        always_select=[],
         step_size=0.005,
-        nlopt_solver = nlopt.opt(nlopt.LD_LBFGS, 1),
-        max_iter = 100,
-        ic_type = "aic",
-        ic_coef = 1.0,
-        metric_method = None,
-        cv = 1,
-        split_method = None,
-        random_state = None,
+        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        max_iter=100,
+        ic_type="aic",
+        ic_coef=1.0,
+        metric_method=None,
+        cv=1,
+        split_method=None,
+        random_state=None,
     ):
-        self.fast = False # fast version of GraHTP is actually IHT 
+        self.fast = False  # fast version of GraHTP is actually IHT
         self.step_size = step_size
         super().__init__(
-            dimensionality = dimensionality,
-            sparsity = sparsity,
-            sample_size = sample_size,
-            nlopt_solver = nlopt_solver,
-            max_iter = max_iter,
-            ic_type = ic_type,
-            ic_coef = ic_coef,
-            metric_method = metric_method,
-            cv = cv,
-            split_method = split_method,
-            random_state = random_state,
+            dimensionality=dimensionality,
+            sparsity=sparsity,
+            sample_size=sample_size,
+            always_select=always_select,
+            nlopt_solver=nlopt_solver,
+            max_iter=max_iter,
+            ic_type=ic_type,
+            ic_coef=ic_coef,
+            metric_method=metric_method,
+            cv=cv,
+            split_method=split_method,
+            random_state=random_state,
         )
 
     def _solve(
@@ -799,8 +793,15 @@ class GrahtpSolver(BaseSolver):
         init_params,
         data,
     ):
-        if sparsity == 0:
-            return np.zeros(self.dimensionality), np.array([], dtype="int32")
+        if sparsity <= self.always_select.size:
+            return super()._solve(
+                sparsity,
+                objective,
+                gradient,
+                init_support_set,
+                init_params,
+                data,
+            )
         # init
         params = init_params
         support_old = np.array([], dtype="int32")
@@ -820,7 +821,9 @@ class GrahtpSolver(BaseSolver):
                 params, data, np.arange(self.dimensionality)
             )
             # S2: Gradient Hard Thresholding
-            support_new = np.argpartition(np.abs(params_bias), -sparsity)[-sparsity:]
+            score = np.abs(params_bias)
+            score[self.always_select] = np.inf
+            support_new = np.argpartition(score, -sparsity)[-sparsity:]
             # terminating condition
             if np.all(set(support_old) == set(support_new)):
                 break
@@ -828,10 +831,12 @@ class GrahtpSolver(BaseSolver):
                 support_old = support_new
             # S3: debise
             params = np.zeros(self.dimensionality)
-            if self.fast:   
+            if self.fast:
                 params[support_new] = params_bias[support_new]
             else:
-                params[support_new], _ = self._cache_nlopt(opt_fn, params_bias[support_new])
+                params[support_new], _ = self._cache_nlopt(
+                    opt_fn, params_bias[support_new]
+                )
 
         # final optimization for IHT
         if self.fast:
@@ -841,9 +846,9 @@ class GrahtpSolver(BaseSolver):
 
 
 class GraspSolver(BaseSolver):
-    
+
     ## inherited the constructor of BaseSolver
-    
+
     def _solve(
         self,
         sparsity,
@@ -853,8 +858,15 @@ class GraspSolver(BaseSolver):
         init_params,
         data,
     ):
-        if sparsity == 0:
-            return np.zeros(self.dimensionality), np.array([], dtype="int32")
+        if sparsity <= self.always_select.size:
+            return super()._solve(
+                sparsity,
+                objective,
+                gradient,
+                init_support_set,
+                init_params,
+                data,
+            )
         # init
         params = init_params
         support_old = np.array([], dtype="int32")
@@ -870,23 +882,22 @@ class GraspSolver(BaseSolver):
 
         for iter in range(self.max_iter):
             # compute local gradient
-            z = gradient(params, data, np.arange(self.dimensionality))
-
+            grad_values = gradient(params, data, np.arange(self.dimensionality))
+            score = np.abs(grad_values)
+            score[self.always_select] = np.inf
             # identify directions
             if 2 * sparsity < self.dimensionality:
                 Omega = [
                     idx
-                    for idx in np.argpartition(np.abs(z), -2 * sparsity)[
-                        -2 * sparsity :
-                    ]
-                    if z[idx] != 0.0
+                    for idx in np.argpartition(score, -2 * sparsity)[-2 * sparsity :]
+                    if score[idx] != 0.0
                 ]  # supp of top 2k largest absolute values of gradient
             else:
-                Omega = np.nonzero(z)[0]  # supp(z)
+                Omega = np.nonzero(score)[0]  # supp(z)
 
             # merge supports
             support_new = np.unique(np.append(Omega, params.nonzero()[0]))
-            
+
             # terminating condition
             if np.all(set(support_old) == set(support_new)):
                 break
@@ -897,7 +908,9 @@ class GraspSolver(BaseSolver):
             params_bias[support_new], _ = self._cache_nlopt(opt_fn, params[support_new])
 
             # prune estimate
-            support_set = np.argpartition(np.abs(params_bias), -sparsity)[-sparsity:]
+            score = np.abs(params_bias)
+            score[self.always_select] = np.inf
+            support_set = np.argpartition(score, -sparsity)[-sparsity:]
             params = np.zeros(self.dimensionality)
             params[support_set] = params_bias[support_set]
 
@@ -908,31 +921,33 @@ class IHTSolver(GrahtpSolver):
     def __init__(
         self,
         dimensionality,
-        sparsity = None,
-        sample_size = 1,
+        sparsity=None,
+        sample_size=1,
         *,
+        always_select=[],
         step_size=0.005,
-        nlopt_solver = nlopt.opt(nlopt.LD_LBFGS, 1),
-        max_iter = 100,
-        ic_type = "aic",
-        ic_coef = 1.0,
-        metric_method = None,
-        cv = 1,
-        split_method = None,
-        random_state = None,
+        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        max_iter=100,
+        ic_type="aic",
+        ic_coef=1.0,
+        metric_method=None,
+        cv=1,
+        split_method=None,
+        random_state=None,
     ):
         super().__init__(
-            dimensionality = dimensionality,
-            sparsity  = sparsity,
-            sample_size  = sample_size,
-            step_size = step_size,
-            nlopt_solver = nlopt_solver,
-            max_iter  = max_iter,
-            ic_type = ic_type,
-            ic_coef  = ic_coef,
-            metric_method  = metric_method,
-            cv  = cv,
-            split_method  = split_method,
-            random_state  = random_state,
+            dimensionality=dimensionality,
+            sparsity=sparsity,
+            sample_size=sample_size,
+            always_select=always_select,
+            step_size=step_size,
+            nlopt_solver=nlopt_solver,
+            max_iter=max_iter,
+            ic_type=ic_type,
+            ic_coef=ic_coef,
+            metric_method=metric_method,
+            cv=cv,
+            split_method=split_method,
+            random_state=random_state,
         )
-        self.fast = True # IHT is actually fast version of GraHTP 
+        self.fast = True  # IHT is actually fast version of GraHTP

@@ -72,3 +72,14 @@ def test_grad_hess():
 
 def test_jit():
     pass
+
+@pytest.mark.parametrize("model", models)
+@pytest.mark.parametrize("solver_creator", solvers)
+def test_always_select(model, solver_creator):
+    for i in range(model["n_features"]):
+        if model["params"][i] != 0:
+            continue
+        solver = solver_creator(model["n_features"], model["n_informative"], always_select = [i])
+        solver.solve(model["loss"])
+        
+        assert i in solver.get_result()["support_set"]

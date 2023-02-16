@@ -806,20 +806,9 @@ class GrahtpSolver(BaseSolver):
         params = init_params
         support_old = np.array([], dtype="int32")
 
-        # !!carefully change names of variables
-        # self, objective, gradient, support_new, data come from closure
-        def opt_fn(x, grad):
-            x_full = np.zeros(self.dimensionality)
-            x_full[support_new] = x
-            if grad.size > 0:
-                grad[:] = gradient(x_full, data, support_new)
-            return objective(x_full, data)
-
         for iter in range(self.max_iter):
             # S1: gradient descent
-            params_bias = params - self.step_size * gradient(
-                params, data, np.arange(self.dimensionality)
-            )
+            params_bias = params - self.step_size * gradient(params, data)
             # S2: Gradient Hard Thresholding
             score = np.abs(params_bias)
             score[self.always_select] = np.inf
@@ -835,12 +824,14 @@ class GrahtpSolver(BaseSolver):
                 params[support_new] = params_bias[support_new]
             else:
                 params[support_new], _ = self._cache_nlopt(
-                    opt_fn, params_bias[support_new]
+                    objective, gradient, params_bias, support_new, data
                 )
 
         # final optimization for IHT
         if self.fast:
-            params[support_new], _ = self._cache_nlopt(opt_fn, params[support_new])
+            params[support_new], _ = self._cache_nlopt(
+                    objective, gradient, params, support_new, data
+                )
 
         return params, support_new
 
@@ -871,18 +862,9 @@ class GraspSolver(BaseSolver):
         params = init_params
         support_old = np.array([], dtype="int32")
 
-        # !!carefully change names of variables
-        # self, objective, gradient, support_new, data come from closure
-        def opt_fn(x, grad):
-            x_full = np.zeros(self.dimensionality)
-            x_full[support_new] = x
-            if grad.size > 0:
-                grad[:] = gradient(x_full, data, support_new)
-            return objective(x_full, data)
-
         for iter in range(self.max_iter):
             # compute local gradient
-            grad_values = gradient(params, data, np.arange(self.dimensionality))
+            grad_values = gradient(params, data)
             score = np.abs(grad_values)
             score[self.always_select] = np.inf
             # identify directions
@@ -905,7 +887,10 @@ class GraspSolver(BaseSolver):
                 support_old = support_new
             # minimize
             params_bias = np.zeros(self.dimensionality)
-            params_bias[support_new], _ = self._cache_nlopt(opt_fn, params[support_new])
+            params_bias[support_new], _ = self._cache_nlopt(
+                    objective, gradient, params, support_new, data
+                )
+
 
             # prune estimate
             score = np.abs(params_bias)

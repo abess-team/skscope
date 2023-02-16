@@ -70,22 +70,25 @@ class BaseSolver(BaseEstimator):
         init_support_set=None,
         init_params=None,
         data=None,
+        jit=False,
     ):
         r"""
         Set the optimization objective and begin to solve
 
         Parameters
         ----------
-        + objective : function('params': array-like, ('data': custom class)) ->  float
+        + objective : function('params': array of float(, 'data': custom class)) ->  float
             Defined the objective of optimization, must be written in JAX if gradient is not provided.
-        + gradient : function('params': array-like, ('data': custom class,) 'compute_index': array-like) -> array-like
-            Defined the gradient of objective function, return the gradient of parameters in `compute_index`.
+        + gradient : function('params': array of float(, 'data': custom class)) -> array of float
+            Defined the gradient of objective function, return the gradient of parameters.
         + init_support_set : array-like of int, optional, default=[]
             The index of the variables in initial active set.
         + init_params : array-like of float, optional, default is an all-zero vector
             An initial value of parameters.
         + data : custom class, optional, default=None
             The data that objective function should be known, like samples, responses, weights, etc, which is necessary for cross validation. It can be any class which is match to objective function.
+        + jit : bool, optional, default=False
+            just-in-time compilation with XLA, but it should be a pure function.
         """
         BaseSolver._check_positive_integer(self.dimensionality, "dimensionality")
         BaseSolver._check_positive_integer(self.sample_size, "sample_size")
@@ -174,7 +177,7 @@ class BaseSolver(BaseEstimator):
                     "The length of init_params must match `dimensionality`!"
                 )
 
-        if gradient is not None:
+        if gradient is not None and not jit:
             if objective.__code__.co_argcount == 1:
                 loss_fn = lambda params, data: objective(params)
             elif objective.__code__.co_argcount == 2:
@@ -182,31 +185,40 @@ class BaseSolver(BaseEstimator):
             else:
                 raise ValueError("objective should be a function of 1 or 2 argument.")
 
-            if gradient.__code__.co_argcount == 2:
-                loss_grad = lambda params, data, compute_index: gradient(
-                    params, compute_index
-                )
-            elif gradient.__code__.co_argcount == 3:
+            if gradient.__code__.co_argcount == 1:
+                loss_grad = lambda params, data: gradient(params)
+            elif gradient.__code__.co_argcount == 2:
                 loss_grad = gradient
             else:
-                raise ValueError("gradient should be a function of 2 or 3 argument.")
-        else:  ## if gradient is not provided, use JAX to compute gradient
+                raise ValueError("gradient should be a function of 1 or 2 argument.")
+        elif gradient is None and not jit:
             if objective.__code__.co_argcount == 1:
                 loss_fn = lambda params, data: objective(params).item()
-
-                def loss_grad(params, data, compute_index):
-                    return np.array(jax.grad(objective)(params))[compute_index]
-
+                loss_grad = lambda params, data: np.array(jax.grad(objective)(params))
             elif objective.__code__.co_argcount == 2:
                 loss_fn = lambda params, data: objective(params, data).item()
-
-                def loss_grad(params, data, compute_index):
-                    return np.array(jax.grad(objective)(params, data))[compute_index]
-
+                loss_grad = lambda params, data: np.array(jax.grad(objective)(params, data))
             else:
                 raise ValueError(
-                    "objective should be a function of 1 argument written by JAX when gradient isn't offered."
+                    "objective should be a function of 1 or 2 argument written by JAX when gradient isn't offered."
                 )
+        elif jit:
+            if objective.__code__.co_argcount != 1:
+                raise ValueError(
+                    "objective should be a function of 1 argument written by JAX when jit is True."
+                )
+            if gradient is not None and gradient.__code__.co_argcount != 1:
+                raise ValueError(
+                    "gradient should be a function of 1 argument written by JAX when jit is True."
+                )
+            objective = jax.jit(objective)
+            if gradient is None:
+                gradient = jax.jit(jax.grad(objective))
+            else:
+                gradient = jax.jit(gradient)
+    
+            loss_fn = lambda params, data: objective(params).item()
+            loss_grad = lambda params, data: np.array(gradient(params))
 
         if self.cv == 1:
             is_first_loop: bool = True
@@ -326,7 +338,7 @@ class BaseSolver(BaseEstimator):
             sparsity: int,
             objective: Callable[[Sequence[float], Any], float],
             gradient: Callable[
-                [Sequence[float], Any, Sequence[int]], Sequence[float]
+                [Sequence[float], Any], Sequence[float]
             ],
             init_support_set: Sequence[int],
             init_params: Sequence[float],
@@ -361,27 +373,24 @@ class BaseSolver(BaseEstimator):
             universal_set = np.setdiff1d(np.arange(p), always_select)
             p = p - always_select.size
             s = s - always_select.size
+
             def helper(start: int, s: str, curr_selection: np.ndarray):
                 if s == 0:
                     yield curr_selection
                 else:
                     for i in range(start, p - s + 1):
-                        yield from helper(i + 1, s - 1, np.append(curr_selection, universal_set[i]))
+                        yield from helper(
+                            i + 1, s - 1, np.append(curr_selection, universal_set[i])
+                        )
 
             yield from helper(0, s, always_select)
 
-        # !!carefully change names of variables
-        # self, objective, gradient, support_set, data come from closure
-        def opt_fn(x, grad):
-            x_full = np.zeros(self.dimensionality)
-            x_full[support_set] = x
-            if grad.size > 0:
-                grad[:] = gradient(x_full, data, support_set)
-            return objective(x_full, data)
 
         result = {"params": None, "support_set": None, "value_of_objective": math.inf}
-        for support_set in all_subsets(self.dimensionality, sparsity, self.always_select):
-            opt_params, loss = self._cache_nlopt(opt_fn, init_params[support_set])
+        for support_set in all_subsets(
+            self.dimensionality, sparsity, self.always_select
+        ):
+            opt_params, loss = self._cache_nlopt(objective, gradient, init_params, support_set, data)
             if loss < result["value_of_objective"]:
                 params = np.zeros(self.dimensionality)
                 params[support_set] = opt_params
@@ -391,19 +400,26 @@ class BaseSolver(BaseEstimator):
 
         return result["params"], result["support_set"]
 
-    def _cache_nlopt(self, opt_fn, init_params):
+    def _cache_nlopt(self, loss_fn, grad_fn, init_params, support_set, data):
+        """
+        Nlopt often throws RuntimeError even if the optimization is nearly successful. This function is used to cache the best result and return it.
+        """
         best_loss = math.inf
         best_params = None
 
         def cache_opt_fn(x, grad):
             nonlocal best_loss, best_params
-            loss = opt_fn(x, grad)
+            x_full = np.zeros(self.dimensionality)
+            x_full[support_set] = x
+            if grad.size > 0:
+                grad[:] = grad_fn(x_full, data)[support_set]
+            loss =  loss_fn(x_full, data)
             if loss < best_loss:
                 best_loss = loss
                 best_params = np.copy(x)
             return loss
 
-        nlopt_solver = nlopt.opt(self.nlopt_solver.get_algorithm(), init_params.size)
+        nlopt_solver = nlopt.opt(self.nlopt_solver.get_algorithm(), support_set.size)
         if nlopt_solver.get_algorithm_name() != self.nlopt_solver.get_algorithm_name():
             raise ValueError("The algorithm of nlopt_solver is invalid.")
         nlopt_solver.set_stopval(self.nlopt_solver.get_stopval())
@@ -416,7 +432,7 @@ class BaseSolver(BaseEstimator):
         nlopt_solver.set_min_objective(cache_opt_fn)
 
         try:
-            opt_params = nlopt_solver.optimize(init_params)
+            opt_params = nlopt_solver.optimize(init_params[support_set])
             return opt_params, nlopt_solver.last_optimum_value()
         except RuntimeError:
             return best_params, best_loss

@@ -251,6 +251,7 @@ class ScopeSolver(BaseEstimator):
         hessian=None,
         autodiff=False,
         data=None,
+        jit=False,
     ):
         r"""
         Set the optimization objective and begin to solve
@@ -516,10 +517,7 @@ class ScopeSolver(BaseEstimator):
         elif gradient is not None and hessian is not None:
             self.__set_objective_custom(objective, gradient, hessian)
         else:
-            objective = ScopeSolver.__objective_decorator(
-                objective, self.aux_params_size
-            )
-            self.__set_objective_jax(objective)
+            objective = self.__set_objective_jax(objective, use_jit=jit)
 
         result = pywrap_Universal(
             data,
@@ -611,30 +609,6 @@ class ScopeSolver(BaseEstimator):
         """
         self.model.set_init_params_of_sub_optim(self.init_params_of_sub_optim)
 
-    def __objective_decorator(objective, aux_params_size):
-        if objective.__code__.co_argcount == 3:
-            return objective
-        elif objective.__code__.co_argcount == 2 and aux_params_size > 0:
-
-            def __objective(params, aux_params, data):
-                return objective(params, aux_params)
-
-            return __objective
-        elif objective.__code__.co_argcount == 2 and aux_params_size == 0:
-
-            def __objective(params, aux_params, data):
-                return objective(params, data)
-
-            return __objective
-        elif objective.__code__.co_argcount == 1:
-
-            def __objective(params, aux_params, data):
-                return objective(params)
-
-            return __objective
-        else:
-            raise ValueError("The objective function should have 1, 2 or 3 arguments.")
-
     def __set_objective_autodiff(self, objective_overloaded):
         r"""
         Register objective function as callback function. This method only can register objective function with Cpp library `autodiff`.
@@ -647,7 +621,7 @@ class ScopeSolver(BaseEstimator):
         self.model.set_gradient_autodiff(objective_overloaded)
         self.model.set_hessian_autodiff(objective_overloaded)
 
-    def __set_objective_jax(self, objective):
+    def __set_objective_jax(self, objective, use_jit=False):
         r"""
         Register objective function as callback function. This method only can register objective function with Python package `JAX`.
 
@@ -678,40 +652,83 @@ class ScopeSolver(BaseEstimator):
             solver2 = ScopeSolver(10, aux_params_size=1)
             solver2.set_objective_jax(linear_with_intercept)
         """
-        # the function for differential
-        def func_(params_compute, aux_params, params, ind, data):
-            params_complete = params.at[ind].set(params_compute)
-            return objective(params_complete, aux_params, data)
 
-        def grad_(params, aux_params, data, compute_params_index):
-            params_j = jnp.array(params)
-            aux_params_j = jnp.array(aux_params)
-            params_compute_j = jnp.array(params[compute_params_index])
-            return np.array(
-                jnp.append(
-                    *jax.grad(func_, (1, 0))(
-                        params_compute_j,
-                        aux_params_j,
-                        params_j,
-                        compute_params_index,
+        if objective.__code__.co_argcount == 3:
+            if use_jit:
+                raise ValueError(
+                    "The objective function should not have `data` argument when use jit."
+                )
+            loss_ = objective
+        elif objective.__code__.co_argcount == 2 and self.aux_params_size > 0:
+            def loss_(params, aux_params, data):
+                return objective(params, aux_params)
+            if use_jit:
+                loss_ = jax.jit(loss_, static_argnums=(2,))
+        elif objective.__code__.co_argcount == 2 and self.aux_params_size == 0:
+            if use_jit:
+                raise ValueError(
+                    "The objective function should not have `data` argument when use jit."
+                )
+            def loss_(params, aux_params, data):
+                return objective(params, data)
+        elif objective.__code__.co_argcount == 1:
+            def loss_(params, aux_params, data):
+                return objective(params)
+            if use_jit:
+                loss_ = jax.jit(loss_, static_argnums=(2,))
+        else:
+            raise ValueError("The objective function should have 1, 2 or 3 arguments.")
+
+        def diff_fn(compute_params, aux_params, full_params, compute_index, data):
+            full_params = full_params.at[compute_index].set(compute_params)
+            return loss_(full_params, aux_params, data)
+
+        if use_jit:
+            diff_fn = jax.jit(diff_fn, static_argnums=(4,))
+
+        def loss(params, aux_params, data):
+            return loss_(params, aux_params, data).item()
+
+        def grad(params, aux_params, data, compute_index):
+            def grad_(full_params, aux_params, compute_index, data):
+                return jnp.append(
+                    *jax.grad(diff_fn, (1, 0))(
+                        full_params[compute_index],
+                        aux_params,
+                        full_params,
+                        compute_index,
                         data,
                     )
                 )
-            )
 
-        def hessian_(params, aux_params, data, compute_params_index):
-            params_j = jnp.array(params)
-            aux_params_j = jnp.array(aux_params)
-            params_compute_j = jnp.array(params[compute_params_index])
-            return np.array(
-                jax.jacfwd(jax.jacrev(func_))(
-                    params_compute_j, aux_params_j, params_j, compute_params_index, data
+            if use_jit:
+                grad_ = jax.jit(grad_, static_argnums=(3,))
+                return np.array(grad_(params, aux_params, compute_index, data))
+            else: 
+                return np.array(grad_(jnp.array(params), jnp.array(aux_params), compute_index, data))
+
+        def hess(params, aux_params, data, compute_index):
+            def hess_(full_params, aux_params, compute_index, data):
+                return jax.jacfwd(jax.jacrev(diff_fn))(
+                    full_params[compute_index],
+                    aux_params,
+                    full_params,
+                    compute_index,
+                    data,
                 )
-            )
+            
+            if use_jit:
+                hess_ = jax.jit(hess_, static_argnums=(3,))
+                return np.array(hess_(params, aux_params, compute_index, data))
+            else:
+                return np.array(hess_(jnp.array(params), jnp.array(aux_params), compute_index, data))
 
-        self.model.set_loss_of_model(objective)
-        self.model.set_gradient_user_defined(grad_)
-        self.model.set_hessian_user_defined(hessian_)
+        self.model.set_loss_of_model(loss)
+        self.model.set_gradient_user_defined(grad)
+        self.model.set_hessian_user_defined(hess)
+
+        return loss
+
 
     def __set_objective_custom(self, objective, gradient, hessian):
         r"""
@@ -830,8 +847,8 @@ class GrahtpSolver(BaseSolver):
         # final optimization for IHT
         if self.fast:
             params[support_new], _ = self._cache_nlopt(
-                    objective, gradient, params, support_new, data
-                )
+                objective, gradient, params, support_new, data
+            )
 
         return params, support_new
 
@@ -888,9 +905,8 @@ class GraspSolver(BaseSolver):
             # minimize
             params_bias = np.zeros(self.dimensionality)
             params_bias[support_new], _ = self._cache_nlopt(
-                    objective, gradient, params, support_new, data
-                )
-
+                objective, gradient, params, support_new, data
+            )
 
             # prune estimate
             score = np.abs(params_bias)

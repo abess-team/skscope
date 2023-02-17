@@ -70,8 +70,13 @@ def test_grad():
 def test_grad_hess():
     pass
 
-def test_jit():
-    pass
+@pytest.mark.parametrize("model", models)
+@pytest.mark.parametrize("solver_creator", solvers)
+def test_jit(model, solver_creator):
+    solver = solver_creator(model["n_features"], model["n_informative"])
+    params = solver.solve(model["loss"], jit = True)
+    
+    assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
 
 @pytest.mark.parametrize("model", models)
 @pytest.mark.parametrize("solver_creator", solvers)

@@ -7,7 +7,6 @@ import jax
 from jax import numpy as jnp
 from ._scope import pywrap_Universal, UniversalModel, init_spdlog, NloptConfig
 
-
 class ScopeSolver(BaseEstimator):
     r"""
     Get sparse optimal solution of convex objective function by sparse-Constrained Optimization via Splicing Iteration (SCOPE) algorithm, which also can be used for variables selection.
@@ -277,7 +276,7 @@ class ScopeSolver(BaseEstimator):
             Any class which is match to objective function. It can cantain all data that objective should be known, like samples, responses, weights, etc.
         """
         ScopeSolver._set_log_level(
-            self.file_log_level, self.console_log_level, self.log_file_name
+            self.console_log_level, self.file_log_level, self.log_file_name
         )
 
         nlopt_config = NloptConfig(
@@ -678,7 +677,7 @@ class ScopeSolver(BaseEstimator):
                 loss_ = jax.jit(loss_, static_argnums=(2,))
         else:
             raise ValueError("The objective function should have 1, 2 or 3 arguments.")
-
+        
         def diff_fn(compute_params, aux_params, full_params, compute_index, data):
             full_params = full_params.at[compute_index].set(compute_params)
             return loss_(full_params, aux_params, data)
@@ -689,8 +688,7 @@ class ScopeSolver(BaseEstimator):
         def loss(params, aux_params, data):
             return loss_(params, aux_params, data).item()
 
-        def grad(params, aux_params, data, compute_index):
-            def grad_(full_params, aux_params, compute_index, data):
+        def grad_(full_params, aux_params, compute_index, data):
                 return jnp.append(
                     *jax.grad(diff_fn, (1, 0))(
                         full_params[compute_index],
@@ -701,14 +699,16 @@ class ScopeSolver(BaseEstimator):
                     )
                 )
 
+        if use_jit:
+            grad_ = jax.jit(grad_, static_argnums=(3,))
+
+        def grad(params, aux_params, data, compute_index):
             if use_jit:
-                grad_ = jax.jit(grad_, static_argnums=(3,))
                 return np.array(grad_(params, aux_params, compute_index, data))
             else: 
                 return np.array(grad_(jnp.array(params), jnp.array(aux_params), compute_index, data))
-
-        def hess(params, aux_params, data, compute_index):
-            def hess_(full_params, aux_params, compute_index, data):
+        
+        def hess_(full_params, aux_params, compute_index, data):
                 return jax.jacfwd(jax.jacrev(diff_fn))(
                     full_params[compute_index],
                     aux_params,
@@ -717,8 +717,11 @@ class ScopeSolver(BaseEstimator):
                     data,
                 )
             
+        if use_jit:
+            hess_ = jax.jit(hess_, static_argnums=(3,))
+
+        def hess(params, aux_params, data, compute_index):
             if use_jit:
-                hess_ = jax.jit(hess_, static_argnums=(3,))
                 return np.array(hess_(params, aux_params, compute_index, data))
             else:
                 return np.array(hess_(jnp.array(params), jnp.array(aux_params), compute_index, data))

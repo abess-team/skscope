@@ -179,25 +179,33 @@ class BaseSolver(BaseEstimator):
 
         if gradient is not None and not jit:
             if objective.__code__.co_argcount == 1:
-                loss_fn = lambda params, data: objective(params)
+                def loss_fn(params, data):
+                    return objective(params)
             elif objective.__code__.co_argcount == 2:
-                loss_fn = objective
+                def loss_fn(params, data):
+                    return objective(params, data)
             else:
                 raise ValueError("objective should be a function of 1 or 2 argument.")
 
             if gradient.__code__.co_argcount == 1:
-                loss_grad = lambda params, data: gradient(params)
+                def loss_grad(params, data):
+                    return gradient(params)
             elif gradient.__code__.co_argcount == 2:
-                loss_grad = gradient
+                def loss_grad(params, data):
+                    return gradient(params, data)
             else:
                 raise ValueError("gradient should be a function of 1 or 2 argument.")
         elif gradient is None and not jit:
             if objective.__code__.co_argcount == 1:
-                loss_fn = lambda params, data: objective(params).item()
-                loss_grad = lambda params, data: np.array(jax.grad(objective)(params))
+                def loss_fn(params, data):
+                    return objective(params).item()
+                def loss_grad(params, data):
+                    return np.array(jax.grad(objective)(params))
             elif objective.__code__.co_argcount == 2:
-                loss_fn = lambda params, data: objective(params, data).item()
-                loss_grad = lambda params, data: np.array(jax.grad(objective)(params, data))
+                def loss_fn(params, data):
+                    return objective(params, data).item()
+                def loss_grad(params, data):
+                    return np.array(jax.grad(objective)(params, data))
             else:
                 raise ValueError(
                     "objective should be a function of 1 or 2 argument written by JAX when gradient isn't offered."
@@ -211,14 +219,24 @@ class BaseSolver(BaseEstimator):
                 raise ValueError(
                     "gradient should be a function of 1 argument written by JAX when jit is True."
                 )
-            objective = jax.jit(objective)
+            
+            @jax.jit
+            def loss_(params):
+                return objective(params)
+            def loss_fn(params, data):
+                return loss_(params).item()
+
             if gradient is None:
-                gradient = jax.jit(jax.grad(objective))
+                @jax.jit
+                def grad_(params):
+                    return jax.grad(loss_)(params)
             else:
-                gradient = jax.jit(gradient)
-    
-            loss_fn = lambda params, data: objective(params).item()
-            loss_grad = lambda params, data: np.array(gradient(params))
+                @jax.jit
+                def grad_(params):
+                    return gradient(params)
+            def loss_grad(params, data):
+                return np.array(grad_(params))
+            
 
         if self.cv == 1:
             is_first_loop: bool = True

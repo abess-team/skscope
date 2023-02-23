@@ -125,7 +125,7 @@ class BaseSolver(BaseEstimator):
             self.sparsity = np.unique(np.array(self.sparsity, dtype="int32"))
             if (
                 self.sparsity[0] < force_min_sparsity
-                or self.sparsity[-1] >= self.dimensionality
+                or self.sparsity[-1] > self.dimensionality
             ):
                 raise ValueError(
                     "All sparsity should be between 0 (when `always_select` is default) and dimensionality."

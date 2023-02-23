@@ -375,7 +375,7 @@ class ScopeSolver(BaseEstimator):
                 sparsity = np.unique(np.array(self.sparsity, dtype="int32"))
                 if sparsity.size == 0:
                     raise ValueError("sparsity should not be empty.")
-                if sparsity[0] < force_min_sparsity or sparsity[-1] >= group_num:
+                if sparsity[0] < force_min_sparsity or sparsity[-1] > group_num:
                     raise ValueError(
                         "All sparsity should be between 0 (when `always_select` is default) and dimensionality (when `group` is default)."
                     )
@@ -398,7 +398,7 @@ class ScopeSolver(BaseEstimator):
                 )
                 gs_higher_bound = self.gs_higher_bound
 
-            if gs_lower_bound < force_min_sparsity or gs_higher_bound >= group_num:
+            if gs_lower_bound < force_min_sparsity or gs_higher_bound > group_num:
                 raise ValueError(
                     "gs_lower_bound and gs_higher_bound should be between 0 (when `always_select` is default) and dimensionality (when `group` is default)."
                 )

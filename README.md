@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/abess-team/scope/branch/master/graphs/sunburst.svg)](https://codecov.io/gh/abess-team/scope)
+
 ## What is `scope`?
 
 Sparsity-Constraint OPtimization via itErative (scope) are algorithms for getting sparse optimal solution of convex objective function, which also can be used for variables selection. Its characteristic is that the optimization objective can be a user-defined function so that the algorithm can be applied to various problems.

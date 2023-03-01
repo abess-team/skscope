@@ -41,13 +41,16 @@ bool abessUniversal::primary_model_fit(UniversalData& active_data, MatrixXd& y, 
 void abessUniversal::sacrifice(UniversalData& data, UniversalData& XA, MatrixXd& y, VectorXd& para, VectorXd& beta_A, VectorXd& aux_para, VectorXi& A, VectorXi& I, VectorXd& weights, VectorXi& g_index, VectorXi& g_size, int g_num, VectorXi& A_ind, VectorXd& sacrifice, VectorXi& U, VectorXi& U_ind, int num)
 {
     SPDLOG_DEBUG("sacrifice begin");
+    VectorXd gradient_full;
+    MatrixXd hessian_full;
+    data.gradient_and_hessian(para, aux_para, gradient_full, hessian_full, this->lambda_level);
+
     int size, index;
     for (auto group_index : A) {
         size = g_size(group_index);
         index = g_index(group_index);
-        VectorXd gradient_group(size);
-        MatrixXd hessian_group(size, size);
-        data.hessian(para, aux_para, gradient_group, hessian_group, index, size, this->lambda_level);
+        VectorXd gradient_group = gradient_full.segment(index, size);
+        MatrixXd hessian_group = hessian_full.block(index, index, size, size);
         if (size == 1) { // optimize for frequent degradation situations
             sacrifice(group_index) = para(index) * para(index) * hessian_group(0, 0);
         }
@@ -59,9 +62,8 @@ void abessUniversal::sacrifice(UniversalData& data, UniversalData& XA, MatrixXd&
     for (auto group_index : I) {
         size = g_size(group_index);
         index = g_index(group_index);
-        VectorXd gradient_group(size);
-        MatrixXd hessian_group(size, size);
-        data.hessian(para, aux_para, gradient_group, hessian_group, index, size, this->lambda_level);
+        VectorXd gradient_group = gradient_full.segment(index, size);
+        MatrixXd hessian_group = hessian_full.block(index, index, size, size);
         if (size == 1) { // optimize for frequent degradation situations
             if (hessian_group(0, 0) < this->enough_small) {
                 SPDLOG_ERROR("there exists a submatrix of hessian which is not positive definite!\nactive set is{}\nactive params are {}\ngroup index is {}, hessian is {}", data.get_effective_para_index().transpose(),para.transpose(), index, hessian_group(0,0));
@@ -94,9 +96,10 @@ double abessUniversal::effective_number_of_parameter(UniversalData& X, Universal
 
     if (active_data.cols() == 0) return 0.;
 
-    MatrixXd hessian(active_data.cols(), active_data.cols());
-    VectorXd g;
-    active_data.hessian(active_para, aux_para, g, hessian, 0, active_data.cols(), this->lambda_level);
+    VectorXd gradient;
+    MatrixXd hessian;
+    active_data.gradient_and_hessian(active_para, aux_para, gradient, hessian, this->lambda_level);
+
     SelfAdjointEigenSolver<MatrixXd> adjoint_eigen_solver(hessian, EigenvaluesOnly);
     double enp = 0.;
     for (int i = 0; i < adjoint_eigen_solver.eigenvalues().size(); i++) {

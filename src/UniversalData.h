@@ -56,8 +56,8 @@ public:
     UniversalData slice_by_sample(const VectorXi& target_sample_index);
     nlopt_function get_nlopt_function(double lambda); // create a function which can be optimized by nlopt
     double loss(const VectorXd& effective_para, const VectorXd& aux_para, double lambda); // compute the loss with effective_para
-    double gradient(const VectorXd& effective_para, const VectorXd& aux_para, Eigen::Map<VectorXd>& gradient, double lambda); // compute the gradient of effective_para
-    void hessian(const VectorXd& effective_para, const VectorXd& aux_para, VectorXd& gradient, MatrixXd& hessian, Eigen::Index index, Eigen::Index size, double lambda); // compute the hessian of sequence from index to (index+size-1) in effective_para                
+    double loss_and_gradient(const VectorXd& effective_para, const VectorXd& aux_para, Eigen::Map<VectorXd>& gradient, double lambda); 
+    void gradient_and_hessian(const VectorXd& effective_para, const VectorXd& aux_para, VectorXd& gradient,MatrixXd& hessian, double lambda);             
     void init_para(VectorXd & active_para, VectorXd & aux_para);  // init para and aux_para, default is not change.                                                                                        
     nlopt_opt nlopt_create(unsigned dim) {return this->nlopt_solver->create(dim);}                
 };
@@ -72,10 +72,10 @@ private:
     // only the derivative of aux_para and para[compute_para_index[i]] need be computed, 
     // size of return will equal to the sum of compute_para_index and aux_para. 
     // the derivative of aux_para should be setted before para.
-    function <VectorXd(VectorXd const& para, VectorXd const& aux_para, ExternData const& data, VectorXi const& compute_para_index)> gradient_user_defined;
+    function <pair<double, VectorXd>(VectorXd const& para, VectorXd const& aux_para, ExternData const& data)> gradient_user_defined;
     // only the derivative of para[compute_para_index[i]] need be computed, size of gradient will equal to compute_para_index.
     // compute_para_index: compute_para[i] = para[compute_para_index[i]]
-    function <MatrixXd(VectorXd const& para, VectorXd const& aux_para, ExternData const& data, VectorXi const& compute_para_index)> hessian_user_defined;
+    function <MatrixXd(VectorXd const& para, VectorXd const& aux_para, ExternData const& data)> hessian_user_defined;
     function <ExternData(ExternData const& old_data, VectorXi const& target_sample_index)> slice_by_sample;
     function <void(ExternData const* p)> deleter = [](ExternData const* p) { delete p; };
     function <pair<VectorXd, VectorXd>(VectorXd & para, VectorXd & aux_para, ExternData const& data, VectorXi const& active_para_index)> init_para = nullptr;
@@ -85,8 +85,8 @@ public:
     void set_loss_of_model(function <double(VectorXd const&, VectorXd const&, ExternData const&)> const&);
     void set_gradient_autodiff(function <dual(VectorXdual const&, VectorXdual const&, ExternData const&)> const&);
     void set_hessian_autodiff(function <dual2nd(VectorXdual2nd const&, VectorXdual2nd const&, ExternData const&)> const&);
-    void set_gradient_user_defined(function <VectorXd(VectorXd const&, VectorXd const&, ExternData const&, VectorXi const&)> const&);
-    void set_hessian_user_defined(function <MatrixXd(VectorXd const&, VectorXd const&, ExternData const&, VectorXi const&)> const&);
+    void set_gradient_user_defined(function <pair<double, VectorXd>(VectorXd const&, VectorXd const&, ExternData const&)> const&);
+    void set_hessian_user_defined(function <MatrixXd(VectorXd const&, VectorXd const&, ExternData const&)> const&);
     void set_slice_by_sample(function <ExternData(ExternData const&, VectorXi const&)> const&);
     void set_deleter(function <void(ExternData const&)> const&);
     void set_init_params_of_sub_optim(function <pair<VectorXd, VectorXd>(VectorXd const&, VectorXd const&, ExternData const&, VectorXi const&)> const&);

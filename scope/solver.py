@@ -678,53 +678,29 @@ class ScopeSolver(BaseEstimator):
         else:
             raise ValueError("The objective function should have 1, 2 or 3 arguments.")
         
-        def diff_fn(compute_params, aux_params, full_params, compute_index, data):
-            full_params = full_params.at[compute_index].set(compute_params)
-            return loss_(full_params, aux_params, data)
-
-        if use_jit:
-            diff_fn = jax.jit(diff_fn, static_argnums=(4,))
 
         def loss(params, aux_params, data):
             return loss_(params, aux_params, data).item()
 
-        def grad_(full_params, aux_params, compute_index, data):
-                return jnp.append(
-                    *jax.grad(diff_fn, (1, 0))(
-                        full_params[compute_index],
-                        aux_params,
-                        full_params,
-                        compute_index,
-                        data,
-                    )
-                )
+        def grad_(full_params, aux_params, data):
+            value, gradient = jax.value_and_grad(loss_, (1,0))(full_params, aux_params, data)
+            return value, jnp.append(*gradient)
 
         if use_jit:
-            grad_ = jax.jit(grad_, static_argnums=(3,))
+            grad_ = jax.jit(grad_, static_argnums=(2,))
 
-        def grad(params, aux_params, data, compute_index):
-            if use_jit:
-                return np.array(grad_(params, aux_params, compute_index, data))
-            else: 
-                return np.array(grad_(jnp.array(params), jnp.array(aux_params), compute_index, data))
+        def grad(params, aux_params, data):
+            value, gradient = grad_(jnp.array(params), jnp.array(aux_params), data)
+            return value, np.array(gradient)
         
-        def hess_(full_params, aux_params, compute_index, data):
-                return jax.jacfwd(jax.jacrev(diff_fn))(
-                    full_params[compute_index],
-                    aux_params,
-                    full_params,
-                    compute_index,
-                    data,
-                )
+        def hess_(full_params, aux_params, data):
+            return jax.hessian(loss_)(full_params, aux_params, data)
             
         if use_jit:
-            hess_ = jax.jit(hess_, static_argnums=(3,))
+            hess_ = jax.jit(hess_, static_argnums=(2,))
 
-        def hess(params, aux_params, data, compute_index):
-            if use_jit:
-                return np.array(hess_(params, aux_params, compute_index, data))
-            else:
-                return np.array(hess_(jnp.array(params), jnp.array(aux_params), compute_index, data))
+        def hess(params, aux_params, data):
+            return np.array(hess_(jnp.array(params), jnp.array(aux_params), data))
 
         self.model.set_loss_of_model(loss)
         self.model.set_gradient_user_defined(grad)

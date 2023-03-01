@@ -5,11 +5,13 @@ on:
     paths:
       - "scope/*.py"
       - "src/**"
+      - "pytest/*.py"
       - ".github/workflows/code_coverage.yml"
   pull_request:
     paths:
       - "scope/*.py"
       - "src/**"
+      - "pytest/*.py"
       - ".github/workflows/code_coverage.yml"
   workflow_dispatch:
 

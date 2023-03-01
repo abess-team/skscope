@@ -2,7 +2,7 @@ from sklearn.datasets import make_regression
 from jax import numpy as jnp
 
 class CreateTestModel:
-    def __init__(self, N=20, P=5, K=3, seed=1):
+    def __init__(self, N=20, P=5, K=3, seed=10):
         self.N = N
         self.P = P
         self.K = K

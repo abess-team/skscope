@@ -1,0 +1,49 @@
+name: Code Coverage
+
+on:
+  push:
+    paths:
+      - "scope/*.py"
+      - "src/**"
+      - ".github/workflows/code_coverage.yml"
+  pull_request:
+    paths:
+      - "scope/*.py"
+      - "src/**"
+      - ".github/workflows/code_coverage.yml"
+  workflow_dispatch:
+
+jobs:
+  codecovPy:
+    name: Codecov workflow
+    runs-on: ubuntu-latest
+    env:
+      PYTHON: "3.9"
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: 3.9
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - name: Install scope & dependencies
+        run: |
+          pip install .
+          ls * -al
+      - name: Generate coverage report
+        run: |
+          pip install pytest
+          pip install pytest-cov
+          cd ./pytest
+          pytest --cov=scope -v --cov-report=xml
+          ls * -al
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./pytest/coverage.xml
+          fail_ci_if_error: true
+          flags: Python
+          verbose: true

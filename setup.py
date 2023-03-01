@@ -145,7 +145,7 @@ setup(
     install_requires=[
         "numpy",
         "scikit-learn>=0.24",
-        "jax",
+        "jax[cpu]",
         "nlopt==2.7.1",
     ],
     license="GPL-3",

@@ -197,6 +197,7 @@ class ScopeSolver(BaseEstimator):
     @staticmethod
     def _set_log_level(console_log_level, file_log_level, log_file_name):
         # log level
+        console_log_level = console_log_level.lower()
         if console_log_level == "off":
             console_log_level = 6
         elif console_log_level == "error":
@@ -216,6 +217,7 @@ class ScopeSolver(BaseEstimator):
                 "console_log_level must be in 'off', 'error', 'warning', 'debug'"
             )
 
+        file_log_level = file_log_level.lower()
         if file_log_level == "off":
             file_log_level = 6
         elif file_log_level == "error":

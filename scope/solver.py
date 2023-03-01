@@ -151,6 +151,7 @@ class ScopeSolver(BaseEstimator):
         gs_higher_bound=None,
         regular_coef=0.0,
         thread=1,
+        jax_platform="cpu",
         random_state=None,
         console_log_level="off",
         file_log_level="off",
@@ -183,6 +184,7 @@ class ScopeSolver(BaseEstimator):
         self.gs_higher_bound = gs_higher_bound
         self.regular_coef = regular_coef
         self.thread = thread
+        self.jax_platform = jax_platform
         self.random_state = random_state
         self.console_log_level = console_log_level
         self.file_log_level = file_log_level
@@ -280,6 +282,10 @@ class ScopeSolver(BaseEstimator):
         ScopeSolver._set_log_level(
             self.console_log_level, self.file_log_level, self.log_file_name
         )
+        
+        if self.jax_platform not in ["cpu", "gpu", "tpu"]:
+            raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
+        jax.config.update("jax_platform_name", self.jax_platform)
 
         nlopt_config = NloptConfig(
             self.nlopt_solver.get_algorithm(),

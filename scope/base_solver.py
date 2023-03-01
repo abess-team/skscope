@@ -42,6 +42,7 @@ class BaseSolver(BaseEstimator):
         metric_method=None,
         cv=1,
         split_method=None,
+        jax_platform="cpu",
         random_state=None,
     ):
         self.dimensionality = dimensionality
@@ -54,6 +55,7 @@ class BaseSolver(BaseEstimator):
         self.metric_method = metric_method
         self.cv = cv
         self.split_method = split_method
+        self.jax_platform = jax_platform
         self.random_state = random_state
         self.nlopt_solver = nlopt_solver
 
@@ -90,6 +92,10 @@ class BaseSolver(BaseEstimator):
         + jit : bool, optional, default=False
             just-in-time compilation with XLA, but it should be a pure function.
         """
+        if self.jax_platform not in ["cpu", "gpu", "tpu"]:
+            raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
+        jax.config.update("jax_platform_name", self.jax_platform)
+        
         BaseSolver._check_positive_integer(self.dimensionality, "dimensionality")
         BaseSolver._check_positive_integer(self.sample_size, "sample_size")
         BaseSolver._check_non_negative_integer(self.max_iter, "max_iter")

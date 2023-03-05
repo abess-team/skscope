@@ -41,6 +41,7 @@ class BaseSolver(BaseEstimator):
         ic_coef=1.0,
         metric_method=None,
         cv=1,
+        cv_fold_id=None,
         split_method=None,
         jax_platform="cpu",
         random_state=None,
@@ -54,6 +55,7 @@ class BaseSolver(BaseEstimator):
         self.ic_coef = ic_coef
         self.metric_method = metric_method
         self.cv = cv
+        self.cv_fold_id = cv_fold_id
         self.split_method = split_method
         self.jax_platform = jax_platform
         self.random_state = random_state
@@ -152,13 +154,26 @@ class BaseSolver(BaseEstimator):
                 raise ValueError("data should be provided when cv > 1")
             if self.split_method is None:
                 raise ValueError("split_method should be provided when cv > 1")
-            kf = KFold(
-                n_splits=self.cv, shuffle=True, random_state=self.random_state
-            ).split(np.zeros(self.sample_size))
+            if self.cv_fold_id is None:
+                kf = KFold(
+                    n_splits=self.cv, shuffle=True, random_state=self.random_state
+                ).split(np.zeros(self.sample_size))
 
-            self.cv_fold_id = np.zeros(self.sample_size)
-            for i, (_, fold_id) in enumerate(kf):
-                self.cv_fold_id[fold_id] = i
+                self.cv_fold_id = np.zeros(self.sample_size)
+                for i, (_, fold_id) in enumerate(kf):
+                    self.cv_fold_id[fold_id] = i
+            else:
+                self.cv_fold_id = np.array(self.cv_fold_id, dtype="int32")
+                if self.cv_fold_id.ndim > 1:
+                    raise ValueError("group should be an 1D array of integers.")
+                if self.cv_fold_id.size != self.sample_size:
+                    raise ValueError(
+                        "The length of group should be equal to X.shape[0]."
+                    )
+                if len(set(self.cv_fold_id)) != self.cv:
+                    raise ValueError(
+                        "The number of different masks should be equal to `cv`."
+                    )
 
         if init_support_set is None:
             init_support_set = np.array([], dtype="int32")
@@ -428,6 +443,8 @@ class BaseSolver(BaseEstimator):
         """
         Nlopt often throws RuntimeError even if the optimization is nearly successful. This function is used to cache the best result and return it.
         """
+        if len(support_set) == 0:
+            return np.zeros(0), math.inf
         best_loss = math.inf
         best_params = None
 

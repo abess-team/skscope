@@ -885,15 +885,17 @@ class GraspSolver(BaseSolver):
             support_new = np.unique(np.append(Omega, params.nonzero()[0]))
 
             # terminating condition
-            if np.all(set(support_old) == set(support_new)):
+            if iter > 0 and np.all(set(support_old) == set(support_new)):
                 break
             else:
                 support_old = support_new
+                
             # minimize
             params_bias = np.zeros(self.dimensionality)
-            params_bias[support_new], _ = self._cache_nlopt(
-                objective, gradient, params, support_new, data
-            )
+            if support_new.size > 0:
+                params_bias[support_new], _ = self._cache_nlopt(
+                    objective, gradient, params, support_new, data
+                )
 
             # prune estimate
             score = np.abs(params_bias)

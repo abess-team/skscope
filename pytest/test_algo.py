@@ -4,8 +4,6 @@ import nlopt
 from create_test_model import CreateTestModel
 import jax
 
-# prohibit jax from using GPU temporarily
-jax.config.update("jax_platform_name", "cpu")
 
 create_test_model = CreateTestModel()
 linear = create_test_model.create_linear_model()

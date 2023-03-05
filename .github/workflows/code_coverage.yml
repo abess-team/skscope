@@ -47,7 +47,7 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          files: ./cpp_coverage.xml, ./coverage.xml
+          files: ./coverage.xml, ./cpp_coverage.xml
           fail_ci_if_error: true
           flags: Python
           verbose: true

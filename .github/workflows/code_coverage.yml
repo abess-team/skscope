@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: 3.9
       - name: Checkout repository and submodules
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Install scope & dependencies
@@ -41,13 +41,16 @@ jobs:
           pip install pytest
           pip install pytest-cov
           pip install gcovr
-          pytest pytest --cov=scope -v --cov-report=xml
+          cd ./pytest
+          pytest --cov=scope -v --cov-report=xml
+          ls * -al
+          cd ..
           gcovr --filter src/ --print-summary --xml cpp_coverage.xml
           ls * -al
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          files: ./coverage.xml, ./cpp_coverage.xml
+          files: ./pytest/coverage.xml, ./cpp_coverage.xml
           fail_ci_if_error: true
           flags: Python
           verbose: true

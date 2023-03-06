@@ -242,7 +242,7 @@ class ScopeSolver(BaseEstimator):
         init_params=None,
         gradient=None,
         hessian=None,
-        autodiff=False,
+        cpp=False,
         data=None,
         jit=False,
     ):
@@ -253,7 +253,7 @@ class ScopeSolver(BaseEstimator):
         ----------
         + objective : function('params': array, ('data': custom class)) ->  float
             Defined the objective of optimization, must be written in JAX if gradient and hessian are not provided.
-            If `autodiff` is `True`, `objective` can be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
+            If `cpp` is `True`, `objective` can be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
         + init_support_set : array-like of int, optional, default=[]
             The index of the variables in initial active set.
         + init_params : array-like of float, optional, default is an all-zero vector
@@ -262,8 +262,8 @@ class ScopeSolver(BaseEstimator):
             Defined the gradient of objective function, return the gradient of parameters in `compute_index`.
         + hessian : function('params': array, 'data': custom class, 'compute_index': array) -> 2D array
             Defined the hessian of objective function, return the hessian matrix of the parameters in `compute_index`.
-        + autodiff : bool, optional, default=False
-            If `autodiff` is `True`, `objective` must be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
+        + cpp : bool, optional, default=False
+            If `cpp` is `True`, `objective` must be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
         + data : custom class, optional, default=None
             Any class which is match to objective function. It can cantain all data that objective should be known, like samples, responses, weights, etc.
         """
@@ -485,12 +485,10 @@ class ScopeSolver(BaseEstimator):
                 )
 
         # set optimization objective
-        if autodiff:
-            self.__set_objective_autodiff(objective)
-        elif gradient is not None and hessian is not None:
-            self.__set_objective_custom(objective, gradient, hessian)
+        if cpp:
+            loss_fn = self.__set_objective_cpp(objective, gradient, hessian)
         else:
-            objective = self.__set_objective_jax(objective, use_jit=jit)
+            loss_fn = self.__set_objective_py(objective, gradient, hessian, jit, init_params, data)
 
         result = pywrap_Universal(
             data,
@@ -526,7 +524,7 @@ class ScopeSolver(BaseEstimator):
         self.support_set = np.nonzero(self.params)[0]
         self.train_objective = result[2]
         self.eval_objective = result[4] if self.cv == 1 else result[3]
-        self.value_of_objective = objective(self.params, data)
+        self.value_of_objective = loss_fn(self.params, data)
 
         return self.params
 
@@ -580,71 +578,15 @@ class ScopeSolver(BaseEstimator):
         """
         self.model.set_init_params_of_sub_optim(self.init_params_of_sub_optim)
 
-    def __set_objective_autodiff(self, objective_overloaded):
+    def __set_objective_cpp(self, objective, gradient, hessian):
         r"""
         Register objective function as callback function. This method only can register objective function with Cpp library `autodiff`.
 
         Parameters
         ----------
         + objective_overloaded : a wrap of Cpp overloaded function which defined the objective of optimization, examples can be found in https://github.com/abess-team/scope_example.
-        """
-        self.model.set_loss_of_model(objective_overloaded)
-        self.model.set_gradient_autodiff(objective_overloaded)
-        self.model.set_hessian_autodiff(objective_overloaded)
-
-    def __set_objective_jax(self, objective, use_jit=False):
-        r"""
-        Register objective function as callback function. This method only can register objective function with Python package `JAX`.
-
-        Parameters
-        ----------
-        + objective : function('params': jax.numpy.DeviceArray, 'data': custom class) ->  float or function('params': jax.numpy.DeviceArray, 'data': custom class) -> float
-            Defined the objective of optimization, must be written in JAX.
-        """
-        # loss
-        if objective.__code__.co_argcount == 2:
-            loss_ = objective
-        elif objective.__code__.co_argcount == 1:
-            def loss_(params, data):
-                return objective(params)
-        else:
-            raise ValueError("The objective function should have 1 or 2 arguments.")
         
-        if use_jit:
-            loss_ = jax.jit(loss_, static_argnums=(1,))
 
-        def loss_fn(params, data):
-            return loss_(params, data).item()
-
-        # grad
-        def grad_(params, data):
-            return jax.value_and_grad(loss_)(params, data)
-
-        if use_jit:
-            grad_ = jax.jit(grad_, static_argnums=(1,))
-
-        def value_and_grad(params, data):
-            value, gradient = grad_(jnp.array(params), data)
-            return value, np.array(gradient)
-
-        # hess
-        def hess_(full_params, data):
-            return jax.hessian(loss_)(full_params, data)
-
-        if use_jit:
-            hess_ = jax.jit(hess_, static_argnums=(1,))
-
-        def hess_fn(params, data):
-            return np.array(hess_(jnp.array(params), data))
-
-        self.model.set_loss_of_model(loss_fn)
-        self.model.set_gradient_user_defined(value_and_grad)
-        self.model.set_hessian_user_defined(hess_fn)
-
-        return loss_fn
-
-    def __set_objective_custom(self, objective, gradient, hessian):
-        r"""
         Register objective function and its gradient and hessian as callback function.
 
         Parameters
@@ -655,16 +597,81 @@ class ScopeSolver(BaseEstimator):
             Defined the gradient of objective function, return the gradient of parameters.
         + hessian : function {'params': array-like, 'data': custom class, 'return': 2D array-like}
             Defined the hessian of objective function, return the hessian matrix of the parameters.
-
         """
         self.model.set_loss_of_model(objective)
-        # NOTE: Perfect Forwarding of grad and hess is neccessary for func written in Pybind11_Cpp code
-        self.model.set_gradient_user_defined(
-            lambda params, data: gradient(params, data)
-        )
-        self.model.set_hessian_user_defined(
-            lambda params, data: hessian(params, data)
-        )
+        if gradient is None:
+            self.model.set_gradient_autodiff(objective)
+        else:
+            self.model.set_gradient_user_defined(
+                lambda params, data: (objective(params, data), gradient(params, data))
+            )
+        if hessian is None:
+            self.model.set_hessian_autodiff(objective)
+        else:
+            # NOTE: Perfect Forwarding of grad and hess is neccessary for func written in Pybind11_Cpp code
+            self.model.set_hessian_user_defined(
+                lambda params, data: hessian(params, data)
+            )
+        return objective
+
+    def __set_objective_py(self, objective, gradient, hessian, jit, test_params, test_data):
+        r"""
+        Register objective function as callback function. This method only can register objective function with Python package `JAX`.
+
+        Parameters
+        ----------
+        + objective : function('params': jax.numpy.DeviceArray, 'data': custom class) ->  float or function('params': jax.numpy.DeviceArray, 'data': custom class) -> float
+            Defined the objective of optimization, must be written in JAX.
+
+
+        Register objective function and its gradient and hessian as callback function.
+
+        Parameters
+        ----------
+        + objective : function {'params': array-like, 'data': custom class, 'return': float}
+            Defined the objective of optimization.
+        + gradient : function {'params': array-like, 'data': custom class, 'return': array-like}
+            Defined the gradient of objective function, return the gradient of parameters.
+        + hessian : function {'params': array-like, 'data': custom class, 'return': 2D array-like}
+            Defined the hessian of objective function, return the hessian matrix of the parameters.
+        """        
+        loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
+
+        # hess
+        if hessian is None:
+            hess_ = lambda params, data: jax.hessian(loss_)(params, data)
+        elif hessian.__code__.co_argcount == 2:
+            hess_ = hessian
+        elif hessian.__code__.co_argcount == 1:
+            hess_ = lambda params, data: hessian(params)
+        else:
+            raise ValueError("The hessian function should have 1 or 2 arguments.")
+        if jit:
+            hess_ = jax.jit(hess_, static_argnums=(1,))
+
+        # check if loss_ is a jax value
+        try: 
+            loss_(test_params, test_data).item()
+        except AttributeError:
+            loss_fn = loss_
+            def value_and_grad(params, data):
+                value, grad = grad_(params, data)
+                return value, np.array(grad)   
+            def hess_fn(params, data):
+                return np.array(hess_(params, data))         
+        else:
+            loss_fn = lambda params, data: loss_(params, data).item()
+            def value_and_grad(params, data):
+                value, grad = grad_(params, data)
+                return value.item(), np.array(grad)
+            def hess_fn(params, data):
+                return np.array(hess_(jnp.array(params), data))
+
+        self.model.set_loss_of_model(loss_fn)
+        self.model.set_gradient_user_defined(value_and_grad)
+        self.model.set_hessian_user_defined(hess_fn)
+
+        return loss_fn
 
 
 class GrahtpSolver(BaseSolver):

@@ -62,10 +62,16 @@ def test_cv(model, solver_creator):
 
     assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
 
+@pytest.mark.parametrize("model", models, ids=models_ids)
+@pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
+def test_no_autodiff(model, solver_creator):
+    """
+    Test that the user can provide the gradient and hessian
+    """
+    solver = solver_creator(model["n_features"], model["n_informative"])
+    if str(solver)[:5] == "Scope":
+        params = solver.solve(model["loss_numpy"], gradient=model["grad"], hessian=model["hess"])
+    else:
+        params = solver.solve(model["loss_numpy"], gradient=model["grad"])
 
-def test_grad():
-    pass
-
-
-def test_grad_hess():
-    pass
+    assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)

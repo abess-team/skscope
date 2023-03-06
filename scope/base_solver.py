@@ -199,28 +199,8 @@ class BaseSolver(BaseEstimator):
                 raise ValueError(
                     "The length of init_params must match `dimensionality`!"
                 )
-            
-        # objective function 
-        if objective.__code__.co_argcount == 2:
-            loss_ = objective
-        elif objective.__code__.co_argcount == 1:
-            loss_ = lambda params, data: objective(params)
-        else:
-            raise ValueError("The objective function should have 1 or 2 arguments.")
-        if jit:
-            loss_ = jax.jit(loss_, static_argnums=(1,))
-
-        if gradient is None:
-            grad_ = lambda params, data: jax.value_and_grad(loss_)(params, data)
-        elif gradient.__code__.co_argcount == 2:
-            grad_ = lambda params, data: (loss_(params, data), gradient(params, data))
-        elif gradient.__code__.co_argcount == 1:
-            grad_ = lambda params, data: (loss_(params, data), gradient(params))
-        else:
-            raise ValueError("The gradient function should have 1 or 2 arguments.")
-        if jit:
-            grad_ = jax.jit(grad_, static_argnums=(1,))
-
+        
+        loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
         # check if loss_ is a jax value
         try: 
             loss_(init_params, data).item()
@@ -235,7 +215,6 @@ class BaseSolver(BaseEstimator):
                 value, grad = grad_(params, data)
                 return value.item(), np.array(grad)
 
-    
         if self.cv == 1:
             is_first_loop: bool = True
             for s in self.sparsity:
@@ -290,6 +269,31 @@ class BaseSolver(BaseEstimator):
             self.eval_objective = cv_eval[best_sparsity]
 
         return self.params
+
+    @staticmethod
+    def _set_objective(objective, gradient, jit):
+        # objective function 
+        if objective.__code__.co_argcount == 2:
+            loss_ = objective
+        elif objective.__code__.co_argcount == 1:
+            loss_ = lambda params, data: objective(params)
+        else:
+            raise ValueError("The objective function should have 1 or 2 arguments.")
+        if jit:
+            loss_ = jax.jit(loss_, static_argnums=(1,))
+
+        if gradient is None:
+            grad_ = lambda params, data: jax.value_and_grad(loss_)(params, data)
+        elif gradient.__code__.co_argcount == 2:
+            grad_ = lambda params, data: (loss_(params, data), gradient(params, data))
+        elif gradient.__code__.co_argcount == 1:
+            grad_ = lambda params, data: (loss_(params, data), gradient(params))
+        else:
+            raise ValueError("The gradient function should have 1 or 2 arguments.")
+        if jit:
+            grad_ = jax.jit(grad_, static_argnums=(1,))
+        
+        return loss_, grad_
 
     def _metric(
         self,

@@ -1,5 +1,6 @@
 from sklearn.datasets import make_regression
 from jax import numpy as jnp
+import numpy as np
 
 class CreateTestModel:
     def __init__(self, N=100, P=5, K=3, seed=1):
@@ -14,7 +15,13 @@ class CreateTestModel:
         )
 
         def linear_model(params):
-            return jnp.sum(jnp.square(Y - X @ params))
+            return jnp.sum(jnp.square(Y - jnp.matmul(X, params)))
+        def linear_model_numpy(params):
+            return np.sum(np.square(Y - np.matmul(X, params)))
+        def grad_linear_model(params):
+            return -2 * np.matmul(X.T, (Y - np.matmul(X, params)))
+        def hess_linear_model(params):
+            return 2 * np.matmul(X.T, X)
         
         data = {"X" : X, "Y" : Y}
 
@@ -33,7 +40,7 @@ class CreateTestModel:
             "loss_data": linear_model_data,
             "data": data,
             "split_method": split_method,
-            "loss_jit": None,
-            "grad_jit": None,
-            "hess_jit": None,
+            "loss_numpy": linear_model_numpy,
+            "grad": grad_linear_model,
+            "hess": hess_linear_model,
         }

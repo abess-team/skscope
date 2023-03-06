@@ -7,7 +7,7 @@ using namespace Eigen;
 double abessUniversal::loss_function(UniversalData& active_data, MatrixXd& y, VectorXd& weights, VectorXd& active_para, VectorXd& aux_para, VectorXi& A,
     VectorXi& g_index, VectorXi& g_size, double lambda) 
 {
-    return active_data.loss(active_para, lambda);
+    return active_data.loss(active_para);
 }
 
 bool abessUniversal::primary_model_fit(UniversalData& active_data, MatrixXd& y, VectorXd& weights, VectorXd& active_para, VectorXd& aux_para, double loss0,
@@ -17,7 +17,7 @@ bool abessUniversal::primary_model_fit(UniversalData& active_data, MatrixXd& y, 
     double value = 0.;
     active_data.init_para(active_para);
 
-    nlopt_function f = active_data.get_nlopt_function(this->lambda_level);
+    nlopt_function f = active_data.get_nlopt_function();
     nlopt_opt opt = active_data.nlopt_create(active_para.size());
     nlopt_set_min_objective(opt, f, &active_data);
     nlopt_result result = nlopt_optimize(opt, active_para.data(), &value); 
@@ -37,7 +37,7 @@ void abessUniversal::sacrifice(UniversalData& data, UniversalData& XA, MatrixXd&
     SPDLOG_DEBUG("sacrifice begin");
     VectorXd gradient_full;
     MatrixXd hessian_full;
-    data.gradient_and_hessian(para, gradient_full, hessian_full, this->lambda_level);
+    data.gradient_and_hessian(para, gradient_full, hessian_full);
 
     int size, index;
     for (auto group_index : A) {
@@ -86,18 +86,5 @@ void abessUniversal::sacrifice(UniversalData& data, UniversalData& XA, MatrixXd&
 
 double abessUniversal::effective_number_of_parameter(UniversalData& X, UniversalData& active_data, MatrixXd& y, VectorXd& weights, VectorXd& beta, VectorXd& active_para, VectorXd& aux_para)
 {
-    if (this->lambda_level == 0.) return active_data.cols();
-
-    if (active_data.cols() == 0) return 0.;
-
-    VectorXd gradient;
-    MatrixXd hessian;
-    active_data.gradient_and_hessian(active_para, gradient, hessian, this->lambda_level);
-
-    SelfAdjointEigenSolver<MatrixXd> adjoint_eigen_solver(hessian, EigenvaluesOnly);
-    double enp = 0.;
-    for (int i = 0; i < adjoint_eigen_solver.eigenvalues().size(); i++) {
-        enp += adjoint_eigen_solver.eigenvalues()(i) / (adjoint_eigen_solver.eigenvalues()(i) + this->lambda_level);
-    }
-    return enp;
+    return active_data.cols();
 }

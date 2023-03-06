@@ -44,30 +44,29 @@ const VectorXi& UniversalData::get_effective_para_index() const
     return effective_para_index;
 }
 
-nlopt_function UniversalData::get_nlopt_function(double lambda) 
+nlopt_function UniversalData::get_nlopt_function() 
 {
-    this->lambda = lambda;
     return [](unsigned n, const double* x, double* grad, void* f_data) {
         UniversalData* data = static_cast<UniversalData*>(f_data);
         Map<VectorXd const> effective_para(x, n);
         if (grad) { // not use operator new
             Map<VectorXd> gradient(grad, n);
-            return data->loss_and_gradient(effective_para, gradient, data->lambda);
+            return data->loss_and_gradient(effective_para, gradient);
         }
         else {
-            return data->loss(effective_para, data->lambda);
+            return data->loss(effective_para);
         }
     };
 }
 
-double UniversalData::loss(const VectorXd& effective_para, double lambda)
+double UniversalData::loss(const VectorXd& effective_para)
 {
     VectorXd complete_para = VectorXd::Zero(this->model_size);
     complete_para(this->effective_para_index) = effective_para;
-    return model->loss(complete_para, *this->data) + lambda * effective_para.squaredNorm(); 
+    return model->loss(complete_para, *this->data); 
 }
 
-double UniversalData::loss_and_gradient(const VectorXd& effective_para, Map<VectorXd>& gradient, double lambda)
+double UniversalData::loss_and_gradient(const VectorXd& effective_para, Map<VectorXd>& gradient)
 {
     double value = 0.0;
     VectorXd complete_para = VectorXd::Zero(this->model_size);
@@ -89,11 +88,10 @@ double UniversalData::loss_and_gradient(const VectorXd& effective_para, Map<Vect
         value = val(value_dual);
     }
     
-    gradient += 2 * lambda * effective_para;
-    return value + lambda * effective_para.squaredNorm();
+    return value;
 }
 
-void UniversalData::gradient_and_hessian(const VectorXd& effective_para, VectorXd& gradient, MatrixXd& hessian, double lambda)
+void UniversalData::gradient_and_hessian(const VectorXd& effective_para, VectorXd& gradient, MatrixXd& hessian)
 {
     gradient.resize(this->effective_size);
     hessian.resize(this->effective_size, this->effective_size);
@@ -119,10 +117,6 @@ void UniversalData::gradient_and_hessian(const VectorXd& effective_para, VectorX
         for (Eigen::Index i = 0; i < this->effective_size; i++) {
             gradient[i] = val(gradient_dual[i]);
         }
-    }
-    if (lambda != 0.0) {
-        gradient += 2 * lambda * effective_para;
-        hessian += 2 * lambda * MatrixXd::Identity(this->effective_size, this->effective_size);
     }
 }
 

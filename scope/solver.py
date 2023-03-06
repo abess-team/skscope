@@ -143,7 +143,6 @@ class ScopeSolver(BaseEstimator):
         path_type="seq",
         gs_lower_bound=None,
         gs_higher_bound=None,
-        regular_coef=0.0,
         thread=1,
         jax_platform="cpu",
         random_state=None,
@@ -175,7 +174,6 @@ class ScopeSolver(BaseEstimator):
         self.path_type = path_type
         self.gs_lower_bound = gs_lower_bound
         self.gs_higher_bound = gs_higher_bound
-        self.regular_coef = regular_coef
         self.thread = thread
         self.jax_platform = jax_platform
         self.random_state = random_state
@@ -418,17 +416,6 @@ class ScopeSolver(BaseEstimator):
                     "screening_size should be between max(sparsity) and dimensionality."
                 )
 
-        # regular_coef
-        if self.regular_coef == None:
-            regular_coef = np.array([0.0], dtype=float)
-        else:
-            if isinstance(self.regular_coef, (int, float)):
-                regular_coef = np.array([self.regular_coef], dtype=float)
-            else:
-                regular_coef = np.array(self.regular_coef, dtype=float)
-            if any(regular_coef < 0.0):
-                raise ValueError("regular_coef should be positive.")
-
         # thread
         BaseSolver._check_non_negative_integer(self.thread, "thread")
 
@@ -518,7 +505,7 @@ class ScopeSolver(BaseEstimator):
             self.ic_coef,
             self.cv,
             sparsity,
-            regular_coef,
+            np.array([0.0]),
             gs_lower_bound,
             gs_higher_bound,
             screening_size,

@@ -40,7 +40,6 @@ private:
     UniversalModel* model;
     NloptConfig* nlopt_solver;
     Eigen::Index sample_size;
-    double lambda = 0.;  // L2 penalty coef for nlopt
     Eigen::Index model_size; // length of complete_para
     VectorXi effective_para_index;// `complete_para[effective_para_index[i]]` is `effective_para[i]`
     Eigen::Index effective_size; // length of effective_para_index
@@ -52,12 +51,12 @@ public:
 
     Eigen::Index rows() const; // getter of sample_size
     Eigen::Index cols() const; // getter of effective_para
-    const VectorXi& get_effective_para_index() const; // getter of effective_para_index
+    const VectorXi& get_effective_para_index() const; // getter of effective_para_index, only used for log
     UniversalData slice_by_sample(const VectorXi& target_sample_index);
-    nlopt_function get_nlopt_function(double lambda); // create a function which can be optimized by nlopt
-    double loss(const VectorXd& effective_para, double lambda); // compute the loss with effective_para
-    double loss_and_gradient(const VectorXd& effective_para, Eigen::Map<VectorXd>& gradient, double lambda);
-    void gradient_and_hessian(const VectorXd& effective_para, VectorXd& gradient,MatrixXd& hessian, double lambda);             
+    nlopt_function get_nlopt_function(); // create a function which can be optimized by nlopt
+    double loss(const VectorXd& effective_para); // compute the loss with effective_para
+    double loss_and_gradient(const VectorXd& effective_para, Eigen::Map<VectorXd>& gradient);
+    void gradient_and_hessian(const VectorXd& effective_para, VectorXd& gradient,MatrixXd& hessian);             
     void init_para(VectorXd & effective_para);  // initialize para for primary_model_fit, default is not change.                                                                                        
     nlopt_opt nlopt_create(unsigned dim) {return this->nlopt_solver->create(dim);}                
 };

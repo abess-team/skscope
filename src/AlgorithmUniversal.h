@@ -18,8 +18,6 @@ public:
       * Only these three paras will be used.  
       * @param active_data                                          UniversalData which has been limited to active set A
       * @param active_para                                          the value of active parameters adapted to active_data
-      * @param aux_para                                            the value of aux_para
-      * @param lambda                                               L2 penalty coefficient
       * 
       * @return a double value indicating the loss
       */
@@ -31,7 +29,6 @@ public:
       * Only these three paras will be used.
       * @param active_data                                          UniversalData which will be optimized, it has been limited to active set A
       * @param active_para                                          a column vector of initial values for active parameters
-      * @param aux_para                                            a column vector of initial values for aux_para
       *
       * @return a boolean value indicating successful completion of the optimization algorithm, and results are stored in active_para and aux_para.
       */
@@ -43,7 +40,6 @@ public:
       * Only these seven paras will be used.
       * @param data                                                 UniversalData which include both active set A and inactive set I
       * @param para                                                 the value of effective parameters adapted to data
-      * @param aux_para                                            the value of aux_para
       * @param A                                                    the index in g_index of group in active set 
       * @param I                                                    the index in g_index of group in inactive set
       * @param g_index                                              the index in para of all groups
@@ -58,8 +54,6 @@ public:
       * compute the effective number of parameters which will be used to compute information criterion
       * Only these two paras will be used.
       * @param active_data                                          UniversalData which has been limited to active set A
-      * @param active_para                                          the value of effective parameters adapted to active_data
-      * @param aux_para                                            the value of aux_para
       *
       * @return a double value indicating the effective number of parameters
       */

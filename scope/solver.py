@@ -7,6 +7,7 @@ import jax
 from jax import numpy as jnp
 from ._scope import pywrap_Universal, UniversalModel, init_spdlog, NloptConfig
 
+
 class ScopeSolver(BaseEstimator):
     r"""
     Get sparse optimal solution of convex objective function by sparse-Constrained Optimization via Splicing Iteration (SCOPE) algorithm, which also can be used for variables selection.
@@ -20,14 +21,10 @@ class ScopeSolver(BaseEstimator):
         The sparsity level, which is the number of nonzero elements of the optimal solution, denoted as s. If sparsity is an array-like, it should be a list of integers.
         default is `range(min(n, int(n/(log(log(n))log(p)))))`
         Used only when path_type = "seq".
-    + aux_params_size : int, optional, default=0
-        The total number of auxiliary variables, which means that they need to be considered in optimization but always be selected.
-        This is for the convenience of some models, for example, the intercept in linear regression is an auxiliary variable.
     + sample_size : int, optional, default=1
         sample size, only used in the selection of support size, denoted as n.
     + always_select : array-like, optional, default=[]
         An array contains the indexes of variables which must be selected.
-        Its effect is simillar to see these variables as auxiliary variables and set `aux_params_size`.
     + group : array-like with shape (p,), optional, default=range(p)
         The group index for each variable, and it must be an incremental integer array starting from 0 without gap.
         The variables in the same group must be adjacent, and they will be selected together or not.
@@ -102,8 +99,6 @@ class ScopeSolver(BaseEstimator):
     ----------
     params : array-like, shape(p, )
         The sparse optimal solution
-    aux_params : array-like, shape(`aux_params_size`,)
-        The aux_params of the model.
     eval_objective : float
         If cv=1, it stores the score under chosen information criterion.
         If cv>1, it stores the test objective under cross-validation.
@@ -138,7 +133,6 @@ class ScopeSolver(BaseEstimator):
         split_method=None,
         deleter=None,
         cv_fold_id=None,
-        aux_params_size=0,
         group=None,
         init_params_of_sub_optim=None,
         warm_start=True,
@@ -171,7 +165,6 @@ class ScopeSolver(BaseEstimator):
         self.split_method = split_method
         self.deleter = deleter
         self.cv_fold_id = cv_fold_id
-        self.aux_params_size = aux_params_size
         self.group = group
         self.init_params_of_sub_optim = init_params_of_sub_optim
         self.warm_start = warm_start
@@ -249,7 +242,6 @@ class ScopeSolver(BaseEstimator):
         objective,
         init_support_set=None,
         init_params=None,
-        init_aux_params=None,
         gradient=None,
         hessian=None,
         autodiff=False,
@@ -261,18 +253,16 @@ class ScopeSolver(BaseEstimator):
 
         Parameters
         ----------
-        + objective : function('params': array, ('aux_params': array), ('data': custom class)) ->  float
+        + objective : function('params': array, ('data': custom class)) ->  float
             Defined the objective of optimization, must be written in JAX if gradient and hessian are not provided.
             If `autodiff` is `True`, `objective` can be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
         + init_support_set : array-like of int, optional, default=[]
             The index of the variables in initial active set.
         + init_params : array-like of float, optional, default is an all-zero vector
             An initial value of parameters.
-        + init_aux_params : array-like of float, optional, default is an all-zero vector
-            An initial value of auxiliary parameters.
-        + gradient : function('params': array, 'aux_params': array, 'data': custom class, 'compute_index': array) -> array
-            Defined the gradient of objective function, return the gradient of `aux_params` and the parameters in `compute_index`.
-        + hessian : function('params': array, 'aux_params': array, 'data': custom class, 'compute_index': array) -> 2D array
+        + gradient : function('params': array, 'data': custom class, 'compute_index': array) -> array
+            Defined the gradient of objective function, return the gradient of parameters in `compute_index`.
+        + hessian : function('params': array, 'data': custom class, 'compute_index': array) -> 2D array
             Defined the hessian of objective function, return the hessian matrix of the parameters in `compute_index`.
         + autodiff : bool, optional, default=False
             If `autodiff` is `True`, `objective` must be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
@@ -282,7 +272,7 @@ class ScopeSolver(BaseEstimator):
         ScopeSolver._set_log_level(
             self.console_log_level, self.file_log_level, self.log_file_name
         )
-        
+
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
@@ -304,9 +294,6 @@ class ScopeSolver(BaseEstimator):
 
         n = self.sample_size
         BaseSolver._check_positive_integer(n, "sample_size")
-
-        m = self.aux_params_size
-        BaseSolver._check_non_negative_integer(m, "aux_params_size")
 
         BaseSolver._check_non_negative_integer(self.max_iter, "max_iter")
 
@@ -508,16 +495,6 @@ class ScopeSolver(BaseEstimator):
                     "The length of init_params must match `dimensionality`!"
                 )
 
-        # init_aux_params
-        if init_aux_params is None:
-            init_aux_params = np.zeros(m, dtype=float)
-        else:
-            init_aux_params = np.array(init_aux_params, dtype=float)
-            if init_aux_params.shape != (m,):
-                raise ValueError(
-                    "The length of init_aux_params must match `aux_params_size`!"
-                )
-
         # set optimization objective
         if autodiff:
             self.__set_objective_autodiff(objective)
@@ -532,7 +509,7 @@ class ScopeSolver(BaseEstimator):
             nlopt_config,
             p,
             n,
-            m,
+            0,
             self.max_iter,
             self.max_exchange_num,
             path_type,
@@ -553,27 +530,25 @@ class ScopeSolver(BaseEstimator):
             self.cv_fold_id,
             init_support_set,
             init_params,
-            init_aux_params,
+            np.zeros(0),
         )
 
         self.params = np.array(result[0])
         self.support_set = np.nonzero(self.params)[0]
-        self.aux_params = result[1].squeeze()
         self.train_objective = result[2]
         self.eval_objective = result[4] if self.cv == 1 else result[3]
-        self.value_of_objective = objective(self.params, self.aux_params, data)
+        self.value_of_objective = objective(self.params, data)
 
         return self.params
 
     def get_result(self):
         r"""
-        Get the solution of optimization, include the parameters and auxiliary parameters ...
+        Get the solution of optimization, include the parameters ...
         """
         return {
             "params": self.params,
             "support_set": self.support_set,
             "value_of_objective": self.value_of_objective,
-            "aux_params": self.aux_params,
             "train_objective": self.train_objective,
             "eval_objective": self.eval_objective,
         }
@@ -604,15 +579,15 @@ class ScopeSolver(BaseEstimator):
 
     def __set_init_params_of_sub_optim(self):
         r"""
-        Register a callback function to initialize parameters and auxiliary parameters for each sub-problem of optimization.
+        Register a callback function to initialize parameters for each sub-problem of optimization.
 
         Parameters
         ----------
-        + func : function {'params': array-like, 'aux_params': array-like, 'data': custom class, 'active_index': array-like, 'return': tuple of array-like}
-            - `params` and `aux_params` are the default initialization of parameters and auxiliary parameters.
+        + func : function {'params': array-like, 'data': custom class, 'active_index': array-like, 'return': array-like}
+            - `params` is the default initialization of parameters and auxiliary parameters.
             - `data` is the training set of sub-problem.
             - `active_index` is the index of parameters needed initialization, the parameters not in `active_index` must be zeros.
-            - The function should return a tuple of array-like, the first element is the initialization of parameters and the second element is the initialization of auxiliary parameters.
+            - The function should return the initialization of parameters.
         """
         self.model.set_init_params_of_sub_optim(self.init_params_of_sub_optim)
 
@@ -634,81 +609,44 @@ class ScopeSolver(BaseEstimator):
 
         Parameters
         ----------
-        + objective : function('params': jax.numpy.DeviceArray, 'aux_params': jax.numpy.DeviceArray, 'data': custom class) ->  float or function('params': jax.numpy.DeviceArray, 'data': custom class) -> float
+        + objective : function('params': jax.numpy.DeviceArray, 'data': custom class) ->  float or function('params': jax.numpy.DeviceArray, 'data': custom class) -> float
             Defined the objective of optimization, must be written in JAX.
-
-        Examples
-        --------
-            import jax.numpy as jnp
-            from abess import ScopeSolver
-
-            class CustomData:
-                def __init__(self, x, y):
-                    self.x = x
-                    self.y = y
-
-            def linear_no_intercept(params, data):
-                return jnp.sum(jnp.square(data.x @ params - data.y))
-
-            def linear_with_intercept(params, aux_params, data):
-                return jnp.sum(jnp.square(data.x @ params + aux_params - data.y))
-
-            solver1 = ScopeSolver(10)
-            solver1.set_objective_jax(linear_no_intercept)
-
-            solver2 = ScopeSolver(10, aux_params_size=1)
-            solver2.set_objective_jax(linear_with_intercept)
         """
-
-        if objective.__code__.co_argcount == 3:
-            if use_jit:
-                raise ValueError(
-                    "The objective function should not have `data` argument when use jit."
-                )
+        # loss
+        if objective.__code__.co_argcount == 2:
             loss_ = objective
-        elif objective.__code__.co_argcount == 2 and self.aux_params_size > 0:
-            def loss_(params, aux_params, data):
-                return objective(params, aux_params)
-            if use_jit:
-                loss_ = jax.jit(loss_, static_argnums=(2,))
-        elif objective.__code__.co_argcount == 2 and self.aux_params_size == 0:
-            if use_jit:
-                raise ValueError(
-                    "The objective function should not have `data` argument when use jit."
-                )
-            def loss_(params, aux_params, data):
-                return objective(params, data)
         elif objective.__code__.co_argcount == 1:
-            def loss_(params, aux_params, data):
+            def loss_(params, data):
                 return objective(params)
-            if use_jit:
-                loss_ = jax.jit(loss_, static_argnums=(2,))
         else:
-            raise ValueError("The objective function should have 1, 2 or 3 arguments.")
+            raise ValueError("The objective function should have 1 or 2 arguments.")
         
+        if use_jit:
+            loss_ = jax.jit(loss_, static_argnums=(1,))
 
-        def loss(params, aux_params, data):
-            return loss_(params, aux_params, data).item()
+        def loss(params, data):
+            return loss_(params, data).item()
 
-        def grad_(full_params, aux_params, data):
-            value, gradient = jax.value_and_grad(loss_, (1,0))(full_params, aux_params, data)
-            return value, jnp.append(*gradient)
+        # grad
+        def grad_(params, data):
+            return jax.value_and_grad(loss_)(params, data)
 
         if use_jit:
-            grad_ = jax.jit(grad_, static_argnums=(2,))
+            grad_ = jax.jit(grad_, static_argnums=(1,))
 
-        def grad(params, aux_params, data):
-            value, gradient = grad_(jnp.array(params), jnp.array(aux_params), data)
+        def grad(params, data):
+            value, gradient = grad_(jnp.array(params), data)
             return value, np.array(gradient)
-        
-        def hess_(full_params, aux_params, data):
-            return jax.hessian(loss_)(full_params, aux_params, data)
-            
-        if use_jit:
-            hess_ = jax.jit(hess_, static_argnums=(2,))
 
-        def hess(params, aux_params, data):
-            return np.array(hess_(jnp.array(params), jnp.array(aux_params), data))
+        # hess
+        def hess_(full_params, data):
+            return jax.hessian(loss_)(full_params, data)
+
+        if use_jit:
+            hess_ = jax.jit(hess_, static_argnums=(1,))
+
+        def hess(params, data):
+            return np.array(hess_(jnp.array(params), data))
 
         self.model.set_loss_of_model(loss)
         self.model.set_gradient_user_defined(grad)
@@ -716,40 +654,27 @@ class ScopeSolver(BaseEstimator):
 
         return loss
 
-
     def __set_objective_custom(self, objective, gradient, hessian):
         r"""
         Register objective function and its gradient and hessian as callback function.
 
         Parameters
         ----------
-        + objective : function {'params': array-like, 'aux_params': array-like, 'data': custom class, 'return': float}
+        + objective : function {'params': array-like, 'data': custom class, 'return': float}
             Defined the objective of optimization.
-        + gradient : function {'params': array-like, 'aux_params': array-like, 'data': custom class, 'compute_index': array-like, 'return': array-like}
-            Defined the gradient of objective function, return the gradient of `aux_params` and the parameters in `compute_index`.
-        + hessian : function {'params': array-like, 'aux_params': array-like, 'data': custom class, 'compute_index': array-like, 'return': 2D array-like}
-            Defined the hessian of objective function, return the hessian matrix of the parameters in `compute_index`.
+        + gradient : function {'params': array-like, 'data': custom class, 'return': array-like}
+            Defined the gradient of objective function, return the gradient of parameters.
+        + hessian : function {'params': array-like, 'data': custom class, 'return': 2D array-like}
+            Defined the hessian of objective function, return the hessian matrix of the parameters.
 
-        Examples
-        --------
-            import numpy as np
-            def objective(params, aux_params, data):
-                return np.sum(np.square(data.y - data.x @ params))
-            def grad(params, aux_params, data, compute_params_index):
-                return -2 * data.x[:,compute_params_index].T @ (data.y - data.x @ params)
-            def hess(params, aux_params, data, compute_params_index):
-                return 2 * data.x[:,compute_params_index].T @ data.x[:,compute_params_index]
-
-            model.set_objective_custom(objective=objective, gradient=grad, hessian=hess)
         """
         self.model.set_loss_of_model(objective)
         # NOTE: Perfect Forwarding of grad and hess is neccessary for func written in Pybind11_Cpp code
         self.model.set_gradient_user_defined(
-            lambda arg1, arg2, arg3, arg4: gradient(arg1, arg2, arg3, arg4)
+            lambda params, data: gradient(params, data)
         )
-
         self.model.set_hessian_user_defined(
-            lambda arg1, arg2, arg3, arg4: hessian(arg1, arg2, arg3, arg4)
+            lambda params, data: hessian(params, data)
         )
 
 
@@ -889,7 +814,7 @@ class GraspSolver(BaseSolver):
                 break
             else:
                 support_old = support_new
-                
+
             # minimize
             params_bias = np.zeros(self.dimensionality)
             if support_new.size > 0:

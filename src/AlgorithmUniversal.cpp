@@ -7,34 +7,28 @@ using namespace Eigen;
 double abessUniversal::loss_function(UniversalData& active_data, MatrixXd& y, VectorXd& weights, VectorXd& active_para, VectorXd& aux_para, VectorXi& A,
     VectorXi& g_index, VectorXi& g_size, double lambda) 
 {
-    return active_data.loss(active_para, aux_para, lambda);
+    return active_data.loss(active_para, lambda);
 }
 
 bool abessUniversal::primary_model_fit(UniversalData& active_data, MatrixXd& y, VectorXd& weights, VectorXd& active_para, VectorXd& aux_para, double loss0,
     VectorXi& A, VectorXi& g_index, VectorXi& g_size) 
 {
-    SPDLOG_DEBUG("optimization begin\nactive set: {}\ninit loss: {}\naux_para:{}\npara:{}", active_data.get_effective_para_index().transpose(), loss0, aux_para.transpose(), active_para.transpose());    
+    SPDLOG_DEBUG("optimization begin\nactive set: {}\ninit loss: {}\npara:{}", active_data.get_effective_para_index().transpose(), loss0, active_para.transpose());    
     double value = 0.;
-    active_data.init_para(active_para, aux_para);
-    unsigned optim_size = active_para.size() + aux_para.size();
-    VectorXd optim_para(optim_size);
-    optim_para.head(aux_para.size()) = aux_para;
-    optim_para.tail(active_para.size()) = active_para;
-    nlopt_function f = active_data.get_nlopt_function(this->lambda_level);
+    active_data.init_para(active_para);
 
-    //nlopt_opt opt = nlopt_create(NLOPT_LD_LBFGS, optim_size);
-    nlopt_opt opt = active_data.nlopt_create(optim_size);
+    nlopt_function f = active_data.get_nlopt_function(this->lambda_level);
+    nlopt_opt opt = active_data.nlopt_create(active_para.size());
     nlopt_set_min_objective(opt, f, &active_data);
-    nlopt_result result = nlopt_optimize(opt, optim_para.data(), &value); // positive return values means success
+    nlopt_result result = nlopt_optimize(opt, active_para.data(), &value); 
     nlopt_destroy(opt);
 
     bool success = result > 0;
     if(!success){
         SPDLOG_WARN("nlopt failed to optimize, state: {} ", nlopt_result_to_string(result));
     }
-    aux_para = optim_para.head(aux_para.size());
-    active_para = optim_para.tail(active_para.size());
-    SPDLOG_DEBUG("optimization end\nfinal loss: {}\naux_para:{}\npara:{}", value, aux_para.transpose(), active_para.transpose());
+
+    SPDLOG_DEBUG("optimization end\nfinal loss: {}\npara:{}", value, active_para.transpose());
     return success;
 }
 
@@ -43,7 +37,7 @@ void abessUniversal::sacrifice(UniversalData& data, UniversalData& XA, MatrixXd&
     SPDLOG_DEBUG("sacrifice begin");
     VectorXd gradient_full;
     MatrixXd hessian_full;
-    data.gradient_and_hessian(para, aux_para, gradient_full, hessian_full, this->lambda_level);
+    data.gradient_and_hessian(para, gradient_full, hessian_full, this->lambda_level);
 
     int size, index;
     for (auto group_index : A) {
@@ -98,7 +92,7 @@ double abessUniversal::effective_number_of_parameter(UniversalData& X, Universal
 
     VectorXd gradient;
     MatrixXd hessian;
-    active_data.gradient_and_hessian(active_para, aux_para, gradient, hessian, this->lambda_level);
+    active_data.gradient_and_hessian(active_para, gradient, hessian, this->lambda_level);
 
     SelfAdjointEigenSolver<MatrixXd> adjoint_eigen_solver(hessian, EigenvaluesOnly);
     double enp = 0.;

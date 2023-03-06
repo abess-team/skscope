@@ -49,59 +49,51 @@ nlopt_function UniversalData::get_nlopt_function(double lambda)
     this->lambda = lambda;
     return [](unsigned n, const double* x, double* grad, void* f_data) {
         UniversalData* data = static_cast<UniversalData*>(f_data);
-        Map<VectorXd const> aux_para(x, n - data->effective_size);
-        Map<VectorXd const> effective_para(x + n - data->effective_size, data->effective_size);
+        Map<VectorXd const> effective_para(x, n);
         if (grad) { // not use operator new
             Map<VectorXd> gradient(grad, n);
-            return data->loss_and_gradient(effective_para, aux_para, gradient, data->lambda);
+            return data->loss_and_gradient(effective_para, gradient, data->lambda);
         }
         else {
-            return data->loss(effective_para, aux_para, data->lambda);
+            return data->loss(effective_para, data->lambda);
         }
     };
 }
 
-double UniversalData::loss(const VectorXd& effective_para, const VectorXd& aux_para, double lambda)
+double UniversalData::loss(const VectorXd& effective_para, double lambda)
 {
     VectorXd complete_para = VectorXd::Zero(this->model_size);
     complete_para(this->effective_para_index) = effective_para;
-    return model->loss(complete_para, aux_para, *this->data) + lambda * effective_para.squaredNorm();
-    
+    return model->loss(complete_para, *this->data) + lambda * effective_para.squaredNorm(); 
 }
 
-double UniversalData::loss_and_gradient(const VectorXd& effective_para, const VectorXd& aux_para, Map<VectorXd>& gradient, double lambda)
+double UniversalData::loss_and_gradient(const VectorXd& effective_para, Map<VectorXd>& gradient, double lambda)
 {
     double value = 0.0;
     VectorXd complete_para = VectorXd::Zero(this->model_size);
     complete_para(this->effective_para_index) = effective_para;
 
     if (model->gradient_user_defined) {
-        VectorXd full_grad(this->model_size + aux_para.size());
-        tie(value, full_grad) = model->gradient_user_defined(complete_para, aux_para, *this->data);
-        gradient.head(aux_para.size()) = full_grad.head(aux_para.size());
-        gradient.tail(effective_size) = full_grad.tail(this->model_size)(this->effective_para_index);
-        //gradient = model->gradient_user_defined(complete_para, aux_para, *this->data, this->effective_para_index);
-        //value = model->loss(complete_para, aux_para, *this->data);
+        tie(value, complete_para) = model->gradient_user_defined(complete_para, *this->data);
+        gradient = complete_para(this->effective_para_index);
     }
-    else { // autodiff
-        dual v;
+    else { // forward autodiff
+        dual value_dual;
         VectorXdual effective_para_dual = effective_para;
-        VectorXdual aux_para_dual = aux_para;
-        auto func = [this, &complete_para](VectorXdual const& compute_para, VectorXdual const& aux_para) {
-            VectorXdual para = complete_para;
-            para(this->effective_para_index) = compute_para;
-            return this->model->gradient_autodiff(para, aux_para, *this->data);
+        auto func = [this, &complete_para](VectorXdual const& effective_para_dual) {
+            VectorXdual complete_para_dual = complete_para;
+            complete_para_dual(this->effective_para_index) = effective_para_dual;
+            return this->model->gradient_autodiff(complete_para_dual, *this->data);
         };
-        gradient.head(aux_para.size()) = autodiff::gradient(func, wrt(aux_para_dual), at(effective_para_dual, aux_para_dual), v);
-        gradient.tail(effective_size) = autodiff::gradient(func, wrt(effective_para_dual), at(effective_para_dual, aux_para_dual), v);
-        value = val(v);
+        gradient = autodiff::gradient(func, wrt(effective_para_dual), at(effective_para_dual), value_dual);
+        value = val(value_dual);
     }
     
-    gradient.tail(effective_size) += 2 * lambda * effective_para;
+    gradient += 2 * lambda * effective_para;
     return value + lambda * effective_para.squaredNorm();
 }
 
-void UniversalData::gradient_and_hessian(const VectorXd& effective_para, const VectorXd& aux_para, VectorXd& gradient,MatrixXd& hessian, double lambda)
+void UniversalData::gradient_and_hessian(const VectorXd& effective_para, VectorXd& gradient, MatrixXd& hessian, double lambda)
 {
     gradient.resize(this->effective_size);
     hessian.resize(this->effective_size, this->effective_size);
@@ -110,23 +102,22 @@ void UniversalData::gradient_and_hessian(const VectorXd& effective_para, const V
     
     if (model->hessian_user_defined) {
         double value = 0.0;
-        VectorXd full_grad(this->model_size + aux_para.size());
-        tie(value, full_grad) = model->gradient_user_defined(complete_para, aux_para, *this->data);
-        gradient = full_grad.tail(this->model_size)(this->effective_para_index);
-        hessian = model->hessian_user_defined(complete_para, aux_para, *this->data)(this->effective_para_index, this->effective_para_index);
+        tie(value, complete_para) = model->gradient_user_defined(complete_para, *this->data);
+        gradient = complete_para(this->effective_para_index);
+        hessian = model->hessian_user_defined(complete_para, *this->data)(this->effective_para_index, this->effective_para_index);
     }
-    else { // autodiff
-        dual2nd v;
-        VectorXdual2nd g;
-        VectorXdual2nd compute_para_dual = effective_para;
-        VectorXdual2nd aux_para_dual = aux_para;
-        hessian = autodiff::hessian([this, &complete_para](VectorXdual2nd const& compute_para_dual, VectorXdual2nd const& aux_para_dual) {
-            VectorXdual2nd para = complete_para;
-            para(this->effective_para_index) = compute_para_dual;
-            return this->model->hessian_autodiff(para, aux_para_dual, *this->data);
-            }, wrt(compute_para_dual), at(compute_para_dual, aux_para_dual), v, g);
+    else { // forward autodiff
+        dual2nd value_dual;
+        VectorXdual2nd gradient_dual;
+        VectorXdual2nd effective_para_dual = effective_para;
+        auto func = [this, &complete_para](VectorXdual2nd const& effective_para_dual) {
+            VectorXdual2nd complete_para_dual = complete_para;
+            complete_para_dual(this->effective_para_index) = effective_para_dual;
+            return this->model->hessian_autodiff(complete_para_dual, *this->data);
+        };
+        hessian = autodiff::hessian(func, wrt(effective_para_dual), at(effective_para_dual), value_dual, gradient_dual);
         for (Eigen::Index i = 0; i < this->effective_size; i++) {
-            gradient[i] = val(g[i]);
+            gradient[i] = val(gradient_dual[i]);
         }
     }
     if (lambda != 0.0) {
@@ -135,38 +126,38 @@ void UniversalData::gradient_and_hessian(const VectorXd& effective_para, const V
     }
 }
 
-void UniversalData::init_para(VectorXd & active_para, VectorXd & aux_para){
+void UniversalData::init_para(VectorXd & effective_para){
     if (model->init_para) {
         VectorXd complete_para = VectorXd::Zero(this->model_size);
-        complete_para(this->effective_para_index) = active_para;
-        tie(complete_para, aux_para) = model->init_para(complete_para, aux_para, *this->data, this->effective_para_index);
-        active_para = complete_para(this->effective_para_index);
+        complete_para(this->effective_para_index) = effective_para;
+        complete_para = model->init_para(complete_para, *this->data, this->effective_para_index);
+        effective_para = complete_para(this->effective_para_index);
     }
 }
 
 
-void UniversalModel::set_loss_of_model(function <double(VectorXd const&, VectorXd const&, ExternData const&)> const& f)
+void UniversalModel::set_loss_of_model(function <double(VectorXd const&, ExternData const&)> const& f)
 {
     loss = f;
 }
 
-void UniversalModel::set_gradient_autodiff(function <dual(VectorXdual const&, VectorXdual const&, ExternData const&)> const& f) {
+void UniversalModel::set_gradient_autodiff(function <dual(VectorXdual const&, ExternData const&)> const& f) {
     gradient_autodiff = f;
     gradient_user_defined = nullptr;
 }
 
-void UniversalModel::set_hessian_autodiff(function <dual2nd(VectorXdual2nd const&, VectorXdual2nd const&, ExternData const&)> const& f) {
+void UniversalModel::set_hessian_autodiff(function <dual2nd(VectorXdual2nd const&, ExternData const&)> const& f) {
     hessian_autodiff = f;
     hessian_user_defined = nullptr;
 }
 
-void UniversalModel::set_gradient_user_defined(function <pair<double, VectorXd>(VectorXd const&, VectorXd const&, ExternData const&)> const& f)
+void UniversalModel::set_gradient_user_defined(function <pair<double, VectorXd>(VectorXd const&, ExternData const&)> const& f)
 {
     gradient_user_defined = f;
     gradient_autodiff = nullptr;
 }
 
-void UniversalModel::set_hessian_user_defined(function <MatrixXd(VectorXd const&, VectorXd const&, ExternData const&)> const& f)
+void UniversalModel::set_hessian_user_defined(function <MatrixXd(VectorXd const&, ExternData const&)> const& f)
 {
     hessian_user_defined = f;
     hessian_autodiff = nullptr;
@@ -187,7 +178,7 @@ void UniversalModel::set_deleter(function<void(ExternData const&)> const& f)
     }
 }
 
-void UniversalModel::set_init_params_of_sub_optim(function <pair<VectorXd, VectorXd>(VectorXd const&, VectorXd const&, ExternData const&, VectorXi const&)> const& f)
+void UniversalModel::set_init_params_of_sub_optim(function <VectorXd(VectorXd const&, ExternData const&, VectorXi const&)> const& f)
 {
     init_para = f;
 }

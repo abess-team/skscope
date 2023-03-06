@@ -36,6 +36,7 @@ class CreateTestModel:
             "n_features": self.P,
             "n_informative": self.K,
             "params": true_params,
+            "support_set": np.nonzero(true_params)[0],
             "loss": linear_model,
             "loss_data": linear_model_data,
             "data": data,

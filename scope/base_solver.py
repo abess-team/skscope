@@ -201,19 +201,10 @@ class BaseSolver(BaseEstimator):
                 )
         
         loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
-        # check if loss_ is a jax value
-        try: 
-            loss_(init_params, data).item()
-        except AttributeError:
-            loss_fn = loss_
-            def value_and_grad(params, data):
-                value, grad = grad_(params, data)
-                return value, np.array(grad)            
-        else:
-            loss_fn = lambda params, data: loss_(params, data).item()
-            def value_and_grad(params, data):
-                value, grad = grad_(params, data)
-                return value.item(), np.array(grad)
+        loss_fn = lambda params, data: loss_(params, data).item()
+        def value_and_grad(params, data):
+            value, grad = grad_(params, data)
+            return value.item(), np.array(grad)
 
         if self.cv == 1:
             is_first_loop: bool = True

@@ -21,9 +21,9 @@ def test_base(model, solver_creator):
 
     """
     solver = solver_creator(model["n_features"], model["n_informative"])
-    params = solver.solve(model["loss"])
+    solver.solve(model["loss"])
 
-    assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
+    assert set(model["support_set"]) == set(solver.support_set)
 
 
 @pytest.mark.parametrize("model", models, ids=models_ids)
@@ -31,21 +31,21 @@ def test_base(model, solver_creator):
 def test_config(model, solver_creator):
     solver = solver_creator(model["n_features"], model["n_informative"])
     solver.set_config(**solver.get_config())
-    params = solver.solve(model["loss"], jit=True)
+    solver.solve(model["loss"], jit=True)
 
-    assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
+    assert set(model["support_set"]) == set(solver.support_set)
 
 
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 @pytest.mark.parametrize("ic_type", ["aic", "bic", "gic", "ebic"])
-def test_aic(model, solver_creator, ic_type):
+def test_ic(model, solver_creator, ic_type):
     solver = solver_creator(
-        model["n_features"], model["n_informative"], ic_type=ic_type
+        model["n_features"], [0, model["n_informative"]], model["n_samples"], ic_type=ic_type
     )
-    params = solver.solve(model["loss"], jit=True)
+    solver.solve(model["loss"], jit=True)
 
-    assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
+    assert set(model["support_set"]) == set(solver.support_set)
 
 
 @pytest.mark.parametrize("model", models, ids=models_ids)
@@ -58,9 +58,9 @@ def test_cv(model, solver_creator):
         cv=5,
         split_method=model["split_method"],
     )
-    params = solver.solve(model["loss_data"], data=model["data"])
+    solver.solve(model["loss_data"], data=model["data"])
 
-    assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
+    assert set(model["support_set"]) == set(solver.support_set)
 
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
@@ -70,8 +70,8 @@ def test_no_autodiff(model, solver_creator):
     """
     solver = solver_creator(model["n_features"], model["n_informative"])
     if str(solver)[:5] == "Scope":
-        params = solver.solve(model["loss_numpy"], gradient=model["grad"], hessian=model["hess"])
+        solver.solve(model["loss_numpy"], gradient=model["grad"], hessian=model["hess"])
     else:
-        params = solver.solve(model["loss_numpy"], gradient=model["grad"])
+        solver.solve(model["loss_numpy"], gradient=model["grad"])
 
-    assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
+    assert set(model["support_set"]) == set(solver.support_set)

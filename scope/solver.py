@@ -649,23 +649,13 @@ class ScopeSolver(BaseEstimator):
         if jit:
             hess_ = jax.jit(hess_, static_argnums=(1,))
 
-        # check if loss_ is a jax value
-        try: 
-            loss_(test_params, test_data).item()
-        except AttributeError:
-            loss_fn = loss_
-            def value_and_grad(params, data):
-                value, grad = grad_(params, data)
-                return value, np.array(grad)   
-            def hess_fn(params, data):
-                return np.array(hess_(params, data))         
-        else:
-            loss_fn = lambda params, data: loss_(params, data).item()
-            def value_and_grad(params, data):
-                value, grad = grad_(params, data)
-                return value.item(), np.array(grad)
-            def hess_fn(params, data):
-                return np.array(hess_(jnp.array(params), data))
+
+        loss_fn = lambda params, data: loss_(params, data).item()
+        def value_and_grad(params, data):
+            value, grad = grad_(params, data)
+            return value.item(), np.array(grad)
+        def hess_fn(params, data):
+            return np.array(hess_(jnp.array(params), data))
 
         self.model.set_loss_of_model(loss_fn)
         self.model.set_gradient_user_defined(value_and_grad)

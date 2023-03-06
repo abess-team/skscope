@@ -97,6 +97,8 @@ class BaseSolver(BaseEstimator):
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
+        if jit and getattr(data, "__hash__") is None:
+            raise ValueError("Non-hashable data is not supported by jit.")
         
         BaseSolver._check_positive_integer(self.dimensionality, "dimensionality")
         BaseSolver._check_positive_integer(self.sample_size, "sample_size")
@@ -197,73 +199,48 @@ class BaseSolver(BaseEstimator):
                 raise ValueError(
                     "The length of init_params must match `dimensionality`!"
                 )
-
-        if gradient is not None and not jit:
-            if objective.__code__.co_argcount == 1:
-                def loss_fn(params, data):
-                    return objective(params)
-            elif objective.__code__.co_argcount == 2:
-                def loss_fn(params, data):
-                    return objective(params, data)
-            else:
-                raise ValueError("objective should be a function of 1 or 2 argument.")
-
-            if gradient.__code__.co_argcount == 1:
-                def loss_grad(params, data):
-                    return gradient(params)
-            elif gradient.__code__.co_argcount == 2:
-                def loss_grad(params, data):
-                    return gradient(params, data)
-            else:
-                raise ValueError("gradient should be a function of 1 or 2 argument.")
-        elif gradient is None and not jit:
-            if objective.__code__.co_argcount == 1:
-                def loss_fn(params, data):
-                    return objective(params).item()
-                def loss_grad(params, data):
-                    return np.array(jax.grad(objective)(params))
-            elif objective.__code__.co_argcount == 2:
-                def loss_fn(params, data):
-                    return objective(params, data).item()
-                def loss_grad(params, data):
-                    return np.array(jax.grad(objective)(params, data))
-            else:
-                raise ValueError(
-                    "objective should be a function of 1 or 2 argument written by JAX when gradient isn't offered."
-                )
-        elif jit:
-            if objective.__code__.co_argcount != 1:
-                raise ValueError(
-                    "objective should be a function of 1 argument written by JAX when jit is True."
-                )
-            if gradient is not None and gradient.__code__.co_argcount != 1:
-                raise ValueError(
-                    "gradient should be a function of 1 argument written by JAX when jit is True."
-                )
             
-            @jax.jit
-            def loss_(params):
-                return objective(params)
-            def loss_fn(params, data):
-                return loss_(params).item()
+        # objective function 
+        if objective.__code__.co_argcount == 2:
+            loss_ = objective
+        elif objective.__code__.co_argcount == 1:
+            loss_ = lambda params, data: objective(params)
+        else:
+            raise ValueError("The objective function should have 1 or 2 arguments.")
+        if jit:
+            loss_ = jax.jit(loss_, static_argnums=(1,))
 
-            if gradient is None:
-                @jax.jit
-                def grad_(params):
-                    return jax.grad(loss_)(params)
-            else:
-                @jax.jit
-                def grad_(params):
-                    return gradient(params)
-            def loss_grad(params, data):
-                return np.array(grad_(params))
-            
+        if gradient is None:
+            grad_ = lambda params, data: jax.value_and_grad(loss_)(params, data)
+        elif gradient.__code__.co_argcount == 2:
+            grad_ = lambda params, data: (loss_(params, data), gradient(params, data))
+        elif gradient.__code__.co_argcount == 1:
+            grad_ = lambda params, data: (loss_(params, data), gradient(params))
+        else:
+            raise ValueError("The gradient function should have 1 or 2 arguments.")
+        if jit:
+            grad_ = jax.jit(grad_, static_argnums=(1,))
 
+        # check if loss_ is a jax value
+        try: 
+            loss_(init_params, data).item()
+        except AttributeError:
+            loss_fn = loss_
+            def value_and_grad(params, data):
+                value, grad = grad_(params, data)
+                return value, np.array(grad)            
+        else:
+            loss_fn = lambda params, data: loss_(params, data).item()
+            def value_and_grad(params, data):
+                value, grad = grad_(params, data)
+                return value.item(), np.array(grad)
+
+    
         if self.cv == 1:
             is_first_loop: bool = True
             for s in self.sparsity:
                 init_params, init_support_set = self._solve(
-                    s, loss_fn, loss_grad, init_support_set, init_params, data
+                    s, loss_fn, value_and_grad, init_support_set, init_params, data
                 )  ## warm start: use results of previous sparsity as initial value
                 value_of_objective = loss_fn(init_params, data)
                 eval = self._metric(
@@ -290,7 +267,7 @@ class BaseSolver(BaseEstimator):
                     init_params, init_support_set = self._solve(
                         s,
                         loss_fn,
-                        loss_grad,
+                        value_and_grad,
                         init_support_set,
                         init_params,
                         self.split_method(data, train_index),
@@ -304,7 +281,7 @@ class BaseSolver(BaseEstimator):
             self.params, self.support_set = self._solve(
                 best_sparsity,
                 loss_fn,
-                loss_grad,
+                value_and_grad,
                 cache_init_support_set[best_sparsity],
                 cache_init_params[best_sparsity],
                 data,
@@ -364,8 +341,8 @@ class BaseSolver(BaseEstimator):
     def _solve(
         self,
         sparsity,
-        objective,
-        gradient,
+        loss_fn,
+        value_and_grad,
         init_support_set,
         init_params,
         data,
@@ -429,7 +406,7 @@ class BaseSolver(BaseEstimator):
         for support_set in all_subsets(
             self.dimensionality, sparsity, self.always_select
         ):
-            opt_params, loss = self._cache_nlopt(objective, gradient, init_params, support_set, data)
+            opt_params, loss = self._cache_nlopt(loss_fn, value_and_grad, init_params, support_set, data)
             if loss < result["value_of_objective"]:
                 params = np.zeros(self.dimensionality)
                 params[support_set] = opt_params
@@ -439,7 +416,7 @@ class BaseSolver(BaseEstimator):
 
         return result["params"], result["support_set"]
 
-    def _cache_nlopt(self, loss_fn, grad_fn, init_params, support_set, data):
+    def _cache_nlopt(self, loss_fn, value_and_grad, init_params, support_set, data):
         """
         Nlopt often throws RuntimeError even if the optimization is nearly successful. This function is used to cache the best result and return it.
         """
@@ -453,8 +430,10 @@ class BaseSolver(BaseEstimator):
             x_full = np.zeros(self.dimensionality)
             x_full[support_set] = x
             if grad.size > 0:
-                grad[:] = grad_fn(x_full, data)[support_set]
-            loss =  loss_fn(x_full, data)
+                loss, full_grad = value_and_grad(x_full, data)
+                grad[:] = full_grad[support_set]
+            else:
+                loss = loss_fn(x_full, data)
             if loss < best_loss:
                 best_loss = loss
                 best_params = np.copy(x)

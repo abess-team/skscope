@@ -274,6 +274,8 @@ class ScopeSolver(BaseEstimator):
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
+        if jit and getattr(data, "__hash__") is None:
+            raise ValueError("Non-hashable data is not supported by jit.")
 
         nlopt_config = NloptConfig(
             self.nlopt_solver.get_algorithm(),
@@ -611,7 +613,7 @@ class ScopeSolver(BaseEstimator):
         if use_jit:
             loss_ = jax.jit(loss_, static_argnums=(1,))
 
-        def loss(params, data):
+        def loss_fn(params, data):
             return loss_(params, data).item()
 
         # grad
@@ -621,7 +623,7 @@ class ScopeSolver(BaseEstimator):
         if use_jit:
             grad_ = jax.jit(grad_, static_argnums=(1,))
 
-        def grad(params, data):
+        def value_and_grad(params, data):
             value, gradient = grad_(jnp.array(params), data)
             return value, np.array(gradient)
 
@@ -632,14 +634,14 @@ class ScopeSolver(BaseEstimator):
         if use_jit:
             hess_ = jax.jit(hess_, static_argnums=(1,))
 
-        def hess(params, data):
+        def hess_fn(params, data):
             return np.array(hess_(jnp.array(params), data))
 
-        self.model.set_loss_of_model(loss)
-        self.model.set_gradient_user_defined(grad)
-        self.model.set_hessian_user_defined(hess)
+        self.model.set_loss_of_model(loss_fn)
+        self.model.set_gradient_user_defined(value_and_grad)
+        self.model.set_hessian_user_defined(hess_fn)
 
-        return loss
+        return loss_fn
 
     def __set_objective_custom(self, objective, gradient, hessian):
         r"""
@@ -703,8 +705,8 @@ class GrahtpSolver(BaseSolver):
     def _solve(
         self,
         sparsity,
-        objective,
-        gradient,
+        loss_fn,
+        value_and_grad,
         init_support_set,
         init_params,
         data,
@@ -712,8 +714,8 @@ class GrahtpSolver(BaseSolver):
         if sparsity <= self.always_select.size:
             return super()._solve(
                 sparsity,
-                objective,
-                gradient,
+                loss_fn,
+                value_and_grad,
                 init_support_set,
                 init_params,
                 data,
@@ -724,7 +726,7 @@ class GrahtpSolver(BaseSolver):
 
         for iter in range(self.max_iter):
             # S1: gradient descent
-            params_bias = params - self.step_size * gradient(params, data)
+            params_bias = params - self.step_size * value_and_grad(params, data)[1]
             # S2: Gradient Hard Thresholding
             score = np.abs(params_bias)
             score[self.always_select] = np.inf
@@ -740,13 +742,13 @@ class GrahtpSolver(BaseSolver):
                 params[support_new] = params_bias[support_new]
             else:
                 params[support_new], _ = self._cache_nlopt(
-                    objective, gradient, params_bias, support_new, data
+                    loss_fn, value_and_grad, params_bias, support_new, data
                 )
 
         # final optimization for IHT
         if self.fast:
             params[support_new], _ = self._cache_nlopt(
-                objective, gradient, params, support_new, data
+                loss_fn, value_and_grad, params, support_new, data
             )
 
         return params, support_new
@@ -759,8 +761,8 @@ class GraspSolver(BaseSolver):
     def _solve(
         self,
         sparsity,
-        objective,
-        gradient,
+        loss_fn,
+        value_and_grad,
         init_support_set,
         init_params,
         data,
@@ -768,8 +770,8 @@ class GraspSolver(BaseSolver):
         if sparsity <= self.always_select.size:
             return super()._solve(
                 sparsity,
-                objective,
-                gradient,
+                loss_fn,
+                value_and_grad,
                 init_support_set,
                 init_params,
                 data,
@@ -780,7 +782,7 @@ class GraspSolver(BaseSolver):
 
         for iter in range(self.max_iter):
             # compute local gradient
-            grad_values = gradient(params, data)
+            grad_values = value_and_grad(params, data)[1]
             score = np.abs(grad_values)
             score[self.always_select] = np.inf
             # identify directions
@@ -806,7 +808,7 @@ class GraspSolver(BaseSolver):
             params_bias = np.zeros(self.dimensionality)
             if support_new.size > 0:
                 params_bias[support_new], _ = self._cache_nlopt(
-                    objective, gradient, params, support_new, data
+                    loss_fn, value_and_grad, params, support_new, data
                 )
 
             # prune estimate

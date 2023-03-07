@@ -445,14 +445,14 @@ class ScopeSolver(BaseEstimator):
                 for i, (_, fold_id) in enumerate(kf):
                     self.cv_fold_id[fold_id] = i
             else:
-                cv_fold_id = np.array(cv_fold_id, dtype="int32")
-                if cv_fold_id.ndim > 1:
+                self.cv_fold_id = np.array(self.cv_fold_id, dtype="int32")
+                if self.cv_fold_id.ndim > 1:
                     raise ValueError("group should be an 1D array of integers.")
-                if cv_fold_id.size != n:
+                if self.cv_fold_id.size != n:
                     raise ValueError(
                         "The length of group should be equal to X.shape[0]."
                     )
-                if len(set(cv_fold_id)) != self.cv:
+                if len(set(self.cv_fold_id)) != self.cv:
                     raise ValueError(
                         "The number of different masks should be equal to `cv`."
                     )
@@ -679,7 +679,9 @@ class GrahtpSolver(BaseSolver):
         ic_coef=1.0,
         metric_method=None,
         cv=1,
+        cv_fold_id=None,
         split_method=None,
+        jax_platform="cpu",
         random_state=None,
     ):
         self.fast = False  # fast version of GraHTP is actually IHT
@@ -695,7 +697,9 @@ class GrahtpSolver(BaseSolver):
             ic_coef=ic_coef,
             metric_method=metric_method,
             cv=cv,
+            cv_fold_id=cv_fold_id,
             split_method=split_method,
+            jax_platform=jax_platform,
             random_state=random_state,
         )
 
@@ -833,7 +837,9 @@ class IHTSolver(GrahtpSolver):
         ic_coef=1.0,
         metric_method=None,
         cv=1,
+        cv_fold_id=None,
         split_method=None,
+        jax_platform="cpu",
         random_state=None,
     ):
         super().__init__(
@@ -848,7 +854,9 @@ class IHTSolver(GrahtpSolver):
             ic_coef=ic_coef,
             metric_method=metric_method,
             cv=cv,
+            cv_fold_id=cv_fold_id,
             split_method=split_method,
+            jax_platform=jax_platform,
             random_state=random_state,
         )
         self.fast = True  # IHT is actually fast version of GraHTP

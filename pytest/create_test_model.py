@@ -3,7 +3,7 @@ from jax import numpy as jnp
 import numpy as np
 
 class CreateTestModel:
-    def __init__(self, N=100, P=5, K=3, seed=1):
+    def __init__(self, N=100, P=5, K=2, seed=1):
         self.N = N
         self.P = P
         self.K = K

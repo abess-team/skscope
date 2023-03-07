@@ -64,14 +64,15 @@ def test_init_params(model, solver_creator):
     assert set(model["support_set"]) == set(solver.support_set)
 
 
-def test_coverage():
+def test_add_coverage():
     solver = ScopeSolver(
         linear["n_features"],
         gs_lower_bound=linear["n_informative"] - 1,
         gs_upper_bound=linear["n_informative"] + 1,
         group=[i for i in range(linear["n_features"])],
-        screening_size=0,
-        splicing_type="taper"
+        screening_size=linear["n_features"],
+        splicing_type="taper",
+        path_type="gs",
     )
     solver.solve(linear["loss"], jit=True)
 

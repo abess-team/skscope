@@ -190,46 +190,21 @@ class ScopeSolver(BaseEstimator):
     @staticmethod
     def _set_log_level(console_log_level, file_log_level, log_file_name):
         # log level
+        log_level_dict = {
+            "off": 6,
+            "error": 4,
+            "warning": 3,
+            "debug": 1,
+        }
         console_log_level = console_log_level.lower()
-        if console_log_level == "off":
-            console_log_level = 6
-        elif console_log_level == "error":
-            console_log_level = 4
-        elif console_log_level == "warning":
-            console_log_level = 3
-        elif console_log_level == "debug":
-            console_log_level = 1
-        elif (
-            isinstance(console_log_level, int)
-            and console_log_level >= 0
-            and console_log_level <= 6
-        ):
-            pass
-        else:
-            raise ValueError(
-                "console_log_level must be in 'off', 'error', 'warning', 'debug'"
-            )
-
         file_log_level = file_log_level.lower()
-        if file_log_level == "off":
-            file_log_level = 6
-        elif file_log_level == "error":
-            file_log_level = 4
-        elif file_log_level == "warning":
-            file_log_level = 3
-        elif file_log_level == "debug":
-            file_log_level = 1
-        elif (
-            isinstance(file_log_level, int)
-            and file_log_level >= 0
-            and file_log_level <= 6
-        ):
-            pass
-        else:
+        if console_log_level not in log_level_dict or file_log_level not in log_level_dict:
             raise ValueError(
-                "file_log_level must be in 'off', 'error', 'warning', 'debug'"
+                "console_log_level and file_log_level must be in 'off', 'error', 'warning', 'debug'"
             )
-
+        console_log_level = log_level_dict[console_log_level]
+        file_log_level = log_level_dict[file_log_level]
+        # log file name
         if not isinstance(log_file_name, str):
             raise ValueError("log_file_name must be a string")
 
@@ -301,16 +276,15 @@ class ScopeSolver(BaseEstimator):
         BaseSolver._check_positive_integer(self.max_exchange_num, "max_exchange_num")
 
         # ic_type
-        if self.ic_type == "aic":
-            ic_type = 1
-        elif self.ic_type == "bic":
-            ic_type = 2
-        elif self.ic_type == "gic":
-            ic_type = 3
-        elif self.ic_type == "ebic":
-            ic_type = 4
-        else:
+        information_criterion_dict = {
+            "aic": 1,
+            "bic": 2,
+            "gic": 3,
+            "ebic": 4,
+        }
+        if self.ic_type not in information_criterion_dict.keys():
             raise ValueError('ic_type should be "aic", "bic", "ebic" or "gic"')
+        ic_type = information_criterion_dict[self.ic_type]
 
         # cv
         BaseSolver._check_positive_integer(self.cv, "cv")
@@ -376,7 +350,7 @@ class ScopeSolver(BaseEstimator):
                     )
         elif self.path_type == "gs":
             path_type = 2
-            sparsity = np.array(0, dtype="int32")
+            sparsity = np.array([0], dtype="int32")
             if self.gs_lower_bound is None:
                 gs_lower_bound = force_min_sparsity
             else:

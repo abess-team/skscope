@@ -57,11 +57,11 @@ class ScopeSolver(BaseEstimator):
     + path_type : {"seq", "gs"}, optional, default="seq"
         The method to be used to select the optimal support size.
         - For path_type = "seq", we solve the problem for all sizes in `sparsity` successively.
-        - For path_type = "gs", we solve the problem with support size ranged between `gs_lower_bound` and `gs_higher_bound`, where the specific support size to be considered is determined by golden section.
+        - For path_type = "gs", we solve the problem with support size ranged between `gs_lower_bound` and `gs_upper_bound`, where the specific support size to be considered is determined by golden section.
     + gs_lower_bound : int, optional, default=0
         The lower bound of golden-section-search for sparsity searching.
         Used only when path_type = "gs".
-    + gs_higher_bound : int, optional, default=`min(n, int(n/(log(log(n))log(p))))`
+    + gs_upper_bound : int, optional, default=`min(n, int(n/(log(log(n))log(p))))`
         The higher bound of golden-section-search for sparsity searching.
         Used only when path_type = "gs".
     + ic_type : {'aic', 'bic', 'gic', 'ebic'}, optional, default='gic'
@@ -142,7 +142,7 @@ class ScopeSolver(BaseEstimator):
         splicing_type="halve",
         path_type="seq",
         gs_lower_bound=None,
-        gs_higher_bound=None,
+        gs_upper_bound=None,
         thread=1,
         jax_platform="cpu",
         random_state=None,
@@ -173,7 +173,7 @@ class ScopeSolver(BaseEstimator):
         self.splicing_type = splicing_type
         self.path_type = path_type
         self.gs_lower_bound = gs_lower_bound
-        self.gs_higher_bound = gs_higher_bound
+        self.gs_upper_bound = gs_upper_bound
         self.thread = thread
         self.jax_platform = jax_platform
         self.random_state = random_state
@@ -359,7 +359,7 @@ class ScopeSolver(BaseEstimator):
         # path_type
         if self.path_type == "seq":
             path_type = 1
-            gs_lower_bound, gs_higher_bound = 0, 0
+            gs_lower_bound, gs_upper_bound = 0, 0
             if self.sparsity is None:
                 sparsity = np.arange(
                     force_min_sparsity,
@@ -385,21 +385,21 @@ class ScopeSolver(BaseEstimator):
                 )
                 gs_lower_bound = self.gs_lower_bound
 
-            if self.gs_higher_bound is None:
-                gs_higher_bound = default_max_sparsity
+            if self.gs_upper_bound is None:
+                gs_upper_bound = default_max_sparsity
             else:
                 BaseSolver._check_non_negative_integer(
-                    self.gs_higher_bound, "gs_higher_bound"
+                    self.gs_upper_bound, "gs_upper_bound"
                 )
-                gs_higher_bound = self.gs_higher_bound
+                gs_upper_bound = self.gs_upper_bound
 
-            if gs_lower_bound < force_min_sparsity or gs_higher_bound > group_num:
+            if gs_lower_bound < force_min_sparsity or gs_upper_bound > group_num:
                 raise ValueError(
-                    "gs_lower_bound and gs_higher_bound should be between 0 (when `always_select` is default) and dimensionality (when `group` is default)."
+                    "gs_lower_bound and gs_upper_bound should be between 0 (when `always_select` is default) and dimensionality (when `group` is default)."
                 )
-            if gs_lower_bound > gs_higher_bound:
+            if gs_lower_bound > gs_upper_bound:
                 raise ValueError(
-                    "gs_higher_bound should be larger than gs_lower_bound."
+                    "gs_upper_bound should be larger than gs_lower_bound."
                 )
         else:
             raise ValueError("path_type should be 'seq' or 'gs'")
@@ -408,11 +408,11 @@ class ScopeSolver(BaseEstimator):
         if self.screening_size == -1:
             screening_size = -1
         elif self.screening_size == 0:
-            screening_size = max(sparsity[-1], gs_higher_bound, default_max_sparsity)
+            screening_size = max(sparsity[-1], gs_upper_bound, default_max_sparsity)
         else:
             screening_size = self.screening_size
             if screening_size > group_num or screening_size < max(
-                sparsity[-1], gs_higher_bound
+                sparsity[-1], gs_upper_bound
             ):
                 raise ValueError(
                     "screening_size should be between max(sparsity) and dimensionality."
@@ -507,7 +507,7 @@ class ScopeSolver(BaseEstimator):
             sparsity,
             np.array([0.0]),
             gs_lower_bound,
-            gs_higher_bound,
+            gs_upper_bound,
             screening_size,
             group,
             always_select,

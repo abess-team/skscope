@@ -1,11 +1,15 @@
-from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver 
+import numpy as np
 import pytest
 import nlopt
+
 from create_test_model import CreateTestModel
+from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver 
 
 
 model_creator = CreateTestModel()
-models = (model_creator.create_linear_model(),)
+linear = model_creator.create_linear_model()
+
+models = (linear,)
 models_ids = ("linear",)
 solvers = (ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver)
 solvers_ids = ("scope", "Base", "GraHTP", "GraSP", "IHT")
@@ -35,3 +39,19 @@ def test_always_select(model, solver_creator):
         solver.solve(model["loss"], jit=True)
         
         assert i in solver.get_result()["support_set"]
+
+@pytest.mark.parametrize("model", models, ids=models_ids)
+@pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
+def test_init_support_set(model, solver_creator):
+    solver = solver_creator(model["n_features"], model["n_informative"])
+    solver.solve(model["loss"], init_support_set=[0, 1, 2], jit=True)
+
+    assert set(model["support_set"]) == set(solver.support_set)
+
+@pytest.mark.parametrize("model", models, ids=models_ids)
+@pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
+def test_init_params(model, solver_creator):
+    solver = solver_creator(model["n_features"], model["n_informative"])
+    solver.solve(model["loss"], init_params=np.ones(model["n_features"]), jit=True)
+
+    assert set(model["support_set"]) == set(solver.support_set)

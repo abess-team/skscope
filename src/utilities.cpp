@@ -254,7 +254,7 @@ Eigen::VectorXi complement(Eigen::VectorXi &A, int N) {
 //     }
 // }
 
-void slice(Eigen::VectorXd &nums, Eigen::VectorXi &ind, Eigen::VectorXd &A, int axis) {
+void slice(Eigen::VectorXd &nums, Eigen::VectorXi &ind, Eigen::VectorXd &A) {
     if (ind.size() == 0) {
         A = Eigen::VectorXd::Zero(0);
     } else {
@@ -263,37 +263,21 @@ void slice(Eigen::VectorXd &nums, Eigen::VectorXi &ind, Eigen::VectorXd &A, int 
             A(i) = nums(ind(i));
         }
     }
-    return;
 }
 
-void slice(Eigen::MatrixXd &nums, Eigen::VectorXi &ind, Eigen::MatrixXd &A, int axis) {
-    if (axis == 0) {
-        A = Eigen::MatrixXd::Zero(ind.size(), nums.cols());
-        if (ind.size() != 0) {
-            for (int i = 0; i < ind.size(); i++) {
-                A.row(i) = nums.row(ind(i));
-            }
-        }
-    } else {
-        A = Eigen::MatrixXd::Zero(nums.rows(), ind.size());
-        if (ind.size() != 0) {
-            for (int i = 0; i < ind.size(); i++) {
-                A.col(i) = nums.col(ind(i));
-            }
+void slice(Eigen::MatrixXd &nums, Eigen::VectorXi &ind, Eigen::MatrixXd &A) {
+    A = Eigen::MatrixXd::Zero(ind.size(), nums.cols());
+    if (ind.size() != 0) {
+        for (int i = 0; i < ind.size(); i++) {
+            A.row(i) = nums.row(ind(i));
         }
     }
-    return;
 }
 
 
-void slice(UniversalData& nums, Eigen::VectorXi& ind, UniversalData& A, int axis)
+void slice(UniversalData& nums, Eigen::VectorXi& ind, UniversalData& A)
 {
-    if (axis == 0) {
-        A = nums.slice_by_sample(ind);
-    }
-    else {
-        A = nums.slice_by_para(ind);
-    }
+    A = nums.slice_by_sample(ind);
 }
 
 void slice_restore(Eigen::VectorXd &A, Eigen::VectorXi &ind, Eigen::VectorXd &nums, int axis) {

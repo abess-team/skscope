@@ -80,8 +80,7 @@ Eigen::VectorXi screening(Data<T1, T2, T3, T4> &data, std::vector<Algorithm<T1, 
     }
 
     Eigen::VectorXi screening_A_ind = find_ind(screening_A, g_index, g_size, beta_size, g_num); 
-    T4 x_A;
-    slice(data.x, screening_A_ind, x_A, 1);
+    T4 x_A = X_seg(data.x, 0, screening_A_ind, 0);
 
     Eigen::VectorXd new_x_mean, new_x_norm;
     slice(data.x_mean, screening_A_ind, new_x_mean);

@@ -226,9 +226,9 @@ Eigen::VectorXi max_k(Eigen::VectorXd &nums, int k, bool sort_by_value = false);
 /**
  * @brief Extract `nums` at `ind` position, and store in `A`.
  */
-void slice(Eigen::VectorXd &nums, Eigen::VectorXi &ind, Eigen::VectorXd &A, int axis = 0);
-void slice(Eigen::MatrixXd &nums, Eigen::VectorXi &ind, Eigen::MatrixXd &A, int axis = 0);
-void slice(UniversalData& nums, Eigen::VectorXi& ind, UniversalData& A, int axis = 0);
+void slice(Eigen::VectorXd &nums, Eigen::VectorXi &ind, Eigen::VectorXd &A);
+void slice(Eigen::MatrixXd &nums, Eigen::VectorXi &ind, Eigen::MatrixXd &A);
+void slice(UniversalData& nums, Eigen::VectorXi& ind, UniversalData& A);
 /**
  * @brief The inverse action of function slice.
  */

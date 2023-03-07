@@ -184,17 +184,9 @@ class Metric {
     // }
 
     double ic(int train_n, int M, int N, Algorithm<T1, T2, T3, T4> *algorithm) {
-        double loss;
-        if (algorithm->model_type == 1 || algorithm->model_type == 5) {
-            loss = train_n *
-                   log(algorithm->get_train_loss() - algorithm->lambda_level * algorithm->beta.cwiseAbs2().sum());
-        } else {
-            loss = 2 * (algorithm->get_train_loss() - algorithm->lambda_level * algorithm->beta.cwiseAbs2().sum());
-        }
-
-        if (ic_type == 0) {
-            return loss;
-        } else if (ic_type == 1) {
+        double loss = 2 * (algorithm->get_train_loss() - algorithm->lambda_level * algorithm->beta.cwiseAbs2().sum());
+        
+        if (ic_type == 1) {
             return loss + 2.0 * algorithm->get_effective_number();
         } else if (ic_type == 2) {
             return loss + this->ic_coef * log(double(train_n)) * algorithm->get_effective_number();
@@ -204,12 +196,7 @@ class Metric {
         } else if (ic_type == 4) {
             return loss +
                    this->ic_coef * (log(double(train_n)) + 2 * log(double(N))) * algorithm->get_effective_number();
-        } else if (ic_type == 5) {
-            return train_n *
-                       (algorithm->get_train_loss() - algorithm->lambda_level * algorithm->beta.cwiseAbs2().sum()) +
-                   this->ic_coef * log(double(N)) * log(log(double(train_n))) * algorithm->get_effective_number();
-        } else
-            return 0;
+        };
     };
 
     double loss_function(T4 &train_x, T1 &train_y, Eigen::VectorXd &train_weight, Eigen::VectorXi &g_index,

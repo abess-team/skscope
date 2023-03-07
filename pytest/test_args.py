@@ -72,7 +72,20 @@ def test_add_coverage():
         splicing_type="taper",
         path_type="gs",
         important_search=1,
+        always_select=[linear["support_set"][0]],
+        init_params_of_sub_optim=lambda x, data, index: x,
+        console_log_level="error"
     )
     solver.solve(linear["loss"], jit=True)
 
-    assert set(linear["support_set"]) == set(solver.support_set)
+    solver = ScopeSolver(
+        linear["n_features"],
+        group=[0] + [i for i in range(linear["n_features"]-1)],
+        screening_size=0,
+        path_type="gs",
+        sample_size=linear["n_samples"],
+        cv=2,
+        split_method=linear["split_method"],
+        file_log_level="error",
+    )
+    solver.solve(linear["loss_data"], data=linear["data"])

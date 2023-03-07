@@ -51,6 +51,4 @@ jobs:
         uses: codecov/codecov-action@v3
         with:
           files: ./pytest/coverage.xml, ./cpp_coverage.xml
-          fail_ci_if_error: true
-          flags: Python
           verbose: true

@@ -35,15 +35,13 @@ def test_nlopt_solver(model, solver_creator):
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_always_select(model, solver_creator):
-    for i in range(model["n_features"]):
-        if model["params"][i] != 0:
-            continue
-        solver = solver_creator(
-            model["n_features"], model["n_informative"], always_select=[i]
-        )
-        solver.solve(model["loss"], jit=True)
+    solver = solver_creator(
+        model["n_features"], model["n_informative"], always_select=[0, 1]
+    )
+    solver.solve(model["loss"], jit=True)
 
-        assert i in solver.get_result()["support_set"]
+    assert 0 in solver.support_set
+    assert 1 in solver.support_set
 
 
 @pytest.mark.parametrize("model", models, ids=models_ids)

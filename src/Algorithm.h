@@ -44,7 +44,6 @@
 
 #ifndef R_BUILD
 #include <Eigen/Eigen>
-#include <unsupported/Eigen/MatrixFunctions>
 #endif
 
 #include <cfloat>

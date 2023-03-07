@@ -11,7 +11,6 @@
 #define SRC_UTILITIES_H
 
 #include <Eigen/Eigen>
-#include <unsupported/Eigen/MatrixFunctions>
 #include <type_traits>
 #include <cfloat>
 

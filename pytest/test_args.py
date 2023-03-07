@@ -73,6 +73,7 @@ def test_add_coverage():
         screening_size=linear["n_features"],
         splicing_type="taper",
         path_type="gs",
+        important_search=1,
     )
     solver.solve(linear["loss"], jit=True)
 

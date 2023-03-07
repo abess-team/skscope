@@ -15,12 +15,9 @@ class List {
     // void get_value_by_name(string name, int &value);
     void add(string name, double value);
     void get_value_by_name(string name, double &value);
-    void add(string name, MatrixXd &value);
-    void get_value_by_name(string name, MatrixXd &value);
     void add(string name, VectorXd &value);
     void get_value_by_name(string name, VectorXd &value);
     void add(string name, VectorXi &value);
-    void combine_beta(VectorXd &value);
     // void get_value_by_name(string name, VectorXi &value);
     // void add(string name, Eigen::Matrix<VectorXd, Dynamic, Dynamic> &value);
     // void get_value_by_name(string name, Eigen::Matrix<VectorXd, Dynamic, Dynamic> &value);

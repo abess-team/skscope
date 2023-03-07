@@ -109,7 +109,6 @@ Eigen::VectorXi screening(Data<T1, T2, T3, T4> &data, std::vector<Algorithm<T1, 
         }
     }
 
-    algorithm_list[0]->clear_setting();
     return screening_A_ind;
 }
 

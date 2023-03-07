@@ -41,15 +41,7 @@ UniversalData X_seg(UniversalData& X, int n, Eigen::VectorXi& ind, int model_typ
     return X.slice_by_para(ind);
 }
 
-Eigen::Matrix<Eigen::MatrixXd, -1, -1> invPhi(Eigen::Matrix<Eigen::MatrixXd, -1, -1> &Phi, int N) {
-    Eigen::Matrix<Eigen::MatrixXd, -1, -1> invPhi(N, 1);
-    int row;
-    for (int i = 0; i < N; i++) {
-        row = (Phi(i, 0)).rows();
-        invPhi(i, 0) = (Phi(i, 0)).ldlt().solve(Eigen::MatrixXd::Identity(row, row));
-    }
-    return invPhi;
-}
+
 
 void slice_assignment(Eigen::VectorXd &nums, Eigen::VectorXi &ind, double value) {
     if (ind.size() != 0) {
@@ -294,30 +286,6 @@ void slice(Eigen::MatrixXd &nums, Eigen::VectorXi &ind, Eigen::MatrixXd &A, int 
     return;
 }
 
-void slice(Eigen::SparseMatrix<double> &nums, Eigen::VectorXi &ind, Eigen::SparseMatrix<double> &A, int axis) {
-    if (axis == 0) {
-        Eigen::SparseMatrix<double, Eigen::RowMajor> nums_row(nums);
-        Eigen::SparseMatrix<double, Eigen::RowMajor> A_row(ind.size(), nums.cols());
-        A_row.reserve(nums.nonZeros());
-
-        if (ind.size() != 0) {
-            for (int i = 0; i < ind.size(); i++) {
-                A_row.row(i) = nums_row.row(ind(i));
-            }
-        }
-
-        A = A_row;
-    } else {
-        A.resize(nums.rows(), ind.size());
-        A.reserve(nums.nonZeros());
-        if (ind.size() != 0) {
-            for (int i = 0; i < ind.size(); i++) {
-                A.col(i) = nums.col(ind(i));
-            }
-        }
-    }
-    return;
-}
 
 void slice(UniversalData& nums, Eigen::VectorXi& ind, UniversalData& A, int axis)
 {
@@ -341,60 +309,13 @@ void slice_restore(Eigen::VectorXd &A, Eigen::VectorXi &ind, Eigen::VectorXd &nu
     return;
 }
 
-void slice_restore(Eigen::MatrixXd &A, Eigen::VectorXi &ind, Eigen::MatrixXd &nums, int axis) {
-    if (axis == 0) {
-        nums = Eigen::MatrixXd::Zero(nums.rows(), nums.cols());
-        if (ind.size() != 0) {
-            for (int i = 0; i < ind.size(); i++) {
-                nums.row(ind(i)) = A.row(i);
-            }
-        }
-    } else {
-        nums = Eigen::MatrixXd::Zero(nums.rows(), nums.cols());
-        if (ind.size() != 0) {
-            for (int i = 0; i < ind.size(); i++) {
-                nums.col(ind(i)) = A.col(i);
-            }
-        }
-    }
-    return;
-}
-
-void coef_set_zero(int p, int M, Eigen::VectorXd &beta, double &coef0) {
-    beta = Eigen::VectorXd::Zero(p);
-    coef0 = 0.;
-    return;
-}
-
 void coef_set_zero(int p, int M, Eigen::VectorXd& beta, Eigen::VectorXd& coef0) {
     beta = Eigen::VectorXd::Zero(p);
     coef0 = Eigen::VectorXd::Zero(M);
     return;
 }
 
-void coef_set_zero(int p, int M, Eigen::MatrixXd &beta, Eigen::VectorXd &coef0) {
-    beta = Eigen::MatrixXd::Zero(p, M);
-    coef0 = Eigen::VectorXd::Zero(M);
-    return;
-}
 
-Eigen::VectorXd array_product(Eigen::VectorXd &A, Eigen::VectorXd &B, int axis) {
-    A = A.array() * B.array();
-    return A;
-}
-
-Eigen::MatrixXd array_product(Eigen::MatrixXd &A, Eigen::VectorXd &B, int axis) {
-    if (axis == 0) {
-        for (int i = 0; i < A.rows(); i++) {
-            A.row(i) = A.row(i).array() * B.array();
-        }
-    } else {
-        for (int i = 0; i < A.cols(); i++) {
-            A.col(i) = A.col(i).array() * B.array();
-        }
-    }
-    return A;
-}
 
 // Eigen::SparseMatrix<double> array_product(Eigen::SparseMatrix<double> &A, Eigen::VectorXd &B, int axis)
 // {
@@ -405,26 +326,8 @@ Eigen::MatrixXd array_product(Eigen::MatrixXd &A, Eigen::VectorXd &B, int axis) 
 //     return A;
 // }
 
-void array_quotient(Eigen::VectorXd &A, Eigen::VectorXd &B, int axis) {
-    A = A.array() / B.array();
-    return;
-}
-void array_quotient(Eigen::MatrixXd &A, Eigen::VectorXd &B, int axis) {
-    if (axis == 0) {
-        for (int i = 0; i < A.rows(); i++) {
-            A.row(i) = A.row(i).array() / B.array();
-        }
-    } else {
-        for (int i = 0; i < A.cols(); i++) {
-            A.col(i) = A.col(i).array() / B.array();
-        }
-    }
-    return;
-}
 
-double matrix_dot(Eigen::VectorXd &A, Eigen::VectorXd &B) { return A.dot(B); }
 
-Eigen::VectorXd matrix_dot(Eigen::MatrixXd &A, Eigen::VectorXd &B) { return A.transpose() * B; }
 
 // void matrix_sqrt(Eigen::MatrixXd &A, Eigen::MatrixXd &B)
 // {
@@ -455,17 +358,6 @@ Eigen::VectorXd matrix_dot(Eigen::MatrixXd &A, Eigen::VectorXd &B) { return A.tr
 //     }
 // }
 
-void add_constant_column(Eigen::MatrixXd &X) {
-    X.col(0) = Eigen::MatrixXd::Ones(X.rows(), 1);
-    return;
-}
-
-void add_constant_column(Eigen::SparseMatrix<double> &X) {
-    for (int i = 0; i < X.rows(); i++) {
-        X.insert(i, 0) = 1.0;
-    }
-    return;
-}
 
 // void set_nonzeros(Eigen::MatrixXd &X, Eigen::MatrixXd &x)
 // {
@@ -525,44 +417,6 @@ void add_constant_column(Eigen::SparseMatrix<double> &X) {
 //     return ((l2 == 0 || l1 / l2 > 1e+10) ? true : false);
 // }
 
-// to do
-void add_weight(Eigen::MatrixXd &x, Eigen::VectorXd &y, Eigen::VectorXd weights) {
-    Eigen::VectorXd sqrt_weight = weights.array().sqrt();
-    int n = x.rows();
-    for (int i = 0; i < n; i++) {
-        x.row(i) = x.row(i) * sqrt_weight(i);
-    }
-    array_product(y, sqrt_weight, 1);
-};
-
-void add_weight(Eigen::MatrixXd &x, Eigen::MatrixXd &y, Eigen::VectorXd weights) {
-    Eigen::VectorXd sqrt_weight = weights.array().sqrt();
-    int n = x.rows();
-    for (int i = 0; i < n; i++) {
-        x.row(i) = x.row(i) * sqrt_weight(i);
-    }
-    array_product(y, sqrt_weight, 1);
-};
-
-void add_weight(Eigen::SparseMatrix<double> &x, Eigen::VectorXd &y, Eigen::VectorXd weights) {
-    for (int k = 0; k < x.outerSize(); ++k) {
-        for (SparseMatrix<double>::InnerIterator it(x, k); it; ++it) {
-            x.coeffRef(int(it.row()), int(it.col())) = x.coeffRef(int(it.row()), int(it.col())) * weights(it.row());
-        }
-    }
-    Eigen::VectorXd sqrt_weight = weights.array().sqrt();
-    array_product(y, sqrt_weight, 1);
-};
-
-void add_weight(Eigen::SparseMatrix<double> &x, Eigen::MatrixXd &y, Eigen::VectorXd weights) {
-    for (int k = 0; k < x.outerSize(); ++k) {
-        for (SparseMatrix<double>::InnerIterator it(x, k); it; ++it) {
-            x.coeffRef(int(it.row()), int(it.col())) = x.coeffRef(int(it.row()), int(it.col())) * weights(it.row());
-        }
-    }
-    Eigen::VectorXd sqrt_weight = weights.array().sqrt();
-    array_product(y, sqrt_weight, 1);
-};
 
 void init_spdlog(int console_log_level, int file_log_level, const char* log_file_name)
 {

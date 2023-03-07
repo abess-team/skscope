@@ -92,9 +92,7 @@ List abessWorkflow(T4 &x, T1 &y, int n, int p, int normalize_type, Eigen::Vector
     //     pack & initial all information of data,
     //     including normalize.
     Data<T1, T2, T3, T4> data(x, y, normalize_type, weight, g_index, sparse_matrix, beta_size);
-    if (algorithm_list[0]->model_type == LM_MODEL || algorithm_list[0]->model_type == MUL_LM_MODEL) {
-        add_weight(data.x, data.y, data.weight);
-    }
+
 
     // Screening:
     //     if there are too many noise variables,
@@ -144,10 +142,6 @@ List abessWorkflow(T4 &x, T1 &y, int n, int p, int normalize_type, Eigen::Vector
 
         // golden section search
         gs_path<T1, T2, T3, T4>(data, algorithm_list, metric, parameters, A_init, beta_init, coef0_init, result_list);
-    }
-
-    for (int k = 0; k < Kfold; k++) {
-        algorithm_list[k]->clear_setting();
     }
 
     // Get bestmodel && fit bestmodel:
@@ -220,12 +214,6 @@ List abessWorkflow(T4 &x, T1 &y, int n, int p, int normalize_type, Eigen::Vector
             ic_matrix(ind) = metric->ic(data.n, data.M, data.g_num, algorithm_list[algorithm_index]);
             effective_number_matrix(ind) = algorithm_list[algorithm_index]->get_effective_number();
         }
-
-        for (int i = 0; i < algorithm_list_size; i++) {
-            if (used_algorithm_index(i) == 1) {
-                algorithm_list[i]->clear_setting();
-            }
-        }
     }
 
     // Best result
@@ -242,10 +230,6 @@ List abessWorkflow(T4 &x, T1 &y, int n, int p, int normalize_type, Eigen::Vector
     best_ic = ic_matrix(min_loss_index);
     best_test_loss = test_loss_sum(min_loss_index);
 
-    // Restore for normal:
-    //    restore the changes if normalization is used.
-    restore_for_normal<T2, T3, T4>(best_beta, best_coef0, beta_matrix, coef0_matrix, sparse_matrix, data.normalize_type,
-                               data.n, data.x_mean, data.y_mean, data.x_norm);
 
     // Store in a list for output
     List out_result;

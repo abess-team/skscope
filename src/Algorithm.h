@@ -224,10 +224,6 @@ class Algorithm {
         else
             this->U_size = this->sparsity_level + this->sub_search;
 
-        // Specific init:
-        //     Some specific initial setting for each algorithm,
-        //     e.g. pre-computed items.
-        this->inital_setting(train_x, train_y, train_weight, g_index, g_size, N);
 
         // No need to splicing?
         //     If N == T0, we must put all groups into the model.
@@ -543,10 +539,6 @@ class Algorithm {
         return false;
     };
 
-    virtual void inital_setting(T4 &X, T1 &y, Eigen::VectorXd &weights, Eigen::VectorXi &g_index,
-                                Eigen::VectorXi &g_size, int &N){};
-    virtual void clear_setting(){};
-
     virtual Eigen::VectorXi inital_screening(T4 &X, T1 &y, T2 &beta, T3 &coef0, Eigen::VectorXi &A, Eigen::VectorXi &I,
                                              Eigen::VectorXd &bd, Eigen::VectorXd &weights, Eigen::VectorXi &g_index,
                                              Eigen::VectorXi &g_size, int &N) {
@@ -602,26 +594,18 @@ class Algorithm {
     }
 
     virtual double loss_function(T4 &X, T1 &y, Eigen::VectorXd &weights, T2 &beta, T3 &coef0, Eigen::VectorXi &A,
-                                 Eigen::VectorXi &g_index, Eigen::VectorXi &g_size, double lambda) {
-        return 0;
-    };
+                                 Eigen::VectorXi &g_index, Eigen::VectorXi &g_size, double lambda) = 0;
 
     virtual void sacrifice(T4 &X, T4 &XA, T1 &y, T2 &beta, T2 &beta_A, T3 &coef0, Eigen::VectorXi &A,
                            Eigen::VectorXi &I, Eigen::VectorXd &weights, Eigen::VectorXi &g_index,
                            Eigen::VectorXi &g_size, int N, Eigen::VectorXi &A_ind, Eigen::VectorXd &bd,
-                           Eigen::VectorXi &U, Eigen::VectorXi &U_ind, int num) {
-        return;
-    };
+                           Eigen::VectorXi &U, Eigen::VectorXi &U_ind, int num) = 0;
 
     virtual bool primary_model_fit(T4 &X, T1 &y, Eigen::VectorXd &weights, T2 &beta, T3 &coef0, double loss0,
-                                   Eigen::VectorXi &A, Eigen::VectorXi &g_index, Eigen::VectorXi &g_size) {
-        return true;
-    };
+                                   Eigen::VectorXi &A, Eigen::VectorXi &g_index, Eigen::VectorXi &g_size) = 0;
 
     virtual double effective_number_of_parameter(T4 &X, T4 &XA, T1 &y, Eigen::VectorXd &weights, T2 &beta, T2 &beta_A,
-                                                 T3 &coef0) {
-        return this->sparsity_level;
-    };
+                                                 T3 &coef0) = 0;
 };
 
 #endif  // SRC_ALGORITHM_H

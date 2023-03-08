@@ -141,7 +141,7 @@ setup(
     maintainer="Zezhi Wang",
     maintainer_email="homura@mail.ustc.edu.cn",
     packages=find_packages(),
-    description="scope: Sparsity-Constraint OPtimization via itErative",
+    description="scope: Sparsity-Constraint OPtimization via itErative", # Sparsity-Constraint Optimization with given sParsity lEvel
     long_description=long_description,
     long_description_content_type="text/x-rst",
     install_requires=[

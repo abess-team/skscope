@@ -198,7 +198,10 @@ class ScopeSolver(BaseEstimator):
         }
         console_log_level = console_log_level.lower()
         file_log_level = file_log_level.lower()
-        if console_log_level not in log_level_dict or file_log_level not in log_level_dict:
+        if (
+            console_log_level not in log_level_dict
+            or file_log_level not in log_level_dict
+        ):
             raise ValueError(
                 "console_log_level and file_log_level must be in 'off', 'error', 'warning', 'debug'"
             )
@@ -372,9 +375,7 @@ class ScopeSolver(BaseEstimator):
                     "gs_lower_bound and gs_upper_bound should be between 0 (when `always_select` is default) and dimensionality (when `group` is default)."
                 )
             if gs_lower_bound > gs_upper_bound:
-                raise ValueError(
-                    "gs_upper_bound should be larger than gs_lower_bound."
-                )
+                raise ValueError("gs_upper_bound should be larger than gs_lower_bound.")
         else:
             raise ValueError("path_type should be 'seq' or 'gs'")
 
@@ -462,7 +463,9 @@ class ScopeSolver(BaseEstimator):
         if cpp:
             loss_fn = self.__set_objective_cpp(objective, gradient, hessian)
         else:
-            loss_fn = self.__set_objective_py(objective, gradient, hessian, jit, init_params, data)
+            loss_fn = self.__set_objective_py(
+                objective, gradient, hessian, jit, init_params, data
+            )
 
         result = pywrap_Universal(
             data,
@@ -559,7 +562,7 @@ class ScopeSolver(BaseEstimator):
         Parameters
         ----------
         + objective_overloaded : a wrap of Cpp overloaded function which defined the objective of optimization, examples can be found in https://github.com/abess-team/scope_example.
-        
+
 
         Register objective function and its gradient and hessian as callback function.
 
@@ -588,7 +591,9 @@ class ScopeSolver(BaseEstimator):
             )
         return objective
 
-    def __set_objective_py(self, objective, gradient, hessian, jit, test_params, test_data):
+    def __set_objective_py(
+        self, objective, gradient, hessian, jit, test_params, test_data
+    ):
         r"""
         Register objective function as callback function. This method only can register objective function with Python package `JAX`.
 
@@ -608,7 +613,7 @@ class ScopeSolver(BaseEstimator):
             Defined the gradient of objective function, return the gradient of parameters.
         + hessian : function {'params': array-like, 'data': custom class, 'return': 2D array-like}
             Defined the hessian of objective function, return the hessian matrix of the parameters.
-        """        
+        """
         loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
 
         # hess
@@ -623,11 +628,12 @@ class ScopeSolver(BaseEstimator):
         if jit:
             hess_ = jax.jit(hess_, static_argnums=(1,))
 
-
         loss_fn = lambda params, data: loss_(params, data).item()
+
         def value_and_grad(params, data):
             value, grad = grad_(params, data)
             return value.item(), np.array(grad)
+
         def hess_fn(params, data):
             return np.array(hess_(jnp.array(params), data))
 
@@ -639,6 +645,8 @@ class ScopeSolver(BaseEstimator):
 
 
 class GrahtpSolver(BaseSolver):
+    isFast = False  # fast version of GraHTP is actually IHT
+
     def __init__(
         self,
         dimensionality,
@@ -658,7 +666,6 @@ class GrahtpSolver(BaseSolver):
         jax_platform="cpu",
         random_state=None,
     ):
-        self.fast = False  # fast version of GraHTP is actually IHT
         self.step_size = step_size
         super().__init__(
             dimensionality=dimensionality,
@@ -713,7 +720,7 @@ class GrahtpSolver(BaseSolver):
                 support_old = support_new
             # S3: debise
             params = np.zeros(self.dimensionality)
-            if self.fast:
+            if self.isFast:
                 params[support_new] = params_bias[support_new]
             else:
                 params[support_new], _ = self._cache_nlopt(
@@ -721,12 +728,16 @@ class GrahtpSolver(BaseSolver):
                 )
 
         # final optimization for IHT
-        if self.fast:
+        if self.isFast:
             params[support_new], _ = self._cache_nlopt(
                 loss_fn, value_and_grad, params, support_new, data
             )
 
         return params, support_new
+
+
+class IHTSolver(GrahtpSolver):
+    isFast = True  # IHT is actually fast version of GraHTP
 
 
 class GraspSolver(BaseSolver):
@@ -796,41 +807,132 @@ class GraspSolver(BaseSolver):
         return params, support_set
 
 
-class IHTSolver(GrahtpSolver):
-    def __init__(
-        self,
-        dimensionality,
-        sparsity=None,
-        sample_size=1,
-        *,
-        always_select=[],
-        step_size=0.005,
-        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
-        max_iter=100,
-        ic_type="aic",
-        ic_coef=1.0,
-        metric_method=None,
-        cv=1,
-        cv_fold_id=None,
-        split_method=None,
-        jax_platform="cpu",
-        random_state=None,
-    ):
-        super().__init__(
-            dimensionality=dimensionality,
-            sparsity=sparsity,
-            sample_size=sample_size,
-            always_select=always_select,
-            step_size=step_size,
-            nlopt_solver=nlopt_solver,
-            max_iter=max_iter,
-            ic_type=ic_type,
-            ic_coef=ic_coef,
-            metric_method=metric_method,
-            cv=cv,
-            cv_fold_id=cv_fold_id,
-            split_method=split_method,
-            jax_platform=jax_platform,
-            random_state=random_state,
+class FobaSolver(BaseSolver):
+
+    ## inherited the constructor of BaseSolver
+
+    useGrad = False
+
+    def forward_step(self, loss_fn, value_and_grad, params, support_set, data):
+        if self.useGrad:
+            # FoBa-gdt algorithm
+            value_old, grad = value_and_grad(params, data)
+            score = -np.abs(grad)
+            score[support_set] = np.inf
+        else:
+            # FoBa-obj algorithm
+            value_old = loss_fn(params, data)
+            score = np.empty(self.dimensionality, dtype=float)
+            for idx in range(self.dimensionality):
+                if idx in support_set:
+                    score[idx] = np.inf
+                    continue
+                score[idx] = self._cache_nlopt(
+                    loss_fn,
+                    value_and_grad,
+                    params,
+                    optim_variable_idx=np.array([idx], dtype=int),
+                    data=data,
+                    background_params=params,
+                )[1]
+
+        direction = np.argmin(score)
+        support_set = np.append(support_set, direction)
+        params_temporary, value_new = self._cache_nlopt(
+            loss_fn,
+            value_and_grad,
+            params,
+            optim_variable_idx=support_set,
+            data=data,
         )
-        self.fast = True  # IHT is actually fast version of GraHTP
+        params = np.zeros(self.dimensionality, dtype=float)
+        params[support_set] = params_temporary
+
+        return params, support_set, value_old - value_new
+
+    def backward_step(self, loss_fn, value_and_grad, params, support_set, data, backward_threshold):
+        score = np.empty(self.dimensionality, dtype=float)
+        params_temporary = params.copy()
+        for idx in range(self.dimensionality):
+            if idx not in support_set or idx in self.always_select:
+                score[idx] = np.inf
+                continue
+            params_temporary[idx] = 0.0
+            score[idx] = loss_fn(params_temporary, data)
+            params_temporary[idx] = params[idx]
+        direction = np.argmin(score)
+        if score[direction] >= backward_threshold:
+            return params, support_set, False
+
+        support_set = np.delete(support_set, np.argwhere(support_set == direction))
+        params_temporary, _ = self._cache_nlopt(
+            loss_fn,
+            value_and_grad,
+            params,
+            optim_variable_idx=support_set,
+            data=data,
+        )
+        params = np.zeros(self.dimensionality, dtype=float)
+        params[support_set] = params_temporary
+
+        return params, support_set, True
+
+    def _solve(
+        self,
+        sparsity,
+        loss_fn,
+        value_and_grad,
+        init_support_set,
+        init_params,
+        data,
+    ):
+        if sparsity <= self.always_select.size:
+            return super()._solve(
+                sparsity,
+                loss_fn,
+                value_and_grad,
+                init_support_set,
+                init_params,
+                data,
+            )
+        # init
+        params = np.zeros(self.dimensionality, dtype=float)
+        support_set = self.always_select
+        threshold = {}
+
+        for iter in range(self.max_iter):
+            if support_set.size > min(2 * sparsity, self.dimensionality):
+                break
+            params, support_set, backward_threshold = self.forward_step(
+                loss_fn, value_and_grad, params, support_set, data
+            )
+            threshold[support_set.size] = backward_threshold
+
+            while support_set.size > self.always_select.size:
+                params, support_set, result = self.backward_step(
+                    loss_fn,
+                    value_and_grad,
+                    params,
+                    support_set,
+                    data,
+                    backward_threshold=loss_fn(params, data) + threshold[support_set.size] / 2,
+                )
+                if not result:
+                    break
+        
+        if support_set.size < sparsity:
+            for iter in range(sparsity - support_set.size):
+                params, support_set, _ = self.forward_step(
+                    loss_fn, value_and_grad, params, support_set, data
+                )
+        elif support_set.size > sparsity:
+            for iter in range(support_set.size - sparsity):
+                params, support_set, _ = self.backward_step(
+                    loss_fn, value_and_grad, params, support_set, data, np.inf
+                )
+
+        return params, support_set
+
+
+class FobagdtSolver(FobaSolver):
+    useGrad = True

@@ -190,7 +190,7 @@ class Algorithm {
 
     Eigen::VectorXd get_bd() { return this->bd; }
 
-    virtual int get_beta_size(int n, int p) { return p; }
+    int get_beta_size(int n, int p) { return p; }
 
     /**
      * @param train_x sample matrix for training

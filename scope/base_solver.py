@@ -99,7 +99,7 @@ class BaseSolver(BaseEstimator):
         jax.config.update("jax_platform_name", self.jax_platform)
         if jit and getattr(data, "__hash__") is None:
             raise ValueError("Non-hashable data is not supported by jit.")
-        
+
         BaseSolver._check_positive_integer(self.dimensionality, "dimensionality")
         BaseSolver._check_positive_integer(self.sample_size, "sample_size")
         BaseSolver._check_non_negative_integer(self.max_iter, "max_iter")
@@ -199,9 +199,10 @@ class BaseSolver(BaseEstimator):
                 raise ValueError(
                     "The length of init_params must match `dimensionality`!"
                 )
-        
+
         loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
         loss_fn = lambda params, data: loss_(params, data).item()
+
         def value_and_grad(params, data):
             value, grad = grad_(params, data)
             return value.item(), np.array(grad)
@@ -263,7 +264,7 @@ class BaseSolver(BaseEstimator):
 
     @staticmethod
     def _set_objective(objective, gradient, jit):
-        # objective function 
+        # objective function
         if objective.__code__.co_argcount == 2:
             loss_ = objective
         elif objective.__code__.co_argcount == 1:
@@ -283,7 +284,7 @@ class BaseSolver(BaseEstimator):
             raise ValueError("The gradient function should have 1 or 2 arguments.")
         if jit:
             grad_ = jax.jit(grad_, static_argnums=(1,))
-        
+
         return loss_, grad_
 
     def _metric(
@@ -344,17 +345,21 @@ class BaseSolver(BaseEstimator):
     ):
         """
         Solve the optimization problem with given sparsity. Need to be implemented by corresponding concrete class.
-        def _solve(
-            self,
-            sparsity: int,
-            objective: Callable[[Sequence[float], Any], float],
-            gradient: Callable[
-                [Sequence[float], Any], Sequence[float]
-            ],
-            init_support_set: Sequence[int],
-            init_params: Sequence[float],
-            data: Any,
-        ) -> Tuple[Sequence[float], Sequence[int], float]:
+
+        Parameters
+        ----------
+        sparsity: int
+            The number of non-zero parameters.
+        loss_fn: Callable[[Sequence[float], Any], float]
+            The loss function.
+        value_and_grad: Callable[[Sequence[float], Any], Tuple[float, Sequence[float]]]
+            The function to compute the loss and gradient.
+        init_params: Sequence[float]
+            The complete initial parameters. This is only a suggestion. Whether it is effective depends on the specific algorithm
+        init_support_set: Sequence[int]
+            The initial support_set. This is only a suggestion. Whether it is effective depends on the specific algorithm
+        data: Any
+            The data passed to loss_fn and value_and_grad.
         Returns
         -------
         params: Sequence[float]
@@ -396,12 +401,13 @@ class BaseSolver(BaseEstimator):
 
             yield from helper(0, s, always_select)
 
-
         result = {"params": None, "support_set": None, "value_of_objective": math.inf}
         for support_set in all_subsets(
             self.dimensionality, sparsity, self.always_select
         ):
-            opt_params, loss = self._cache_nlopt(loss_fn, value_and_grad, init_params, support_set, data)
+            opt_params, loss = self._cache_nlopt(
+                loss_fn, value_and_grad, init_params, support_set, data
+            )
             if loss < result["value_of_objective"]:
                 params = np.zeros(self.dimensionality)
                 params[support_set] = opt_params
@@ -411,22 +417,55 @@ class BaseSolver(BaseEstimator):
 
         return result["params"], result["support_set"]
 
-    def _cache_nlopt(self, loss_fn, value_and_grad, init_params, support_set, data):
+    def _cache_nlopt(
+        self,
+        loss_fn,
+        value_and_grad,
+        init_params,
+        optim_variable_idx,
+        data,
+        background_params=None,
+    ):
         """
-        Nlopt often throws RuntimeError even if the optimization is nearly successful. This function is used to cache the best result and return it.
+        Nlopt often throws RuntimeError even if the optimization is nearly successful.
+        This function is used to cache the best result and return it.
+
+        Parameters
+        ----------
+        loss_fn: Callable[[Sequence[float], Any], float]
+            The loss function.
+        value_and_grad: Callable[[Sequence[float], Any], Tuple[float, Sequence[float]]]
+            The function to compute the loss and gradient.
+        init_params: Sequence[float]
+            The complete initial parameters.
+        optim_variable_idx: Sequence[int]
+            The index of variables to be optimized.
+        data: Any
+            The data passed to loss_fn and value_and_grad.
+        background_params: Sequence[float] | None
+            The values of parameters that are not optimized, default is all zeros.
+
+        Returns
+        -------
+        optim_params: Sequence[float]
+            The optimized parameters, whose length is the same as optim_variable_idx.
+        loss: float
+            The loss of the optimized parameters.
         """
-        if len(support_set) == 0:
+        if len(optim_variable_idx) == 0:
             return np.zeros(0), math.inf
         best_loss = math.inf
         best_params = None
+        if background_params is None:
+            background_params = np.zeros(self.dimensionality)
 
         def cache_opt_fn(x, grad):
             nonlocal best_loss, best_params
-            x_full = np.zeros(self.dimensionality)
-            x_full[support_set] = x
+            x_full = background_params
+            x_full[optim_variable_idx] = x
             if grad.size > 0:
                 loss, full_grad = value_and_grad(x_full, data)
-                grad[:] = full_grad[support_set]
+                grad[:] = full_grad[optim_variable_idx]
             else:
                 loss = loss_fn(x_full, data)
             if loss < best_loss:
@@ -434,7 +473,9 @@ class BaseSolver(BaseEstimator):
                 best_params = np.copy(x)
             return loss
 
-        nlopt_solver = nlopt.opt(self.nlopt_solver.get_algorithm(), support_set.size)
+        nlopt_solver = nlopt.opt(
+            self.nlopt_solver.get_algorithm(), optim_variable_idx.size
+        )
         if nlopt_solver.get_algorithm_name() != self.nlopt_solver.get_algorithm_name():
             raise ValueError("The algorithm of nlopt_solver is invalid.")
         nlopt_solver.set_stopval(self.nlopt_solver.get_stopval())
@@ -447,7 +488,7 @@ class BaseSolver(BaseEstimator):
         nlopt_solver.set_min_objective(cache_opt_fn)
 
         try:
-            opt_params = nlopt_solver.optimize(init_params[support_set])
+            opt_params = nlopt_solver.optimize(init_params[optim_variable_idx])
             return opt_params, nlopt_solver.last_optimum_value()
         except RuntimeError:
             return best_params, best_loss

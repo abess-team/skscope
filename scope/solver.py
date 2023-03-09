@@ -909,7 +909,7 @@ class FobaSolver(BaseSolver):
             threshold[support_set.size] = backward_threshold
 
             while support_set.size > self.always_select.size:
-                params, support_set, result = self.backward_step(
+                params, support_set, success = self.backward_step(
                     loss_fn,
                     value_and_grad,
                     params,
@@ -917,7 +917,7 @@ class FobaSolver(BaseSolver):
                     data,
                     backward_threshold=loss_fn(params, data) + threshold[support_set.size] / 2,
                 )
-                if not result:
+                if not success:
                     break
         
         if support_set.size < sparsity:

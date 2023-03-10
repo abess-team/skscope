@@ -25,3 +25,12 @@ multiple_linear
 
 Graphical Models
 --------------------
+
+Survival Models
+--------------------
+
+`Additive hazards model and Cox's proportional hazards model`_.
+
+.. _Additive hazards model and Cox's proportional hazards model: survival.ipynb
+
+

@@ -129,3 +129,12 @@ def test_add_coverage():
         file_log_level="error",
     )
     solver.solve(linear["loss_data"], data=linear["data"])
+
+    solver = ScopeSolver(linear["n_features"], linear["n_informative"])
+    solver.solve(**linear["cpp_model"], cpp=True)
+    set1 = set(solver.support_set)
+    solver.solve(linear["cpp_model"]["objective"], data=linear["cpp_model"]["data"], cpp=True)
+    set2 = set(solver.support_set)
+    
+    assert set(linear["support_set"]) == set1
+    assert set(linear["support_set"]) == set2

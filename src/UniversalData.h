@@ -22,7 +22,6 @@ using VectorXdual2nd = Eigen::Matrix<dual2nd,-1,1>;
 using std::function;
 using std::pair;
 
-using nlopt_function = double (*)(unsigned n, const double* x, double* grad, void* f_data);
 
 class UniversalModel;
 // UniversalData includes everything about the statistic model like loss, constraints and the statistic data like samples, operations of data.
@@ -53,7 +52,6 @@ public:
     Eigen::Index cols() const; // getter of effective_para
     const VectorXi& get_effective_para_index() const; // getter of effective_para_index, only used for log
     UniversalData slice_by_sample(const VectorXi& target_sample_index);
-    nlopt_function get_nlopt_function(); // create a function which can be optimized by nlopt
     double loss(const VectorXd& effective_para); // compute the loss with effective_para
     double loss_and_gradient(const VectorXd& effective_para, Eigen::Map<VectorXd>& gradient);
     void gradient_and_hessian(const VectorXd& effective_para, VectorXd& gradient,MatrixXd& hessian);             

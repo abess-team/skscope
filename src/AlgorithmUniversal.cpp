@@ -10,6 +10,18 @@ double abessUniversal::loss_function(UniversalData& active_data, MatrixXd& y, Ve
     return active_data.loss(active_para);
 }
 
+double nlopt_function(unsigned n, const double* x, double* grad, void* f_data) {
+    UniversalData* data = static_cast<UniversalData*>(f_data);
+    Map<VectorXd const> effective_para(x, n);
+    if (grad) { // not use operator new
+        Map<VectorXd> gradient(grad, n);
+        return data->loss_and_gradient(effective_para, gradient);
+    }
+    else {
+        return data->loss(effective_para);
+    }
+};
+
 bool abessUniversal::primary_model_fit(UniversalData& active_data, MatrixXd& y, VectorXd& weights, VectorXd& active_para, VectorXd& aux_para, double loss0,
     VectorXi& A, VectorXi& g_index, VectorXi& g_size) 
 {
@@ -17,9 +29,8 @@ bool abessUniversal::primary_model_fit(UniversalData& active_data, MatrixXd& y, 
     double value = 0.;
     active_data.init_para(active_para);
 
-    nlopt_function f = active_data.get_nlopt_function();
     nlopt_opt opt = active_data.nlopt_create(active_para.size());
-    nlopt_set_min_objective(opt, f, &active_data);
+    nlopt_set_min_objective(opt, nlopt_function, &active_data);
     nlopt_result result = nlopt_optimize(opt, active_para.data(), &value); 
     nlopt_destroy(opt);
 

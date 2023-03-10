@@ -44,21 +44,6 @@ const VectorXi& UniversalData::get_effective_para_index() const
     return effective_para_index;
 }
 
-nlopt_function UniversalData::get_nlopt_function() 
-{
-    return [](unsigned n, const double* x, double* grad, void* f_data) {
-        UniversalData* data = static_cast<UniversalData*>(f_data);
-        Map<VectorXd const> effective_para(x, n);
-        if (grad) { // not use operator new
-            Map<VectorXd> gradient(grad, n);
-            return data->loss_and_gradient(effective_para, gradient);
-        }
-        else {
-            return data->loss(effective_para);
-        }
-    };
-}
-
 double UniversalData::loss(const VectorXd& effective_para)
 {
     VectorXd complete_para = VectorXd::Zero(this->model_size);

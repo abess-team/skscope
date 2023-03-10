@@ -6,6 +6,7 @@
 #include "List.h"
 #include "api.h"
 #include "utilities.h"
+#include "predefined_model.hpp"
 
 std::tuple<Eigen::VectorXd, Eigen::VectorXd, double, double, double>
 pywrap_Universal(ExternData data, UniversalModel model, NloptConfig nlopt_solver, int model_size, int sample_size,int aux_para_size, int max_iter,
@@ -42,4 +43,11 @@ PYBIND11_MODULE(_scope, m) {
         .def("set_init_params_of_sub_optim", &UniversalModel::set_init_params_of_sub_optim);
     m.def("init_spdlog", &init_spdlog);
     pybind11::class_<NloptConfig>(m, "NloptConfig").def(pybind11::init<int, const char *, double, double, double, double, double, unsigned, unsigned>());
+    pybind11::class_<QuadraticData>(m, "QuadraticData")
+        .def(pybind11::init<Eigen::MatrixXd, Eigen::VectorXd>());
+    m.def("quadratic_loss", &quadratic_loss<double>);
+    m.def("quadratic_loss", &quadratic_loss<dual>);
+    m.def("quadratic_loss", &quadratic_loss<dual2nd>);
+    m.def("quadratic_grad", &quadratic_grad);
+    m.def("quadratic_hess", &quadratic_hess);
 }

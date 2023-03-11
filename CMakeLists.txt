@@ -18,8 +18,7 @@ option(NLOPT_MATLAB "build matlab bindings" OFF)
 option(NLOPT_GUILE "build guile bindings" OFF)
 option(NLOPT_SWIG "use SWIG to build bindings" OFF)
 
-# This flags are used if cmake is called with -DCMAKE_BUILD_TYPE=PROFILE
-set(CMAKE_CXX_FLAGS_PROFILE --coverage)
+
 if(MSVC)
     SET(CMAKE_CXX_FLAGS "/EHsc /arch:AVX2")
     SET(CMAKE_CXX_FLAGS_DEBUG "/W4")
@@ -28,6 +27,8 @@ elseif(DARWIN)
 else()
     SET(CMAKE_CXX_FLAGS "-march=native")
     SET(CMAKE_CXX_FLAGS_DEBUG "-Wall")
+    # This flags are used if cmake is called with -DCMAKE_BUILD_TYPE=PROFILE
+    SET(CMAKE_CXX_FLAGS_PROFILE --coverage)
 endif()
 
 # dependencies

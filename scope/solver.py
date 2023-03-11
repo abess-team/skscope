@@ -550,10 +550,8 @@ class ScopeSolver(BaseEstimator):
 
             print(solver.get_result())
         """
-        if not isinstance(Q, np.ndarray):
-            Q = np.array(Q)
-        if not isinstance(p, np.ndarray):
-            p = np.array(p)
+        Q = np.array(Q, dtype=float)
+        p = np.array(p, dtype=float)
         if Q.ndim != 2 or Q.shape[0] != Q.shape[1]:
             raise ValueError("Q must be a square matrix.")
         if p.ndim != 1 or p.shape[0] != Q.shape[0]:

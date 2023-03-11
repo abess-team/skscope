@@ -2,7 +2,6 @@
 
 #include <Eigen/Eigen>
 #include <pybind11/pybind11.h>
-using ExternData = pybind11::object;
 #include <memory>
 #include <utility>
 
@@ -25,7 +24,7 @@ using std::pair;
 
 class UniversalModel;
 // UniversalData includes everything about the statistic model like loss, constraints and the statistic data like samples, operations of data.
-// In abess project, UniversalData will be an instantiation of T4 in template class algorithm, other instantiation of T4 often is matrix.
+// In abess project, UniversalData will be an instantiation of UniversalData in template class algorithm, other instantiation of UniversalData often is matrix.
 // Thus, UniversalData is just like a matrix in algorithm, and its instance is often denoted as 'x'.
 // In order to work like matrix, UniversalData need the help of utility function like X_seg, slice.
 class UniversalData {
@@ -42,10 +41,10 @@ private:
     Eigen::Index model_size; // length of complete_para
     VectorXi effective_para_index;// `complete_para[effective_para_index[i]]` is `effective_para[i]`
     Eigen::Index effective_size; // length of effective_para_index
-    std::shared_ptr<ExternData> data; // statistic data from user 
+    std::shared_ptr<pybind11::object> data; // statistic data from user 
 public:
     UniversalData() = default;
-    UniversalData(Eigen::Index model_size, Eigen::Index sample_size, ExternData& data, UniversalModel* model, NloptConfig* nlopt_solver);
+    UniversalData(Eigen::Index model_size, Eigen::Index sample_size, pybind11::object& data, UniversalModel* model, NloptConfig* nlopt_solver);
     UniversalData slice_by_para(const VectorXi& target_para_index); // used in util func X_seg() and slice()
 
     Eigen::Index rows() const; // getter of sample_size
@@ -63,23 +62,23 @@ class UniversalModel{
     friend class UniversalData;
 private:
     // size of para will be match for data
-    function <double(VectorXd const& para, ExternData const& data)> loss;
-    function <dual(VectorXdual const& para, ExternData const& data)> gradient_autodiff;
-    function <dual2nd(VectorXdual2nd const& para, ExternData const& data)> hessian_autodiff;
-    function <pair<double, VectorXd>(VectorXd const& para, ExternData const& data)> gradient_user_defined;
-    function <MatrixXd(VectorXd const& para, ExternData const& data)> hessian_user_defined;
-    function <ExternData(ExternData const& old_data, VectorXi const& target_sample_index)> slice_by_sample;
-    function <void(ExternData const* p)> deleter = [](ExternData const* p) { delete p; };
-    function <VectorXd(VectorXd & para, ExternData const& data, VectorXi const& active_para_index)> init_para = nullptr;
+    function <double(VectorXd const& para, pybind11::object const& data)> loss;
+    function <dual(VectorXdual const& para, pybind11::object const& data)> gradient_autodiff;
+    function <dual2nd(VectorXdual2nd const& para, pybind11::object const& data)> hessian_autodiff;
+    function <pair<double, VectorXd>(VectorXd const& para, pybind11::object const& data)> gradient_user_defined;
+    function <MatrixXd(VectorXd const& para, pybind11::object const& data)> hessian_user_defined;
+    function <pybind11::object(pybind11::object const& old_data, VectorXi const& target_sample_index)> slice_by_sample;
+    function <void(pybind11::object const* p)> deleter = [](pybind11::object const* p) { delete p; };
+    function <VectorXd(VectorXd & para, pybind11::object const& data, VectorXi const& active_para_index)> init_para = nullptr;
 
 public:
     // register callback function
-    void set_loss_of_model(function <double(VectorXd const&, ExternData const&)> const&);
-    void set_gradient_autodiff(function <dual(VectorXdual const&, ExternData const&)> const&);
-    void set_hessian_autodiff(function <dual2nd(VectorXdual2nd const&, ExternData const&)> const&);
-    void set_gradient_user_defined(function <pair<double, VectorXd>(VectorXd const&, ExternData const&)> const&);
-    void set_hessian_user_defined(function <MatrixXd(VectorXd const&, ExternData const&)> const&);
-    void set_slice_by_sample(function <ExternData(ExternData const&, VectorXi const&)> const&);
-    void set_deleter(function <void(ExternData const&)> const&);
-    void set_init_params_of_sub_optim(function <VectorXd(VectorXd const&, ExternData const&, VectorXi const&)> const&);
+    void set_loss_of_model(function <double(VectorXd const&, pybind11::object const&)> const&);
+    void set_gradient_autodiff(function <dual(VectorXdual const&, pybind11::object const&)> const&);
+    void set_hessian_autodiff(function <dual2nd(VectorXdual2nd const&, pybind11::object const&)> const&);
+    void set_gradient_user_defined(function <pair<double, VectorXd>(VectorXd const&, pybind11::object const&)> const&);
+    void set_hessian_user_defined(function <MatrixXd(VectorXd const&, pybind11::object const&)> const&);
+    void set_slice_by_sample(function <pybind11::object(pybind11::object const&, VectorXi const&)> const&);
+    void set_deleter(function <void(pybind11::object const&)> const&);
+    void set_init_params_of_sub_optim(function <VectorXd(VectorXd const&, pybind11::object const&, VectorXi const&)> const&);
 };

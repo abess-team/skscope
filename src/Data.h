@@ -1,32 +1,26 @@
 //
 // Created by Jin Zhu on 2020/2/18.
 //
-//  #define R_BUILD
-#ifndef SRC_DATA_H
-#define SRC_DATA_H
 
-#ifdef R_BUILD
-#include <RcppEigen.h>
-// [[Rcpp::depends(RcppEigen)]]
-#else
+#pragma once
+
+
 #include <Eigen/Eigen>
-#endif
-#include <iostream>
 #include <vector>
 
 #include "utilities.h"
 using namespace std;
 using namespace Eigen;
 
-template <class T1, class T2, class T3, class T4>
+
 class Data {
    public:
-    T4 x;
-    T1 y;
+    UniversalData x;
+    Eigen::MatrixXd y;
     Eigen::VectorXd weight;
     Eigen::VectorXd x_mean;
     Eigen::VectorXd x_norm;
-    T3 y_mean;
+    Eigen::VectorXd y_mean;
     int n;
     int p;
     int M;
@@ -37,7 +31,7 @@ class Data {
 
     Data() = default;
 
-    Data(T4 &x, T1 &y, int normalize_type, Eigen::VectorXd &weight, Eigen::VectorXi &g_index, bool sparse_matrix,
+    Data(UniversalData &x, Eigen::MatrixXd &y, int normalize_type, Eigen::VectorXd &weight, Eigen::VectorXi &g_index, bool sparse_matrix,
          int beta_size) {
         this->x = x;
         this->y = y;
@@ -59,4 +53,4 @@ class Data {
     };
 
 };
-#endif  // SRC_DATA_H
+

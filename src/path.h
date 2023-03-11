@@ -1,20 +1,12 @@
 //
 // Created by Jin Zhu on 2020/3/8.
 //
-#ifndef SRC_PATH_H
-#define SRC_PATH_H
 
-#ifdef R_BUILD
-#include <RcppEigen.h>
-// [[Rcpp::depends(RcppEigen)]s]
-using namespace Eigen;
-#else
+
+#pragma once
 
 #include <Eigen/Eigen>
 
-#include "List.h"
-
-#endif
 
 #include <vector>
 
@@ -23,10 +15,9 @@ using namespace Eigen;
 #include "Metric.h"
 #include "utilities.h"
 
-template <class T1, class T2, class T3, class T4>
-void sequential_path_cv(Data<T1, T2, T3, T4> &data, Algorithm<T1, T2, T3, T4> *algorithm,
-                        Metric<T1, T2, T3, T4> *metric, Parameters &parameters, bool early_stop, int k,
-                        Eigen::VectorXi &A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init, Result<T2, T3> &result) {
+void sequential_path_cv(Data &data, Algorithm *algorithm,
+                        Metric *metric, Parameters &parameters, bool early_stop, int k,
+                        Eigen::VectorXi &A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init, Result &result) {
     int p = data.p;
     int N = data.g_num;
     int M = data.M;
@@ -36,9 +27,9 @@ void sequential_path_cv(Data<T1, T2, T3, T4> &data, Algorithm<T1, T2, T3, T4> *a
     // int early_stop_s = sequence_size;
 
     Eigen::VectorXi train_mask, test_mask;
-    T1 train_y, test_y;
+    Eigen::MatrixXd train_y, test_y;
     Eigen::VectorXd train_weight, test_weight;
-    T4 train_x, test_x;
+    UniversalData train_x, test_x;
     int train_n = 0, test_n = 0;
 
     // train & test data
@@ -61,8 +52,8 @@ void sequential_path_cv(Data<T1, T2, T3, T4> &data, Algorithm<T1, T2, T3, T4> *a
         test_n = test_mask.size();
     }
 
-    Eigen::Matrix<T2, Dynamic, 1> beta_matrix(sequence_size, 1);
-    Eigen::Matrix<T3, Dynamic, 1> coef0_matrix(sequence_size, 1);
+    Eigen::Matrix<Eigen::VectorXd, Dynamic, 1> beta_matrix(sequence_size, 1);
+    Eigen::Matrix<Eigen::VectorXd, Dynamic, 1> coef0_matrix(sequence_size, 1);
     Eigen::MatrixXd train_loss_matrix(sequence_size, 1);
     Eigen::MatrixXd ic_matrix(sequence_size, 1);
     Eigen::MatrixXd test_loss_matrix(sequence_size, 1);
@@ -129,10 +120,10 @@ void sequential_path_cv(Data<T1, T2, T3, T4> &data, Algorithm<T1, T2, T3, T4> *a
     result.effective_number_matrix = effective_number_matrix;
 }
 
-template <class T1, class T2, class T3, class T4>
-void gs_path(Data<T1, T2, T3, T4> &data, vector<Algorithm<T1, T2, T3, T4> *> algorithm_list,
-             Metric<T1, T2, T3, T4> *metric, Parameters &parameters, Eigen::VectorXi &A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init,
-             vector<Result<T2, T3>> &result_list) {
+
+void gs_path(Data &data, vector<Algorithm *> algorithm_list,
+             Metric *metric, Parameters &parameters, Eigen::VectorXi &A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init,
+             vector<Result> &result_list) {
     int s_min = parameters.s_min;
     int s_max = parameters.s_max;
     int sequence_size = s_max - s_min + 5;
@@ -140,8 +131,8 @@ void gs_path(Data<T1, T2, T3, T4> &data, vector<Algorithm<T1, T2, T3, T4> *> alg
 
     // init: store for each fold
     int Kfold = metric->Kfold;
-    vector<Eigen::Matrix<T2, -1, -1>> beta_matrix(Kfold);
-    vector<Eigen::Matrix<T3, -1, -1>> coef0_matrix(Kfold);
+    vector<Eigen::Matrix<Eigen::VectorXd, -1, -1>> beta_matrix(Kfold);
+    vector<Eigen::Matrix<Eigen::VectorXd, -1, -1>> coef0_matrix(Kfold);
     vector<Eigen::MatrixXd> train_loss_matrix(Kfold);
     vector<Eigen::MatrixXd> ic_matrix(Kfold);
     vector<Eigen::MatrixXd> test_loss_matrix(Kfold);
@@ -160,7 +151,7 @@ void gs_path(Data<T1, T2, T3, T4> &data, vector<Algorithm<T1, T2, T3, T4> *> alg
 
     Eigen::VectorXd bd_init;
     // gs only support the first lambda
-    FIT_ARG<T2, T3> fit_arg(0, parameters.lambda_list(0), beta_init, coef0_init, bd_init, A_init);
+    FIT_ARG fit_arg(0, parameters.lambda_list(0), beta_init, coef0_init, bd_init, A_init);
 
     int ind = -1;
     int left = round(0.618 * s_min + 0.382 * s_max);
@@ -229,8 +220,8 @@ void gs_path(Data<T1, T2, T3, T4> &data, vector<Algorithm<T1, T2, T3, T4> *> alg
     }
     // cout<<"left==right | s_min = "<<s_min<<" | s_max = "<<s_max<<endl;
 
-    T2 best_beta;
-    // T3 best_coef0;
+    Eigen::VectorXd best_beta;
+    // Eigen::VectorXd best_coef0;
     // double best_train_loss = 0;
     double best_loss = DBL_MAX;
     for (int s = s_min; s <= s_max; s++) {
@@ -276,29 +267,4 @@ void gs_path(Data<T1, T2, T3, T4> &data, vector<Algorithm<T1, T2, T3, T4> *> alg
     parameters.build_sequence();
 }
 
-// double det(double a[], double b[]);
 
-// calculate the intersection of two lines
-// if parallal, need_flag = false.
-// void line_intersection(double line1[2][2], double line2[2][2], double intersection[], bool &need_flag);
-
-// boundary: s=smin, s=max, lambda=lambda_min, lambda_max
-// line: crosses p and is parallal to u
-// calculate the intersections between boundary and line
-// void cal_intersections(double p[], double u[], int s_min, int s_max, double lambda_min, double lambda_max, int a[],
-// int b[]);
-
-// template <class T1, class T2, class T3>
-// void golden_section_search(Data<T1, T2, T3> &data, Algorithm<T1, T2, T3> *algorithm, Metric<T1, T2, T3> *metric,
-// double p[], double u[], int s_min, int s_max, double log_lambda_min, double log_lambda_max, double best_arg[],
-//                            T2 &beta1, T3 &coef01, double &train_loss1, double &ic1, Eigen::MatrixXd &ic_sequence);
-
-// template <class T1, class T2, class T3>
-// void seq_search(Data<T1, T2, T3> &data, Algorithm<T1, T2, T3> *algorithm, Metric<T1, T2, T3> *metric, double p[],
-// double u[], int s_min, int s_max, double log_lambda_min, double log_lambda_max, double best_arg[],
-//                 T2 &beta1, T3 &coef01, double &train_loss1, double &ic1, int nlambda, Eigen::MatrixXd &ic_sequence);
-
-// List pgs_path(Data &data, Algorithm *algorithm, Metric *metric, int s_min, int s_max, double log_lambda_min, double
-// log_lambda_max, int powell_path, int nlambda);
-
-#endif  // SRC_PATH_H

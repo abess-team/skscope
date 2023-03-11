@@ -99,10 +99,10 @@ class ScopeSolver(BaseEstimator):
     ----------
     params : array-like, shape(p, )
         The sparse optimal solution
-    eval_objective : float
+    cv_test_loss : float
         If cv=1, it stores the score under chosen information criterion.
         If cv>1, it stores the test objective under cross-validation.
-    train_objective : float
+    cv_train_loss : float
         The objective on training data.
     value_of_objective: float
         The value of objective function on the solution.
@@ -499,8 +499,9 @@ class ScopeSolver(BaseEstimator):
 
         self.params = np.array(result[0])
         self.support_set = np.nonzero(self.params)[0]
-        self.train_objective = result[2]
-        self.eval_objective = result[4] if self.cv == 1 else result[3]
+        self.cv_train_loss = result[1] if self.cv == 1 else 0.0
+        self.cv_test_loss = result[2] if self.cv == 1 else 0.0
+        self.information_criterion = result[3]
         self.value_of_objective = loss_fn(self.params, data)
 
         return self.params
@@ -513,8 +514,9 @@ class ScopeSolver(BaseEstimator):
             "params": self.params,
             "support_set": self.support_set,
             "value_of_objective": self.value_of_objective,
-            "train_objective": self.train_objective,
-            "eval_objective": self.eval_objective,
+            "cv_train_loss": self.cv_train_loss,
+            "cv_test_loss": self.cv_test_loss,
+            "information_criterion": self.information_criterion,
         }
 
     @staticmethod

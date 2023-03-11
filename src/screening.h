@@ -1,20 +1,11 @@
-#ifndef SRC_SCREENING_H
-#define SRC_SCREENING_H
+#pragma once
 
-//  #define R_BUILD
-
-#ifdef R_BUILD
-#include <Rcpp.h>
-#include <RcppEigen.h>
-using namespace Rcpp;
-// [[Rcpp::depends(RcppEigen)]]
-#else
 #include <Eigen/Eigen>
-#endif
+
 
 #include <algorithm>
 #include <cfloat>
-#include <iostream>
+
 
 #include "Data.h"
 #include "utilities.h"
@@ -22,8 +13,8 @@ using namespace Rcpp;
 using namespace std;
 using namespace Eigen;
 
-template <class T1, class T2, class T3, class T4>
-Eigen::VectorXi screening(Data<T1, T2, T3, T4> &data, std::vector<Algorithm<T1, T2, T3, T4> *> algorithm_list,
+
+Eigen::VectorXi screening(Data &data, std::vector<Algorithm *> algorithm_list,
                           int screening_size, int &beta_size, double lambda, Eigen::VectorXi &A_init) {
     int n = data.n;
     int M = data.M;
@@ -36,14 +27,14 @@ Eigen::VectorXi screening(Data<T1, T2, T3, T4> &data, std::vector<Algorithm<T1, 
     Eigen::VectorXi screening_A(screening_size);
     Eigen::VectorXd coef_norm = Eigen::VectorXd::Zero(g_num);
 
-    T2 beta_init;
-    T3 coef0_init;
+    Eigen::VectorXd beta_init;
+    Eigen::VectorXd coef0_init;
     Eigen::VectorXd bd_init;
 
     for (int i = 0; i < g_num; i++) {
         int p_tmp = g_size(i);
         Eigen::VectorXi index = Eigen::VectorXi::LinSpaced(p_tmp, g_index(i), g_index(i) + p_tmp - 1);
-        T4 x_tmp = X_seg(data.x, n, index, algorithm_list[0]->model_type);
+        UniversalData x_tmp = X_seg(data.x, n, index, algorithm_list[0]->model_type);
         Eigen::VectorXi g_index_tmp = Eigen::VectorXi::LinSpaced(p_tmp, 0, p_tmp - 1);
         Eigen::VectorXi g_size_tmp = Eigen::VectorXi::Ones(p_tmp);
         coef_set_zero(p_tmp, M, beta_init, coef0_init);
@@ -56,7 +47,7 @@ Eigen::VectorXi screening(Data<T1, T2, T3, T4> &data, std::vector<Algorithm<T1, 
         algorithm_list[0]->update_A_init(A_init, p_tmp);
         algorithm_list[0]->fit(x_tmp, data.y, data.weight, g_index_tmp, g_size_tmp, n, p_tmp, p_tmp);
 
-        T2 beta = algorithm_list[0]->beta;
+        Eigen::VectorXd beta = algorithm_list[0]->beta;
         coef_norm(i) = beta.squaredNorm() / p_tmp;
     }
 
@@ -80,7 +71,7 @@ Eigen::VectorXi screening(Data<T1, T2, T3, T4> &data, std::vector<Algorithm<T1, 
     }
 
     Eigen::VectorXi screening_A_ind = find_ind(screening_A, g_index, g_size, beta_size, g_num); 
-    T4 x_A = X_seg(data.x, 0, screening_A_ind, 0);
+    UniversalData x_A = X_seg(data.x, 0, screening_A_ind, 0);
 
     Eigen::VectorXd new_x_mean, new_x_norm;
     slice(data.x_mean, screening_A_ind, new_x_mean);
@@ -93,7 +84,7 @@ Eigen::VectorXi screening(Data<T1, T2, T3, T4> &data, std::vector<Algorithm<T1, 
     data.g_num = screening_size;
     data.g_index = new_g_index;
     data.g_size = new_g_size;
-    beta_size = algorithm_list[0]->get_beta_size(n, new_p);
+    beta_size = new_p;
 
     if (always_select.size() != 0) {
         Eigen::VectorXi new_always_select(always_select.size());
@@ -111,4 +102,4 @@ Eigen::VectorXi screening(Data<T1, T2, T3, T4> &data, std::vector<Algorithm<T1, 
     return screening_A_ind;
 }
 
-#endif  // SRC_SCREENING_H
+

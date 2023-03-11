@@ -45,7 +45,7 @@ jobs:
           pytest --cov=scope -v --cov-report=xml
           ls * -al
           cd ..
-          gcovr --filter src/ --print-summary --xml cpp_coverage.xml
+          gcovr --filter src/ --exclude-throw-branches --exclude-unreachable-branches --print-summary --xml cpp_coverage.xml
           ls * -al
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

@@ -7,8 +7,7 @@
  * @brief some utilities for abess package.
  */
 
-#ifndef SRC_UTILITIES_H
-#define SRC_UTILITIES_H
+#pragma once
 
 #include <Eigen/Eigen>
 #include <type_traits>
@@ -36,8 +35,6 @@ class UniversalData;
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/fmt/ostr.h"
 
-using namespace std;
-using namespace Eigen;
 
 constexpr int UNIVERSAL_MODEL = 0;
 constexpr int LM_MODEL = 1;
@@ -58,14 +55,13 @@ void init_spdlog(int console_log_level, int file_log_level, const char* log_file
  * @brief Save the sequential fitting result along the parameter searching.
  * @details All matrix stored here have only one column, and each row correspond to a
  * parameter combination in class Parameters.
- * @tparam T2 for beta
- * @tparam T3 for coef0
+ * @tparam Eigen::VectorXd for beta
+ * @tparam Eigen::VectorXd for coef0
  */
-template <class T2, class T3>
 struct Result {
-    Eigen::Matrix<T2, Eigen::Dynamic, Eigen::Dynamic>
+    Eigen::Matrix<Eigen::VectorXd, Eigen::Dynamic, Eigen::Dynamic>
         beta_matrix; /*!< Each value is the beta corrsponding a parameter combination */
-    Eigen::Matrix<T3, Eigen::Dynamic, Eigen::Dynamic>
+    Eigen::Matrix<Eigen::VectorXd, Eigen::Dynamic, Eigen::Dynamic>
         coef0_matrix; /*!< Each value is the coef0 corrsponding a parameter combination  */
     Eigen::MatrixXd
         ic_matrix; /*!< Each value is the information criterion value corrsponding a parameter combination  */
@@ -77,16 +73,15 @@ struct Result {
         effective_number_matrix; /*!< Each value is the effective number corrsponding a parameter combination  */
 };
 
-template <class T2, class T3>
 struct FIT_ARG {
     int support_size;
     double lambda;
-    T2 beta_init;
-    T3 coef0_init;
+    Eigen::VectorXd beta_init;
+    Eigen::VectorXd coef0_init;
     Eigen::VectorXd bd_init;
     Eigen::VectorXi A_init;
 
-    FIT_ARG(int _support_size, double _lambda, T2 _beta_init, T3 _coef0_init, VectorXd _bd_init, VectorXi _A_init) {
+    FIT_ARG(int _support_size, double _lambda, Eigen::VectorXd _beta_init, Eigen::VectorXd _coef0_init, Eigen::VectorXd _bd_init, Eigen::VectorXi _A_init) {
         support_size = _support_size;
         lambda = _lambda;
         beta_init = _beta_init;
@@ -175,8 +170,8 @@ Eigen::VectorXi find_ind(Eigen::VectorXi &L, Eigen::VectorXi &index, Eigen::Vect
  */
 UniversalData X_seg(UniversalData& X, int n, Eigen::VectorXi& ind, int model_type); 
 
-// template <class T4>
-// void X_seg(T4 &X, int n, Eigen::VectorXi &ind, T4 &X_seg)
+// template <class UniversalData>
+// void X_seg(UniversalData &X, int n, Eigen::VectorXi &ind, UniversalData &X_seg)
 // {
 //     if (ind.size() == X.cols())
 //     {
@@ -256,4 +251,3 @@ void coef_set_zero(int p, int M, Eigen::VectorXd& beta, Eigen::VectorXd& coef0);
 // bool check_ill_condition(Eigen::MatrixXd &M);
 
 
-#endif  // SRC_UTILITIES_H

@@ -1,9 +1,7 @@
 //
 // Created by Jin Zhu on 2020/2/18.
 //
-// #define R_BUILD
-#ifndef SRC_METRICS_H
-#define SRC_METRICS_H
+#pragma once
 
 #include <algorithm>
 #include <random>
@@ -13,15 +11,14 @@
 #include "Data.h"
 #include "utilities.h"
 
-template <class T1, class T2, class T3, class T4>
-// To do: calculate loss && all to one && lm poisson cox
+
 class Metric {
    public:
     bool is_cv;
     int Kfold;
     int ic_type;
-    // Eigen::Matrix<T2, Dynamic, 1> cv_initial_model_param;
-    // Eigen::Matrix<T3, Dynamic, 1> cv_initial_coef0;
+    // Eigen::Matrix<Eigen::VectorXd, Dynamic, 1> cv_initial_model_param;
+    // Eigen::Matrix<Eigen::VectorXd, Dynamic, 1> cv_initial_coef0;
 
     std::vector<Eigen::VectorXi> cv_initial_A;
     std::vector<Eigen::VectorXi> cv_initial_I;
@@ -29,16 +26,16 @@ class Metric {
     std::vector<Eigen::VectorXi> train_mask_list;
     std::vector<Eigen::VectorXi> test_mask_list;
 
-    std::vector<T4> train_X_list;
-    std::vector<T4> test_X_list;
-    std::vector<T1> train_y_list;
-    std::vector<T1> test_y_list;
+    std::vector<UniversalData> train_X_list;
+    std::vector<UniversalData> test_X_list;
+    std::vector<Eigen::MatrixXd> train_y_list;
+    std::vector<Eigen::MatrixXd> test_y_list;
     std::vector<Eigen::VectorXd> train_weight_list;
     std::vector<Eigen::VectorXd> test_weight_list;
 
-    std::vector<FIT_ARG<T2, T3>> cv_init_fit_arg;
+    std::vector<FIT_ARG> cv_init_fit_arg;
 
-    // std::vector<std::vector<T4>> group_XTX_list;
+    // std::vector<std::vector<UniversalData>> group_XTX_list;
 
     double ic_coef;
 
@@ -62,13 +59,13 @@ class Metric {
 
     void set_cv_init_fit_arg(int beta_size, int M) {
         for (int i = 0; i < this->Kfold; i++) {
-            T2 beta_init;
-            T3 coef0_init;
+            Eigen::VectorXd beta_init;
+            Eigen::VectorXd coef0_init;
             coef_set_zero(beta_size, M, beta_init, coef0_init);
             Eigen::VectorXi A_init;
             Eigen::VectorXd bd_init;
 
-            FIT_ARG<T2, T3> fit_arg(0, 0., beta_init, coef0_init, bd_init, A_init);
+            FIT_ARG fit_arg(0, 0., beta_init, coef0_init, bd_init, A_init);
 
             cv_init_fit_arg[i] = fit_arg;
         }
@@ -108,7 +105,7 @@ class Metric {
     //   this->cv_initial_coef0[k] = coef0;
     // }
 
-    void set_cv_train_test_mask(Data<T1, T2, T3, T4> &data, int n, Eigen::VectorXi &cv_fold_id) {   
+    void set_cv_train_test_mask(Data &data, int n, Eigen::VectorXi &cv_fold_id) {   
         Eigen::VectorXi index_list = Eigen::VectorXi::LinSpaced(n, 0, n - 1);
         auto rule = [&cv_fold_id](int i, int j) -> bool { return cv_fold_id(i) < cv_fold_id(j); };
         std::sort(index_list.data(), index_list.data() + index_list.size(), rule);
@@ -160,7 +157,7 @@ class Metric {
         this->test_mask_list = test_mask_list_tmp;
     };
 
-    // void cal_cv_group_XTX(Data<T1, T2, T3> &data)
+    // void cal_cv_group_XTX(Data<Eigen::MatrixXd, Eigen::VectorXd, Eigen::VectorXd> &data)
     // {
     //   int p = data.p;
     //   Eigen::VectorXi index = data.g_index;
@@ -183,7 +180,7 @@ class Metric {
     //   this->group_XTX_list = group_XTX_list_tmp;
     // }
 
-    double ic(int train_n, int M, int N, Algorithm<T1, T2, T3, T4> *algorithm) {
+    double ic(int train_n, int M, int N, Algorithm *algorithm) {
         double loss = 2 * (algorithm->get_train_loss() - algorithm->lambda_level * algorithm->beta.cwiseAbs2().sum());
         
         if (ic_type == 1) {
@@ -199,16 +196,16 @@ class Metric {
         };
     };
 
-    double loss_function(T4 &train_x, T1 &train_y, Eigen::VectorXd &train_weight, Eigen::VectorXi &g_index,
-                         Eigen::VectorXi &g_size, int train_n, int p, int N, Algorithm<T1, T2, T3, T4> *algorithm) {
+    double loss_function(UniversalData &train_x, Eigen::MatrixXd &train_y, Eigen::VectorXd &train_weight, Eigen::VectorXi &g_index,
+                         Eigen::VectorXi &g_size, int train_n, int p, int N, Algorithm *algorithm) {
         Eigen::VectorXi A = algorithm->get_A_out();
-        T2 beta = algorithm->get_beta();
-        T3 coef0 = algorithm->get_coef0();
+        Eigen::VectorXd beta = algorithm->get_beta();
+        Eigen::VectorXd coef0 = algorithm->get_coef0();
 
         Eigen::VectorXi A_ind = find_ind(A, g_index, g_size, beta.rows(), N);
-        T4 X_A = X_seg(train_x, train_n, A_ind, algorithm->model_type);
+        UniversalData X_A = X_seg(train_x, train_n, A_ind, algorithm->model_type);
 
-        T2 beta_A;
+        Eigen::VectorXd beta_A;
         slice(beta, A_ind, beta_A);
 
         // Eigen::VectorXd beta_A(A_ind.size());
@@ -220,8 +217,8 @@ class Metric {
     }
 
     // to do
-    Eigen::VectorXd fit_and_evaluate_in_metric(std::vector<Algorithm<T1, T2, T3, T4> *> algorithm_list,
-                                               Data<T1, T2, T3, T4> &data, FIT_ARG<T2, T3> &fit_arg) {
+    Eigen::VectorXd fit_and_evaluate_in_metric(std::vector<Algorithm *> algorithm_list,
+                                               Data &data, FIT_ARG &fit_arg) {
         Eigen::VectorXd loss_list(this->Kfold);
 
         if (!is_cv) {
@@ -298,4 +295,4 @@ class Metric {
     };
 };
 
-#endif  // SRC_METRICS_H
+

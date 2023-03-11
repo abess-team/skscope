@@ -6,11 +6,11 @@ using namespace std;
 using Eigen::Map;
 using Eigen::Matrix;
 
-UniversalData::UniversalData(Eigen::Index model_size, Eigen::Index sample_size, ExternData& data, UniversalModel* model, NloptConfig* nlopt_solver)
+UniversalData::UniversalData(Eigen::Index model_size, Eigen::Index sample_size, pybind11::object& data, UniversalModel* model, NloptConfig* nlopt_solver)
     : model(model), nlopt_solver(nlopt_solver), sample_size(sample_size), model_size(model_size), effective_size(model_size)
 {
     this->effective_para_index = VectorXi::LinSpaced(model_size, 0, model_size - 1);
-    this->data = shared_ptr<ExternData>(new ExternData(data));
+    this->data = shared_ptr<pybind11::object>(new pybind11::object(data));
 }
 
 UniversalData UniversalData::slice_by_para(const VectorXi& target_para_index)
@@ -25,7 +25,7 @@ UniversalData UniversalData::slice_by_sample(const VectorXi& target_sample_index
 {
     UniversalData tem(*this);
     tem.sample_size = target_sample_index.size();
-    tem.data = shared_ptr<ExternData>(new ExternData(model->slice_by_sample(*data, target_sample_index)), model->deleter);
+    tem.data = shared_ptr<pybind11::object>(new pybind11::object(model->slice_by_sample(*data, target_sample_index)), model->deleter);
     return tem;
 }
 
@@ -42,21 +42,6 @@ Eigen::Index UniversalData::rows() const
 const VectorXi& UniversalData::get_effective_para_index() const
 {
     return effective_para_index;
-}
-
-nlopt_function UniversalData::get_nlopt_function() 
-{
-    return [](unsigned n, const double* x, double* grad, void* f_data) {
-        UniversalData* data = static_cast<UniversalData*>(f_data);
-        Map<VectorXd const> effective_para(x, n);
-        if (grad) { // not use operator new
-            Map<VectorXd> gradient(grad, n);
-            return data->loss_and_gradient(effective_para, gradient);
-        }
-        else {
-            return data->loss(effective_para);
-        }
-    };
 }
 
 double UniversalData::loss(const VectorXd& effective_para)
@@ -130,49 +115,49 @@ void UniversalData::init_para(VectorXd & effective_para){
 }
 
 
-void UniversalModel::set_loss_of_model(function <double(VectorXd const&, ExternData const&)> const& f)
+void UniversalModel::set_loss_of_model(function <double(VectorXd const&, pybind11::object const&)> const& f)
 {
     loss = f;
 }
 
-void UniversalModel::set_gradient_autodiff(function <dual(VectorXdual const&, ExternData const&)> const& f) {
+void UniversalModel::set_gradient_autodiff(function <dual(VectorXdual const&, pybind11::object const&)> const& f) {
     gradient_autodiff = f;
     gradient_user_defined = nullptr;
 }
 
-void UniversalModel::set_hessian_autodiff(function <dual2nd(VectorXdual2nd const&, ExternData const&)> const& f) {
+void UniversalModel::set_hessian_autodiff(function <dual2nd(VectorXdual2nd const&, pybind11::object const&)> const& f) {
     hessian_autodiff = f;
     hessian_user_defined = nullptr;
 }
 
-void UniversalModel::set_gradient_user_defined(function <pair<double, VectorXd>(VectorXd const&, ExternData const&)> const& f)
+void UniversalModel::set_gradient_user_defined(function <pair<double, VectorXd>(VectorXd const&, pybind11::object const&)> const& f)
 {
     gradient_user_defined = f;
     gradient_autodiff = nullptr;
 }
 
-void UniversalModel::set_hessian_user_defined(function <MatrixXd(VectorXd const&, ExternData const&)> const& f)
+void UniversalModel::set_hessian_user_defined(function <MatrixXd(VectorXd const&, pybind11::object const&)> const& f)
 {
     hessian_user_defined = f;
     hessian_autodiff = nullptr;
 }
 
-void UniversalModel::set_slice_by_sample(function <ExternData(ExternData const&, VectorXi const&)> const& f)
+void UniversalModel::set_slice_by_sample(function <pybind11::object(pybind11::object const&, VectorXi const&)> const& f)
 {
     slice_by_sample = f;
 }
 
-void UniversalModel::set_deleter(function<void(ExternData const&)> const& f)
+void UniversalModel::set_deleter(function<void(pybind11::object const&)> const& f)
 {
     if (f) {
-        deleter = [f](ExternData const* p) { f(*p); delete p; };
+        deleter = [f](pybind11::object const* p) { f(*p); delete p; };
     }
     else {
-        deleter = [](ExternData const* p) { delete p; };
+        deleter = [](pybind11::object const* p) { delete p; };
     }
 }
 
-void UniversalModel::set_init_params_of_sub_optim(function <VectorXd(VectorXd const&, ExternData const&, VectorXi const&)> const& f)
+void UniversalModel::set_init_params_of_sub_optim(function <VectorXd(VectorXd const&, pybind11::object const&, VectorXi const&)> const& f)
 {
     init_para = f;
 }

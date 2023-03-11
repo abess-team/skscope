@@ -5,7 +5,7 @@ import numpy as np
 import nlopt
 import jax
 from jax import numpy as jnp
-from ._scope import pywrap_Universal, UniversalModel, init_spdlog, NloptConfig
+from . import _scope
 
 
 class ScopeSolver(BaseEstimator):
@@ -99,10 +99,10 @@ class ScopeSolver(BaseEstimator):
     ----------
     params : array-like, shape(p, )
         The sparse optimal solution
-    eval_objective : float
+    cv_test_loss : float
         If cv=1, it stores the score under chosen information criterion.
         If cv>1, it stores the test objective under cross-validation.
-    train_objective : float
+    cv_train_loss : float
         The objective on training data.
     value_of_objective: float
         The value of objective function on the solution.
@@ -150,7 +150,7 @@ class ScopeSolver(BaseEstimator):
         file_log_level="off",
         log_file_name="logs/scope.log",
     ):
-        self.model = UniversalModel()
+        self.model = _scope.UniversalModel()
         self.dimensionality = dimensionality
         self.sparsity = sparsity
         self.sample_size = sample_size
@@ -211,7 +211,7 @@ class ScopeSolver(BaseEstimator):
         if not isinstance(log_file_name, str):
             raise ValueError("log_file_name must be a string")
 
-        init_spdlog(console_log_level, file_log_level, log_file_name)
+        _scope.init_spdlog(console_log_level, file_log_level, log_file_name)
 
     def solve(
         self,
@@ -255,7 +255,7 @@ class ScopeSolver(BaseEstimator):
         if jit and getattr(data, "__hash__") is None:
             raise ValueError("Non-hashable data is not supported by jit.")
 
-        nlopt_config = NloptConfig(
+        nlopt_config = _scope.NloptConfig(
             self.nlopt_solver.get_algorithm(),
             self.nlopt_solver.get_algorithm_name(),
             self.nlopt_solver.get_stopval(),
@@ -467,7 +467,7 @@ class ScopeSolver(BaseEstimator):
                 objective, gradient, hessian, jit, init_params, data
             )
 
-        result = pywrap_Universal(
+        result = _scope.pywrap_Universal(
             data,
             self.model,
             nlopt_config,
@@ -499,8 +499,9 @@ class ScopeSolver(BaseEstimator):
 
         self.params = np.array(result[0])
         self.support_set = np.nonzero(self.params)[0]
-        self.train_objective = result[2]
-        self.eval_objective = result[4] if self.cv == 1 else result[3]
+        self.cv_train_loss = result[1] if self.cv == 1 else 0.0
+        self.cv_test_loss = result[2] if self.cv == 1 else 0.0
+        self.information_criterion = result[3]
         self.value_of_objective = loss_fn(self.params, data)
 
         return self.params
@@ -513,10 +514,58 @@ class ScopeSolver(BaseEstimator):
             "params": self.params,
             "support_set": self.support_set,
             "value_of_objective": self.value_of_objective,
-            "train_objective": self.train_objective,
-            "eval_objective": self.eval_objective,
+            "cv_train_loss": self.cv_train_loss,
+            "cv_test_loss": self.cv_test_loss,
+            "information_criterion": self.information_criterion,
         }
 
+    @staticmethod
+    def quadratic_objective(Q, p):
+        """
+        Create a model of quadratic objective function which is $L(x) = <x, Qx> / 2 + <p, x>$.
+
+        Parameters
+        ----------
+        + Q : array-like, shape (n_features, n_features)
+            The matrix of quadratic term.
+        + p : array-like, shape (n_features,)
+            The vector of linear term.
+        
+        Returns
+        -------
+        A dict of quadratic model for `solve()`, which contains the following keys:
+        + objective : function('params': array) ->  float
+            The objective function.
+        + gradient : function('params': array) -> array
+            The gradient of objective function.
+        + hessian : function('params': array) -> array
+            The hessian of objective function.
+
+        Examples
+        --------
+            import numpy as np
+            from scope import ScopeSolver
+
+            solver = ScopeSolver(dimensionality=5)
+            model = solver.quadratic_objective(np.eye(5), np.ones(5))
+            solver.solve(**model, cpp = True) 
+
+            print(solver.get_result())
+        """
+        Q = np.array(Q, dtype=float)
+        p = np.array(p, dtype=float)
+        if Q.ndim != 2 or Q.shape[0] != Q.shape[1]:
+            raise ValueError("Q must be a square matrix.")
+        if p.ndim != 1 or p.shape[0] != Q.shape[0]:
+            raise ValueError("p must be a vector with length of Q.shape[0].")
+
+        return {
+            "objective": _scope.quadratic_loss,
+            "gradient": _scope.quadratic_grad,
+            "hessian": _scope.quadratic_hess,
+            "data": _scope.QuadraticData(Q, p),
+        }
+    
     def __set_split_method(self):
         r"""
         Register `spliter` as a callback function to split data into training set and validation set for cross-validation.
@@ -936,3 +985,37 @@ class FobaSolver(BaseSolver):
 
 class FobagdtSolver(FobaSolver):
     useGrad = True
+
+
+class ForwardSolver(FobaSolver):
+    useGrad = False
+
+    def _solve(
+        self,
+        sparsity,
+        loss_fn,
+        value_and_grad,
+        init_support_set,
+        init_params,
+        data,
+    ):
+        if sparsity <= self.always_select.size:
+            return super()._solve(
+                sparsity,
+                loss_fn,
+                value_and_grad,
+                init_support_set,
+                init_params,
+                data,
+            )
+        # init
+        params = np.zeros(self.dimensionality, dtype=float)
+        support_set = self.always_select
+
+        for iter in range(sparsity - support_set.size):
+            params, support_set, _ = self.forward_step(
+                loss_fn, value_and_grad, params, support_set, data
+            )
+
+
+        return params, support_set

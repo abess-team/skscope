@@ -1,4 +1,4 @@
-from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, FobagdtSolver
+from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, FobagdtSolver, ForwardSolver
 import pytest
 from create_test_model import CreateTestModel
 
@@ -33,6 +33,10 @@ def test_always_select(model, solver_creator):
     assert 0 in solver.support_set
     assert 1 in solver.support_set
 
+def test_forward_selection_solver():
+    solver = ForwardSolver(linear["n_features"], linear["n_informative"])
+    solver.solve(linear["loss"], jit=True)
 
+    assert solver.support_set.size == linear["n_informative"]
 
 

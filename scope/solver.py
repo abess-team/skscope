@@ -985,3 +985,37 @@ class FobaSolver(BaseSolver):
 
 class FobagdtSolver(FobaSolver):
     useGrad = True
+
+
+class ForwardSolver(FobaSolver):
+    useGrad = False
+
+    def _solve(
+        self,
+        sparsity,
+        loss_fn,
+        value_and_grad,
+        init_support_set,
+        init_params,
+        data,
+    ):
+        if sparsity <= self.always_select.size:
+            return super()._solve(
+                sparsity,
+                loss_fn,
+                value_and_grad,
+                init_support_set,
+                init_params,
+                data,
+            )
+        # init
+        params = np.zeros(self.dimensionality, dtype=float)
+        support_set = self.always_select
+
+        for iter in range(sparsity - support_set.size):
+            params, support_set, _ = self.forward_step(
+                loss_fn, value_and_grad, params, support_set, data
+            )
+
+
+        return params, support_set

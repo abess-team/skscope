@@ -3,7 +3,7 @@ import pytest
 import nlopt
 
 from create_test_model import CreateTestModel
-from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, FobagdtSolver
+from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver
 
 
 model_creator = CreateTestModel()
@@ -11,8 +11,8 @@ linear = model_creator.create_linear_model()
 
 models = (linear,)
 models_ids = ("linear",)
-solvers = (ScopeSolver, BaseSolver)#, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, FobagdtSolver)
-solvers_ids = ("scope", "Base")#, "GraHTP", "GraSP", "IHT", "FoBa-obj", "FoBa-gdt")
+solvers = (ScopeSolver, BaseSolver)#, GrahtpSolver, GraspSolver, IHTSolver)
+solvers_ids = ("scope", "Base")#, "GraHTP", "GraSP", "IHT")
 
 
 @pytest.mark.parametrize("model", models, ids=models_ids)

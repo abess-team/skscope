@@ -858,25 +858,62 @@ class GraspSolver(BaseSolver):
 
 class FobaSolver(BaseSolver):
 
-    ## inherited the constructor of BaseSolver
-
-    useGrad = False
+    def __init__(
+        self,
+        dimensionality,
+        sparsity=None,
+        sample_size=1,
+        *,
+        always_select=[],
+        use_gradient=False,
+        threshold=0.0,
+        foba_threshold_ratio=0.5,
+        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        max_iter=100,
+        ic_type="aic",
+        ic_coef=1.0,
+        metric_method=None,
+        cv=1,
+        cv_fold_id=None,
+        split_method=None,
+        jax_platform="cpu",
+        random_state=None,
+    ):
+        self.threshold = threshold
+        self.use_gradient = use_gradient
+        self.foba_threshold_ratio = foba_threshold_ratio
+        super().__init__(
+            dimensionality=dimensionality,
+            sparsity=sparsity,
+            sample_size=sample_size,
+            always_select=always_select,
+            nlopt_solver=nlopt_solver,
+            max_iter=max_iter,
+            ic_type=ic_type,
+            ic_coef=ic_coef,
+            metric_method=metric_method,
+            cv=cv,
+            cv_fold_id=cv_fold_id,
+            split_method=split_method,
+            jax_platform=jax_platform,
+            random_state=random_state,
+        )
 
     def forward_step(self, loss_fn, value_and_grad, params, support_set, data):
-        if self.useGrad:
+        if self.use_gradient:
             # FoBa-gdt algorithm
             value_old, grad = value_and_grad(params, data)
-            score = -np.abs(grad)
-            score[support_set] = np.inf
+            score = np.abs(grad)
+            score[support_set] = -np.inf
         else:
             # FoBa-obj algorithm
             value_old = loss_fn(params, data)
             score = np.empty(self.dimensionality, dtype=float)
             for idx in range(self.dimensionality):
                 if idx in support_set:
-                    score[idx] = np.inf
+                    score[idx] = -np.inf
                     continue
-                score[idx] = self._cache_nlopt(
+                score[idx] = value_old - self._cache_nlopt(
                     loss_fn,
                     value_and_grad,
                     params,
@@ -885,7 +922,9 @@ class FobaSolver(BaseSolver):
                     background_params=params,
                 )[1]
 
-        direction = np.argmin(score)
+        direction = np.argmax(score)
+        if score[direction] < self.threshold:
+            return params, support_set, -1.0
         support_set = np.append(support_set, direction)
         params_temporary, value_new = self._cache_nlopt(
             loss_fn,
@@ -950,11 +989,13 @@ class FobaSolver(BaseSolver):
         threshold = {}
 
         for iter in range(self.max_iter):
-            if support_set.size > min(2 * sparsity, self.dimensionality):
+            if support_set.size >= min(2 * sparsity, self.dimensionality):
                 break
             params, support_set, backward_threshold = self.forward_step(
                 loss_fn, value_and_grad, params, support_set, data
             )
+            if backward_threshold < 0:
+                break
             threshold[support_set.size] = backward_threshold
 
             while support_set.size > self.always_select.size:
@@ -964,7 +1005,7 @@ class FobaSolver(BaseSolver):
                     params,
                     support_set,
                     data,
-                    backward_threshold=loss_fn(params, data) + threshold[support_set.size] / 2,
+                    backward_threshold=loss_fn(params, data) + threshold[support_set.size] + self.foba_threshold_ratio,
                 )
                 if not success:
                     break
@@ -983,12 +1024,46 @@ class FobaSolver(BaseSolver):
         return params, support_set
 
 
-class FobagdtSolver(FobaSolver):
-    useGrad = True
-
-
 class ForwardSolver(FobaSolver):
-    useGrad = False
+    
+    def __init__(
+        self,
+        dimensionality,
+        sparsity=None,
+        sample_size=1,
+        *,
+        always_select=[],
+        use_gradient=False,
+        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        max_iter=100,
+        ic_type="aic",
+        ic_coef=1.0,
+        metric_method=None,
+        cv=1,
+        cv_fold_id=None,
+        split_method=None,
+        jax_platform="cpu",
+        random_state=None,
+    ):
+        super().__init__(
+        dimensionality=dimensionality,
+        sparsity=sparsity,
+        sample_size=sample_size,
+        always_select=always_select,
+        use_gradient=use_gradient,
+        threshold=0.0,
+        foba_threshold_ratio=0.5,
+        nlopt_solver=nlopt_solver,
+        max_iter=max_iter,
+        ic_type=ic_type,
+        ic_coef=ic_coef,
+        metric_method=metric_method,
+        cv=cv,
+        cv_fold_id=cv_fold_id,
+        split_method=split_method,
+        jax_platform=jax_platform,
+        random_state=random_state,
+    )
 
     def _solve(
         self,
@@ -1016,6 +1091,5 @@ class ForwardSolver(FobaSolver):
             params, support_set, _ = self.forward_step(
                 loss_fn, value_and_grad, params, support_set, data
             )
-
 
         return params, support_set

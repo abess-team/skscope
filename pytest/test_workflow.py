@@ -1,4 +1,4 @@
-from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver
+from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, ForwardSolver, OmpSolver
 import pytest
 from create_test_model import CreateTestModel
 
@@ -8,8 +8,11 @@ linear = model_creator.create_linear_model()
 
 models = (linear,)
 models_ids = ("linear",)
-solvers = (ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver)
-solvers_ids = ("scope", "Base", "GraHTP", "GraSP", "IHT")
+
+foba_gdt_solver = lambda *args, **kwargs: FobaSolver(*args, **kwargs, use_gradient=True)
+solvers = (ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, foba_gdt_solver, ForwardSolver, OmpSolver)
+solvers_ids = ("scope", "Base", "GraHTP", "GraSP", "IHT", "FOBA", "FOBA_gdt", "Forward", "OMP")
+
 
 
 @pytest.mark.parametrize("model", models, ids=models_ids)

@@ -11,7 +11,7 @@ __author__ = ("Zezhi Wang, Jin Zhu,"
               "Junxian Zhu, Xueqin Wang")
               
 
-from .solver import (ScopeSolver, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, ForwardSolver)
+from .solver import (ScopeSolver, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, ForwardSolver, OmpSolver)
 from .base_solver import BaseSolver
 
 
@@ -22,5 +22,6 @@ __all__ = [
     "IHTSolver",
     "base_solver", # ASR
     "FobaSolver",
-    "ForwardSolver"
+    "ForwardSolver",
+    "OmpSolver",
 ]

@@ -864,10 +864,10 @@ class FobaSolver(BaseSolver):
         sparsity=None,
         sample_size=1,
         *,
-        always_select=[],
         use_gradient=False,
         threshold=0.0,
         foba_threshold_ratio=0.5,
+        always_select=[],
         nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
         max_iter=100,
         ic_type="aic",
@@ -1031,6 +1031,7 @@ class ForwardSolver(FobaSolver):
         sparsity=None,
         sample_size=1,
         *,
+        use_gradient=False,
         always_select=[],
         nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
         max_iter=100,
@@ -1048,7 +1049,7 @@ class ForwardSolver(FobaSolver):
         sparsity=sparsity,
         sample_size=sample_size,
         always_select=always_select,
-        use_gradient=False,
+        use_gradient=use_gradient,
         threshold=0.0,
         foba_threshold_ratio=0.5,
         nlopt_solver=nlopt_solver,
@@ -1119,6 +1120,7 @@ class OmpSolver(ForwardSolver):
             dimensionality=dimensionality,
             sparsity=sparsity,
             sample_size=sample_size,
+            use_gradient = True,
             always_select=always_select,
             nlopt_solver=nlopt_solver,
             max_iter=max_iter,
@@ -1130,5 +1132,4 @@ class OmpSolver(ForwardSolver):
             split_method=split_method,
             jax_platform=jax_platform,
             random_state=random_state,
-        )
-        self.use_gradient = True    
+        )   

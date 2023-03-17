@@ -458,16 +458,21 @@ class BaseSolver(BaseEstimator):
         best_params = None
         if background_params is None:
             background_params = np.zeros(self.dimensionality)
+        else:
+            background_params = np.copy(
+                background_params
+            )  # avoid changing the original background_params
 
         def cache_opt_fn(x, grad):
             nonlocal best_loss, best_params
-            x_full = background_params
-            x_full[optim_variable_idx] = x
+            background_params[
+                optim_variable_idx
+            ] = x  # update the nonlocal variable: background_params
             if grad.size > 0:
-                loss, full_grad = value_and_grad(x_full, data)
+                loss, full_grad = value_and_grad(background_params, data)
                 grad[:] = full_grad[optim_variable_idx]
             else:
-                loss = loss_fn(x_full, data)
+                loss = loss_fn(background_params, data)
             if loss < best_loss:
                 best_loss = loss
                 best_params = np.copy(x)

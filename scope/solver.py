@@ -867,6 +867,7 @@ class FobaSolver(BaseSolver):
         use_gradient=False,
         threshold=0.0,
         foba_threshold_ratio=0.5,
+        strict_sparsity=True,
         always_select=[],
         nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
         max_iter=100,
@@ -898,6 +899,7 @@ class FobaSolver(BaseSolver):
         self.threshold = threshold
         self.use_gradient = use_gradient
         self.foba_threshold_ratio = foba_threshold_ratio
+        self.strict_sparsity = strict_sparsity
 
     def forward_step(self, loss_fn, value_and_grad, params, support_set, data):
         if self.use_gradient:
@@ -1010,15 +1012,14 @@ class FobaSolver(BaseSolver):
                 if not success:
                     break
         
-        if support_set.size < sparsity:
-            for iter in range(sparsity - support_set.size):
-                params, support_set, _ = self.forward_step(
-                    loss_fn, value_and_grad, params, support_set, data
-                )
-        elif support_set.size > sparsity:
-            for iter in range(support_set.size - sparsity):
+        if self.strict_sparsity:
+            while support_set.size > sparsity:
                 params, support_set, _ = self.backward_step(
                     loss_fn, value_and_grad, params, support_set, data, np.inf
+                )
+            while support_set.size < sparsity:
+                params, support_set, _ = self.forward_step(
+                    loss_fn, value_and_grad, params, support_set, data
                 )
 
         return params, support_set
@@ -1032,6 +1033,8 @@ class ForwardSolver(FobaSolver):
         sample_size=1,
         *,
         use_gradient=False,
+        threshold=0.0,
+        strict_sparsity=True,
         always_select=[],
         nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
         max_iter=100,
@@ -1050,7 +1053,8 @@ class ForwardSolver(FobaSolver):
         sample_size=sample_size,
         always_select=always_select,
         use_gradient=use_gradient,
-        threshold=0.0,
+        strict_sparsity=strict_sparsity,
+        threshold=threshold,
         foba_threshold_ratio=0.5,
         nlopt_solver=nlopt_solver,
         max_iter=max_iter,
@@ -1087,9 +1091,17 @@ class ForwardSolver(FobaSolver):
         support_set = self.always_select
 
         for iter in range(sparsity - support_set.size):
-            params, support_set, _ = self.forward_step(
+            params, support_set, backward_threshold = self.forward_step(
                 loss_fn, value_and_grad, params, support_set, data
             )
+            if backward_threshold < 0.0:
+                break
+        
+        if self.strict_sparsity:
+            while support_set.size < sparsity:
+                params, support_set, _ = self.forward_step(
+                    loss_fn, value_and_grad, params, support_set, data
+                )
 
         return params, support_set
     
@@ -1104,6 +1116,8 @@ class OmpSolver(ForwardSolver):
         sparsity=None,
         sample_size=1,
         *,
+        threshold=0.0,
+        strict_sparsity=True,
         always_select=[],
         nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
         max_iter=100,
@@ -1121,6 +1135,8 @@ class OmpSolver(ForwardSolver):
             sparsity=sparsity,
             sample_size=sample_size,
             use_gradient = True,
+            threshold=threshold,
+            strict_sparsity=strict_sparsity,
             always_select=always_select,
             nlopt_solver=nlopt_solver,
             max_iter=max_iter,

@@ -1007,7 +1007,7 @@ class FobaSolver(BaseSolver):
                     params,
                     support_set,
                     data,
-                    backward_threshold=loss_fn(params, data) + threshold[support_set.size] + self.foba_threshold_ratio,
+                    backward_threshold=loss_fn(params, data) + threshold[support_set.size] * self.foba_threshold_ratio,
                 )
                 if not success:
                     break

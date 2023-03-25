@@ -27,7 +27,7 @@ def test_nlopt_solver(model, solver_creator):
     solver = solver_creator(
         model["n_features"], model["n_informative"], nlopt_solver=nlopt_solver
     )
-    params = solver.solve(model["loss"], jit=True)
+    params = solver.solve(model["loss"])
 
     assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
 
@@ -63,28 +63,36 @@ def test_ic(model, solver_creator, ic_type):
 
     assert set(model["support_set"]) == set(solver.support_set)
 
-
+@pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
-@pytest.mark.parametrize("cv_fold", ["random", "given"])
-def test_cv(solver_creator, cv_fold):
-    n_fold = 2
-    if cv_fold == "random":
-        cv_fold_id = None
-    else:
-        cv_fold_id = [i for i in range(n_fold)] * (linear["n_samples"] // n_fold) + [
-            i for i in range(linear["n_samples"] % n_fold)
-        ]
+def test_cv_random_split(model, solver_creator):
     solver = solver_creator(
-        linear["n_features"],
-        sparsity=[0, linear["n_informative"]],
-        sample_size=linear["n_samples"],
+        model["n_features"],
+        [0, model["n_informative"]],
+        model["n_samples"],
+        cv=2,
+    )
+    solver.solve(model["loss_data"], jit=True)
+
+    assert set(model["support_set"]) == set(solver.support_set)
+
+@pytest.mark.parametrize("model", models, ids=models_ids)
+@pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
+def test_cv_given_split(model, solver_creator):
+    n_fold = 2
+    cv_fold_id = [i for i in range(n_fold)] * (model["n_samples"] // n_fold) + [
+        i for i in range(model["n_samples"] % n_fold)
+    ]
+    solver = solver_creator(
+        model["n_features"],
+        [0, model["n_informative"]],
+        model["n_samples"],
         cv=n_fold,
         cv_fold_id=cv_fold_id,
-        split_method=linear["split_method"],
     )
-    solver.solve(linear["loss_data"], data=linear["data"])
+    solver.solve(model["loss_data"], jit=True)
 
-    assert set(linear["support_set"]) == set(solver.support_set)
+    assert set(model["support_set"]) == set(solver.support_set)
 
 
 @pytest.mark.parametrize("model", models, ids=models_ids)
@@ -125,10 +133,9 @@ def test_add_coverage():
         path_type="gs",
         sample_size=linear["n_samples"],
         cv=2,
-        split_method=linear["split_method"],
         file_log_level="error",
     )
-    solver.solve(linear["loss_data"], data=linear["data"])
+    solver.solve(linear["loss_data"])
 
     solver = ScopeSolver(linear["n_features"], linear["n_informative"])
     solver.solve(**linear["cpp_model"], cpp=True)

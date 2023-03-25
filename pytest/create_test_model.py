@@ -27,19 +27,11 @@ class CreateTestModel:
 
         def hess_linear_model(params):
             return np.matmul(X.T, X)
-
-        data = {"X": X, "Y": Y}
-
-        def linear_model_data(params, data):
-            return jnp.sum(jnp.square(data["Y"] - data["X"] @ params))
-
-        def split_method(data, index):
-            return {
-                "X": data["X"][
-                    index,
-                ],
-                "Y": data["Y"][index],
-            }
+        
+        X_jnp = jnp.array(X)
+        Y_jnp = jnp.array(Y)
+        def linear_model_data(params, data_indices):
+            return jnp.sum(jnp.square(Y_jnp[data_indices] - X_jnp[data_indices,] @ params))
 
         return {
             "n_samples": self.N,
@@ -49,8 +41,6 @@ class CreateTestModel:
             "support_set": np.nonzero(true_params)[0],
             "loss": linear_model,
             "loss_data": linear_model_data,
-            "data": data,
-            "split_method": split_method,
             "loss_numpy": linear_model_numpy,
             "grad": grad_linear_model,
             "hess": hess_linear_model,

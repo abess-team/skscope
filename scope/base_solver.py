@@ -97,8 +97,6 @@ class BaseSolver(BaseEstimator):
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
-        if jit and getattr(data, "__hash__") is None:
-            raise ValueError("Non-hashable data is not supported by jit.")
 
         BaseSolver._check_positive_integer(self.dimensionality, "dimensionality")
         BaseSolver._check_positive_integer(self.sample_size, "sample_size")
@@ -152,6 +150,9 @@ class BaseSolver(BaseEstimator):
         else:
             if self.cv > self.sample_size:
                 raise ValueError("cv should not be greater than sample_size")
+            if data is None and self.split_method is None:
+                data = np.arange(self.sample_size)
+                self.split_method = lambda data, index: index
             if data is None:
                 raise ValueError("data should be provided when cv > 1")
             if self.split_method is None:
@@ -272,7 +273,7 @@ class BaseSolver(BaseEstimator):
         else:
             raise ValueError("The objective function should have 1 or 2 arguments.")
         if jit:
-            loss_ = jax.jit(loss_, static_argnums=(1,))
+            loss_ = jax.jit(loss_)
 
         if gradient is None:
             grad_ = lambda params, data: jax.value_and_grad(loss_)(params, data)
@@ -283,7 +284,7 @@ class BaseSolver(BaseEstimator):
         else:
             raise ValueError("The gradient function should have 1 or 2 arguments.")
         if jit:
-            grad_ = jax.jit(grad_, static_argnums=(1,))
+            grad_ = jax.jit(grad_)
 
         return loss_, grad_
 

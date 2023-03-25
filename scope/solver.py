@@ -252,8 +252,6 @@ class ScopeSolver(BaseEstimator):
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
-        if jit and getattr(data, "__hash__") is None:
-            raise ValueError("Non-hashable data is not supported by jit.")
 
         nlopt_config = _scope.NloptConfig(
             self.nlopt_solver.get_algorithm(),
@@ -288,11 +286,6 @@ class ScopeSolver(BaseEstimator):
         if self.ic_type not in information_criterion_dict.keys():
             raise ValueError('ic_type should be "aic", "bic", "ebic" or "gic"')
         ic_type = information_criterion_dict[self.ic_type]
-
-        # cv
-        BaseSolver._check_positive_integer(self.cv, "cv")
-        if self.cv > n:
-            raise ValueError("cv should not be greater than sample_size")
 
         # group
         if self.group is None:
@@ -409,14 +402,26 @@ class ScopeSolver(BaseEstimator):
             self.important_search, "important_search"
         )
 
-        # cv_fold_id
+        # cv
+        BaseSolver._check_positive_integer(self.cv, "cv")
+        if self.cv > n:
+            raise ValueError("cv should not be greater than sample_size")
         if self.cv > 1:
+            if data is None and self.split_method is None:
+                data = np.arange(n)
+                self.split_method = lambda data, index: index
+            if data is None:
+                raise ValueError("data should be provided when cv > 1")
+            if self.split_method is None:
+                raise ValueError("split_method should be provided when cv > 1")
+            self.model.set_slice_by_sample(self.split_method)
+            self.model.set_deleter(self.deleter)
             if self.cv_fold_id is None:
                 kf = KFold(
                     n_splits=self.cv, shuffle=True, random_state=self.random_state
-                ).split(np.zeros(self.sample_size))
+                ).split(np.zeros(n))
 
-                self.cv_fold_id = np.zeros(self.sample_size)
+                self.cv_fold_id = np.zeros(n)
                 for i, (_, fold_id) in enumerate(kf):
                     self.cv_fold_id[fold_id] = i
             else:
@@ -434,7 +439,7 @@ class ScopeSolver(BaseEstimator):
         else:
             self.cv_fold_id = np.array([], dtype="int32")
 
-        self.__set_split_method()
+
         self.__set_init_params_of_sub_optim()
 
         # init_support_set
@@ -587,6 +592,8 @@ class ScopeSolver(BaseEstimator):
             solver = ScopeSolver(dimensionality=5, cv=10)
             solver.set_split_method(lambda data, index:  Data(data.x[index, :], data.y[index]))
         """
+        if self.split_method is None:
+            self.model.set_slice_by_sample(lambda data, index: data[index])
         self.model.set_slice_by_sample(self.split_method)
         self.model.set_deleter(self.deleter)
 
@@ -675,7 +682,7 @@ class ScopeSolver(BaseEstimator):
         else:
             raise ValueError("The hessian function should have 1 or 2 arguments.")
         if jit:
-            hess_ = jax.jit(hess_, static_argnums=(1,))
+            hess_ = jax.jit(hess_)
 
         loss_fn = lambda params, data: loss_(params, data).item()
 

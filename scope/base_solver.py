@@ -123,7 +123,7 @@ class BaseSolver(BaseEstimator):
         )
 
         # sparsity
-        if self.sparsity == None:
+        if self.sparsity is None:
             self.sparsity = np.arange(
                 force_min_sparsity,
                 default_max_sparsity + 1,

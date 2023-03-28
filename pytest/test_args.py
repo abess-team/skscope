@@ -4,6 +4,7 @@ import nlopt
 
 from create_test_model import CreateTestModel
 from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver
+import scope
 
 
 model_creator = CreateTestModel()
@@ -11,8 +12,8 @@ linear = model_creator.create_linear_model()
 
 models = (linear,)
 models_ids = ("linear",)
-solvers = (ScopeSolver, BaseSolver)#, GrahtpSolver, GraspSolver, IHTSolver)
-solvers_ids = ("scope", "Base")#, "GraHTP", "GraSP", "IHT")
+solvers = (ScopeSolver, BaseSolver)  # , GrahtpSolver, GraspSolver, IHTSolver)
+solvers_ids = ("scope", "Base")  # , "GraHTP", "GraSP", "IHT")
 
 
 @pytest.mark.parametrize("model", models, ids=models_ids)
@@ -49,6 +50,7 @@ def test_init_params(model, solver_creator):
 
     assert set(model["support_set"]) == set(solver.support_set)
 
+
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 @pytest.mark.parametrize("ic_type", ["aic", "bic", "gic", "ebic"])
@@ -63,6 +65,7 @@ def test_ic(model, solver_creator, ic_type):
 
     assert set(model["support_set"]) == set(solver.support_set)
 
+
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_cv_random_split(model, solver_creator):
@@ -75,6 +78,7 @@ def test_cv_random_split(model, solver_creator):
     solver.solve(model["loss_data"], jit=True)
 
     assert set(model["support_set"]) == set(solver.support_set)
+
 
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
@@ -122,13 +126,13 @@ def test_add_coverage():
         important_search=1,
         always_select=[linear["support_set"][0]],
         init_params_of_sub_optim=lambda x, data, index: x,
-        console_log_level="error"
+        console_log_level="error",
     )
     solver.solve(linear["loss"], jit=True)
 
     solver = ScopeSolver(
         linear["n_features"],
-        group=[0] + [i for i in range(linear["n_features"]-1)],
+        group=[0] + [i for i in range(linear["n_features"] - 1)],
         screening_size=0,
         path_type="gs",
         sample_size=linear["n_samples"],
@@ -138,10 +142,15 @@ def test_add_coverage():
     solver.solve(linear["loss_data"])
 
     solver = ScopeSolver(linear["n_features"], linear["n_informative"])
-    solver.solve(**linear["cpp_model"], cpp=True)
+    X, Y = linear["data"]
+    solver.solve(
+        **scope.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y), hessian=True)
+    )
     set1 = set(solver.support_set)
-    solver.solve(linear["cpp_model"]["objective"], data=linear["cpp_model"]["data"], cpp=True)
+    solver.solve(
+        **scope.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y), autodiff=True)
+    )
     set2 = set(solver.support_set)
-    
+
     assert set(linear["support_set"]) == set1
     assert set(linear["support_set"]) == set2

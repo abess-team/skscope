@@ -13,6 +13,7 @@ __author__ = ("Zezhi Wang, Jin Zhu,"
 
 from .solver import (ScopeSolver, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, ForwardSolver, OmpSolver)
 from .base_solver import BaseSolver
+from .util import quadratic_objective
 
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "FobaSolver",
     "ForwardSolver",
     "OmpSolver",
+    "quadratic_objective"
 ]

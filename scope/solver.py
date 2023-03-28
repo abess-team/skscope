@@ -523,53 +523,6 @@ class ScopeSolver(BaseEstimator):
             "cv_test_loss": self.cv_test_loss,
             "information_criterion": self.information_criterion,
         }
-
-    @staticmethod
-    def quadratic_objective(Q, p):
-        """
-        Create a model of quadratic objective function which is $L(x) = <x, Qx> / 2 + <p, x>$.
-
-        Parameters
-        ----------
-        + Q : array-like, shape (n_features, n_features)
-            The matrix of quadratic term.
-        + p : array-like, shape (n_features,)
-            The vector of linear term.
-        
-        Returns
-        -------
-        A dict of quadratic model for `solve()`, which contains the following keys:
-        + objective : function('params': array) ->  float
-            The objective function.
-        + gradient : function('params': array) -> array
-            The gradient of objective function.
-        + hessian : function('params': array) -> array
-            The hessian of objective function.
-
-        Examples
-        --------
-            import numpy as np
-            from scope import ScopeSolver
-
-            solver = ScopeSolver(dimensionality=5)
-            model = solver.quadratic_objective(np.eye(5), np.ones(5))
-            solver.solve(**model, cpp = True) 
-
-            print(solver.get_result())
-        """
-        Q = np.array(Q, dtype=float)
-        p = np.array(p, dtype=float)
-        if Q.ndim != 2 or Q.shape[0] != Q.shape[1]:
-            raise ValueError("Q must be a square matrix.")
-        if p.ndim != 1 or p.shape[0] != Q.shape[0]:
-            raise ValueError("p must be a vector with length of Q.shape[0].")
-
-        return {
-            "objective": _scope.quadratic_loss,
-            "gradient": _scope.quadratic_grad,
-            "hessian": _scope.quadratic_hess,
-            "data": _scope.QuadraticData(Q, p),
-        }
     
     def __set_split_method(self):
         r"""

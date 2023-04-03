@@ -439,7 +439,6 @@ class ScopeSolver(BaseEstimator):
         else:
             self.cv_fold_id = np.array([], dtype="int32")
 
-
         self.__set_init_params_of_sub_optim()
 
         # init_support_set
@@ -524,53 +523,6 @@ class ScopeSolver(BaseEstimator):
             "information_criterion": self.information_criterion,
         }
 
-    @staticmethod
-    def quadratic_objective(Q, p):
-        """
-        Create a model of quadratic objective function which is $L(x) = <x, Qx> / 2 + <p, x>$.
-
-        Parameters
-        ----------
-        + Q : array-like, shape (n_features, n_features)
-            The matrix of quadratic term.
-        + p : array-like, shape (n_features,)
-            The vector of linear term.
-        
-        Returns
-        -------
-        A dict of quadratic model for `solve()`, which contains the following keys:
-        + objective : function('params': array) ->  float
-            The objective function.
-        + gradient : function('params': array) -> array
-            The gradient of objective function.
-        + hessian : function('params': array) -> array
-            The hessian of objective function.
-
-        Examples
-        --------
-            import numpy as np
-            from scope import ScopeSolver
-
-            solver = ScopeSolver(dimensionality=5)
-            model = solver.quadratic_objective(np.eye(5), np.ones(5))
-            solver.solve(**model, cpp = True) 
-
-            print(solver.get_result())
-        """
-        Q = np.array(Q, dtype=float)
-        p = np.array(p, dtype=float)
-        if Q.ndim != 2 or Q.shape[0] != Q.shape[1]:
-            raise ValueError("Q must be a square matrix.")
-        if p.ndim != 1 or p.shape[0] != Q.shape[0]:
-            raise ValueError("p must be a vector with length of Q.shape[0].")
-
-        return {
-            "objective": _scope.quadratic_loss,
-            "gradient": _scope.quadratic_grad,
-            "hessian": _scope.quadratic_hess,
-            "data": _scope.QuadraticData(Q, p),
-        }
-    
     def __set_split_method(self):
         r"""
         Register `spliter` as a callback function to split data into training set and validation set for cross-validation.
@@ -712,6 +664,7 @@ class GrahtpSolver(BaseSolver):
         always_select=[],
         step_size=0.005,
         nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        stop_threshold=0.0,
         max_iter=100,
         ic_type="aic",
         ic_coef=1.0,
@@ -739,6 +692,7 @@ class GrahtpSolver(BaseSolver):
             random_state=random_state,
         )
         self.step_size = step_size
+        self.stop_threshold = stop_threshold
 
     def _solve(
         self,
@@ -761,19 +715,25 @@ class GrahtpSolver(BaseSolver):
         # init
         params = init_params
         support_old = np.array([], dtype="int32")
+        loss_old = np.inf
 
         for iter in range(self.max_iter):
             # S1: gradient descent
-            params_bias = params - self.step_size * value_and_grad(params, data)[1]
+            loss_new, grad = value_and_grad(params, data)
+            params_bias = params - self.step_size * grad
             # S2: Gradient Hard Thresholding
             score = np.abs(params_bias)
             score[self.always_select] = np.inf
             support_new = np.argpartition(score, -sparsity)[-sparsity:]
             # terminating condition
-            if np.all(set(support_old) == set(support_new)):
+            if (
+                np.all(set(support_old) == set(support_new))
+                or loss_old - loss_new < self.stop_threshold
+            ):
                 break
             else:
                 support_old = support_new
+                loss_old = loss_new
             # S3: debise
             params = np.zeros(self.dimensionality)
             if self.isFast:
@@ -789,7 +749,7 @@ class GrahtpSolver(BaseSolver):
                 loss_fn, value_and_grad, params, support_new, data
             )
 
-        return params, support_new
+        return params, support_old
 
 
 class IHTSolver(GrahtpSolver):
@@ -798,7 +758,42 @@ class IHTSolver(GrahtpSolver):
 
 class GraspSolver(BaseSolver):
 
-    ## inherited the constructor of BaseSolver
+    def __init__(
+        self,
+        dimensionality,
+        sparsity=None,
+        sample_size=1,
+        *,
+        always_select=[],
+        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        stop_threshold=0.0,
+        max_iter=100,
+        ic_type="aic",
+        ic_coef=1.0,
+        metric_method=None,
+        cv=1,
+        cv_fold_id=None,
+        split_method=None,
+        jax_platform="cpu",
+        random_state=None,
+    ):
+        super().__init__(
+            dimensionality=dimensionality,
+            sparsity=sparsity,
+            sample_size=sample_size,
+            always_select=always_select,
+            nlopt_solver=nlopt_solver,
+            max_iter=max_iter,
+            ic_type=ic_type,
+            ic_coef=ic_coef,
+            metric_method=metric_method,
+            cv=cv,
+            cv_fold_id=cv_fold_id,
+            split_method=split_method,
+            jax_platform=jax_platform,
+            random_state=random_state,
+        )
+        self.stop_threshold = stop_threshold
 
     def _solve(
         self,
@@ -821,10 +816,11 @@ class GraspSolver(BaseSolver):
         # init
         params = init_params
         support_old = np.array([], dtype="int32")
+        loss_old = np.inf
 
         for iter in range(self.max_iter):
             # compute local gradient
-            grad_values = value_and_grad(params, data)[1]
+            loss_new, grad_values = value_and_grad(params, data)
             score = np.abs(grad_values)
             score[self.always_select] = np.inf
             # identify directions
@@ -841,7 +837,10 @@ class GraspSolver(BaseSolver):
             support_new = np.unique(np.append(Omega, params.nonzero()[0]))
 
             # terminating condition
-            if iter > 0 and np.all(set(support_old) == set(support_new)):
+            if iter > 0 and (
+                np.all(set(support_old) == set(support_new))
+                or loss_old - loss_new < self.stop_threshold
+            ):
                 break
             else:
                 support_old = support_new
@@ -864,7 +863,6 @@ class GraspSolver(BaseSolver):
 
 
 class FobaSolver(BaseSolver):
-
     def __init__(
         self,
         dimensionality,
@@ -922,14 +920,17 @@ class FobaSolver(BaseSolver):
                 if idx in support_set:
                     score[idx] = -np.inf
                     continue
-                score[idx] = value_old - self._cache_nlopt(
-                    loss_fn,
-                    value_and_grad,
-                    params,
-                    optim_variable_idx=np.array([idx], dtype=int),
-                    data=data,
-                    background_params=params,
-                )[1]
+                score[idx] = (
+                    value_old
+                    - self._cache_nlopt(
+                        loss_fn,
+                        value_and_grad,
+                        params,
+                        optim_variable_idx=np.array([idx], dtype=int),
+                        data=data,
+                        background_params=params,
+                    )[1]
+                )
 
         direction = np.argmax(score)
         if score[direction] < self.threshold:
@@ -947,7 +948,9 @@ class FobaSolver(BaseSolver):
 
         return params, support_set, value_old - value_new
 
-    def backward_step(self, loss_fn, value_and_grad, params, support_set, data, backward_threshold):
+    def backward_step(
+        self, loss_fn, value_and_grad, params, support_set, data, backward_threshold
+    ):
         score = np.empty(self.dimensionality, dtype=float)
         params_temporary = params.copy()
         for idx in range(self.dimensionality):
@@ -1014,11 +1017,12 @@ class FobaSolver(BaseSolver):
                     params,
                     support_set,
                     data,
-                    backward_threshold=loss_fn(params, data) + threshold[support_set.size] * self.foba_threshold_ratio,
+                    backward_threshold=loss_fn(params, data)
+                    + threshold[support_set.size] * self.foba_threshold_ratio,
                 )
                 if not success:
                     break
-        
+
         if self.strict_sparsity:
             while support_set.size > sparsity:
                 params, support_set, _ = self.backward_step(
@@ -1055,25 +1059,25 @@ class ForwardSolver(FobaSolver):
         random_state=None,
     ):
         super().__init__(
-        dimensionality=dimensionality,
-        sparsity=sparsity,
-        sample_size=sample_size,
-        always_select=always_select,
-        use_gradient=use_gradient,
-        strict_sparsity=strict_sparsity,
-        threshold=threshold,
-        foba_threshold_ratio=0.5,
-        nlopt_solver=nlopt_solver,
-        max_iter=max_iter,
-        ic_type=ic_type,
-        ic_coef=ic_coef,
-        metric_method=metric_method,
-        cv=cv,
-        cv_fold_id=cv_fold_id,
-        split_method=split_method,
-        jax_platform=jax_platform,
-        random_state=random_state,
-    )
+            dimensionality=dimensionality,
+            sparsity=sparsity,
+            sample_size=sample_size,
+            always_select=always_select,
+            use_gradient=use_gradient,
+            strict_sparsity=strict_sparsity,
+            threshold=threshold,
+            foba_threshold_ratio=0.5,
+            nlopt_solver=nlopt_solver,
+            max_iter=max_iter,
+            ic_type=ic_type,
+            ic_coef=ic_coef,
+            metric_method=metric_method,
+            cv=cv,
+            cv_fold_id=cv_fold_id,
+            split_method=split_method,
+            jax_platform=jax_platform,
+            random_state=random_state,
+        )
 
     def _solve(
         self,
@@ -1103,7 +1107,7 @@ class ForwardSolver(FobaSolver):
             )
             if backward_threshold < 0.0:
                 break
-        
+
         if self.strict_sparsity:
             while support_set.size < sparsity:
                 params, support_set, _ = self.forward_step(
@@ -1111,12 +1115,13 @@ class ForwardSolver(FobaSolver):
                 )
 
         return params, support_set
-    
+
 
 class OmpSolver(ForwardSolver):
     """
     Forward-gdt is equivalent to the orthogonal matching pursuit.
     """
+
     def __init__(
         self,
         dimensionality,
@@ -1141,7 +1146,7 @@ class OmpSolver(ForwardSolver):
             dimensionality=dimensionality,
             sparsity=sparsity,
             sample_size=sample_size,
-            use_gradient = True,
+            use_gradient=True,
             threshold=threshold,
             strict_sparsity=strict_sparsity,
             always_select=always_select,
@@ -1155,4 +1160,4 @@ class OmpSolver(ForwardSolver):
             split_method=split_method,
             jax_platform=jax_platform,
             random_state=random_state,
-        )   
+        )

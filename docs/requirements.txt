@@ -6,5 +6,6 @@ sphinx-panels
 jupyter_sphinx
 pydata-sphinx-theme
 matplotlib
+seaborn
 iPython
 sphinx-autoapi

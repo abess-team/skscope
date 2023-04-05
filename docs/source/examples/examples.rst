@@ -9,12 +9,6 @@ These are some examples.
 (Generalized) Linear Model
 ------------------------------
 
-logistic
-~~~~~~~~~~~~
-
-`logistic model`_.
-
-.. _logistic model: logistic.ipynb
 
 multiple_linear
 ~~~~~~~~~~~~~~~~~~~~

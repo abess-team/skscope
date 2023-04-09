@@ -20,18 +20,18 @@ Now, this library has supported these algorithm: `scope`, `GraHTP`, `GraSP`, `IH
 
 ### Install
 
-    ```bash
-    git clone git@github.com:abess-team/scope.git --recurse-submodules
-    pip install ./scope
-    ```
+```bash
+git clone git@github.com:abess-team/scope.git --recurse-submodules
+pip install ./scope
+```
 
 ### Building the documentation
 
-    ```bash
-    cd scope/docs
-    pip install -r requirements.txt
-    make html
-    ```
+```bash
+cd scope/docs
+pip install -r requirements.txt
+make html
+```
 
 See the document for more installation details.
 
@@ -39,40 +39,40 @@ See the document for more installation details.
 
 ### pytest
 
-    ```bash
-    pip install pytest
-    pytest scope/pytest
-    ```
+```bash
+pip install pytest
+pytest scope/pytest
+```
 
 
 ### First sample
 
 ```python
-    from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver 
-    import jax.numpy as jnp
-    from sklearn.datasets import make_regression
+from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver 
+import jax.numpy as jnp
+from sklearn.datasets import make_regression
 
-    ## generate data
-    n, p, k= 10, 5, 3
-    x, y, true_params = make_regression(n_samples=n, n_features=p, n_informative=k, coef=True)
+## generate data
+n, p, k= 10, 5, 3
+x, y, true_params = make_regression(n_samples=n, n_features=p, n_informative=k, coef=True)
 
-    ## first step: define objective function
-    def custom_objective(params):
-        return jnp.sum(
-            jnp.square(y - x @ params)
-        )
+## first step: define objective function
+def custom_objective(params):
+    return jnp.sum(
+        jnp.square(y - x @ params)
+    )
 
-    ## second step: initialize the solver
-    solver = ScopeSolver(p, k) # there are p optimization parameters, k of which are non-zero
-    # solver = BaseSolver(p, k) ## GrahtpSolver, GraspSolver, IHTSolver are the same
-    
-    ## third step: solve and get the result 
-    params = solver.solve(custom_objective) # set the optimization objective and begin to solve
-    optim_result = solver.get_result()
+## second step: initialize the solver
+solver = ScopeSolver(p, k) # there are p optimization parameters, k of which are non-zero
+# solver = BaseSolver(p, k) ## GrahtpSolver, GraspSolver, IHTSolver are the same
 
-    print("Estimated parameter:\n", params)
-    print("True parameter:\n", true_params)
-    print("Optim result:\n", optim_result)
+## third step: solve and get the result 
+params = solver.solve(custom_objective) # set the optimization objective and begin to solve
+optim_result = solver.get_result()
+
+print("Estimated parameter:\n", params)
+print("True parameter:\n", true_params)
+print("Optim result:\n", optim_result)
 ```
 
 ## Compare with SOTA methods

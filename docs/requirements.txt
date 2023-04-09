@@ -1,11 +1,12 @@
 # doc
-sphinx
-sphinx-copybutton
-nbsphinx
-sphinx-panels
-jupyter_sphinx
-pydata-sphinx-theme
-matplotlib
-seaborn
-iPython
-sphinx-autoapi
+sphinx==4.2.0
+sphinx-copybutton==0.5.1
+nbsphinx==0.9.1
+sphinx-panels==0.6.0
+jupyter_sphinx==0.4.0
+pydata-sphinx-theme==0.8.0
+matplotlib==3.6.3
+seaborn==0.12.2
+iPython==8.9.0
+sphinx-autoapi==1.9.0
+statsmodels==0.13.5

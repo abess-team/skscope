@@ -30,6 +30,7 @@ pip install ./scope
 ```bash
 cd scope/docs
 pip install -r requirements.txt
+conda install -c conda-forge pandoc
 make html
 ```
 

@@ -15,6 +15,7 @@ Install dependent libraries:
 ```bash
 cd docs
 pip install -r requirements.txt
+conda install -c conda-forge pandoc
 ```
 
 ## Generate Website's Content  

@@ -69,10 +69,12 @@ Fusion Models
 Compositional Data
 ---------------------
 
-- `Correlation inference for compositional data <correlation-inference-for-compositional-data.ipynb>`_.
+`Correlation inference for compositional data <correlation-inference-for-compositional-data.ipynb>`_.
+====================
 
 
 Other
 ---------------------
 
-- `focal-loss-with-imbalanced-data <focal-loss-with-imbalanced-data.ipynb>`_.
+`focal-loss-with-imbalanced-data <focal-loss-with-imbalanced-data.ipynb>`_.
+====================

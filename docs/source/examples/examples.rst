@@ -6,7 +6,7 @@ Linear Model and its Variants
 `Linear model <linear-regression.ipynb>`_.
 =================
 
-`Heteroskedastic linear regression (TODO) <heteroskedastic-linear-regression.ipynb>`_.
+`Expectile regression <expectile-regression.ipynb>`_.
 =================
 
 `Linear model with the Huber Loss <huber-loss-with-outliers.ipynb>`_.
@@ -51,6 +51,12 @@ Graphical Models
 ====================
 
 `Sparse precision matrix <sparse-precision-matrix.ipynb>`_.
+====================
+
+Fusion Models
+--------------------
+
+`Trend filter <1d-trend-filtering.ipynb>`_.
 ====================
 
 `Trend filtering for graph <depth-first-search-graph-trend-filtering.ipynb>`_.

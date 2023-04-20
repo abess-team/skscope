@@ -148,7 +148,7 @@ setup(
         "numpy",
         "scikit-learn>=0.24",
         "jax[cpu]",
-        "nlopt==2.7.1",
+        "nlopt",
     ],
     license="GPL-3",
     #url="https://abess.readthedocs.io",

@@ -68,6 +68,22 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
     ---
     :img-top: _static/light_api.png
 
+    Features
+    ^^^^^^^^^^
+
+    Here is a page for features.
+
+    +++
+
+    .. link-button:: guide/features
+        :type: ref
+        :text: To the user guide
+        :classes: btn-block btn-dark stretched-link btn-sm
+
+
+    ---
+    :img-top: _static/light_api.png
+
     API
     ^^^^^^^^^^
 
@@ -91,7 +107,8 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
 
    Install <intro/install>
    Quick Start <intro/quickStart>
-   User guide <guide/guide>
+   Examples <examples/guide>
+   Features <guide/features>
    API <autoapi/scope/index>
    Reference <reference/reference>
    Release notes <releaseNote/releaseNote>

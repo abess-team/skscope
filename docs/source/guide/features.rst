@@ -1,8 +1,6 @@
-.. _guide:
-
 :parenttoc: True
 
-User guide
+Features
 ==========
 
 .. toctree::
@@ -10,9 +8,8 @@ User guide
    :maxdepth: 3
 
    Variants <Variants>
-   Examples <../examples/examples>
-   Computational Tips <ComputationalTips>
    Beyond Scope <BeyondScope>
+   Computational Tips <ComputationalTips>
 
 .. raw:: html
    

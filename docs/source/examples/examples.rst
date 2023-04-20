@@ -1,44 +1,69 @@
 
-:parenttoc: True
 
-Examples
-==========
-
-These are some examples.
-
-(Generalized) Linear Model
+Linear Model and its Variants
 ------------------------------
 
-These are `Generalized Linear Model <GLM.ipynb>`_.
+`Linear model <linear-regression.ipynb>`_.
+=================
 
-Multinomial (Generalized) Linear Model
-~~~~~~~~~~~~~~~~~~~~
+`Heteroskedastic linear regression (TODO) <heteroskedastic-linear-regression.ipynb>`_.
+=================
 
-This is `Multinomial linear model <multiple_linear.ipynb>`_.
+`Linear model with the Huber Loss <huber-loss-with-outliers.ipynb>`_.
+=================
 
-This is `Multinomial logistic model <Multinomial-Logistic-Regression.ipynb>`_.
+`Linear mixed model <Linear-mixed-model.ipynb>`_.
+=================
 
-Graphical Models
---------------------
 
-This is `sparse-gaussian-graphical-model <sparse-gaussian-graphical-model.ipynb>`_.
+Generalized Linear Models
+------------------------------
+
+`Logistic regression <logistic-regression.ipynb>`_.
+=================
+
+`Poisson regression <poisson-regression.ipynb>`_.
+=================
+
+`Gamma regression <gamma-regression.ipynb>`_.
+=================
+
+`Inverse gaussian regression (TODO) <inverse-gaussian-regression.ipynb>`_.
+=================
+
+`Multi-response linear regression <multiple-response-linear-regression.ipynb>`_.
+=================
+
+`Multinomial logistic regression <multinomial-logistic-regression.ipynb>`_.
+=================
 
 Survival Models
 --------------------
 
-This is `Additive hazards model and Cox's proportional hazards model <survival.ipynb>`_.
+`Additive hazards model and Cox's proportional hazards model <survival.ipynb>`_.
+====================
 
 
+Graphical Models
+--------------------
 
-Unorganized Models
+`Sparse gaussian graphical model <sparse-gaussian-precision-matrix.ipynb>`_.
+====================
+
+`Sparse precision matrix <sparse-precision-matrix.ipynb>`_.
+====================
+
+`Trend filtering for graph <depth-first-search-graph-trend-filtering.ipynb>`_.
+====================
+
+
+Compositional Data
 ---------------------
 
-This is `Correlation inference for compositional data <correlation-inference-for-compositional-data.ipynb>`_.
+- `Correlation inference for compositional data <correlation-inference-for-compositional-data.ipynb>`_.
 
-This is `DFS-Graph-Trend-Filtering <depth-first-search-graph-trend-filtering.ipynb>`_.
 
-This is `focal-loss-with-imbalanced-data <focal-loss-with-imbalanced-data.ipynb>`_.
+Other
+---------------------
 
-This is `huber-loss-with-outliers <huber-loss-with-outliers.ipynb>`_.
-
-This is `Linear-mixed-model <Linear-mixed-model.ipynb>`_.
+- `focal-loss-with-imbalanced-data <focal-loss-with-imbalanced-data.ipynb>`_.

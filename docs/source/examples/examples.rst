@@ -9,6 +9,9 @@ Linear Model and its Variants
 `Expectile regression <expectile-regression.ipynb>`_.
 =================
 
+`LAD regression <lad-regression.ipynb>`_.
+=================
+
 `Linear model with the Huber Loss <huber-loss-with-outliers.ipynb>`_.
 =================
 

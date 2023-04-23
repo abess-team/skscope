@@ -713,6 +713,58 @@ class GrahtpSolver(BaseSolver):
             )
         # init
         params = init_params
+        best_suppport_set_tuple = None
+        best_loss = np.inf
+        results = {} # key: tuple of ordered support set, value: params
+
+
+        for iter in range(self.max_iter):
+            # S1: gradient descent
+            params_bias = params - self.step_size * value_and_grad(params, data)[1]
+            # S2: Gradient Hard Thresholding
+            score = np.abs(params_bias)
+            score[self.always_select] = np.inf
+            support_new = np.argpartition(score, -sparsity)[-sparsity:]
+            support_new_tuple = tuple(np.sort(support_new))
+            # terminating condition
+            if support_new_tuple in results:
+                return results[best_suppport_set], best_suppport_set
+            else:
+                # S3: debise
+                params = np.zeros(self.dimensionality)
+                params[support_new], loss = self._cache_nlopt(
+                    loss_fn, value_and_grad, params_bias, support_new, data
+                )
+                # update cache
+                if loss < best_loss:
+                    best_loss = loss
+                    best_suppport_set = support_new_tuple
+                results[support_new_tuple] = params
+
+
+class IHTSolver(GrahtpSolver):
+    isFast = True  # IHT is actually fast version of GraHTP
+
+    def _solve(
+        self,
+        sparsity,
+        loss_fn,
+        value_and_grad,
+        init_support_set,
+        init_params,
+        data,
+    ):
+        if sparsity <= self.always_select.size:
+            return super()._solve(
+                sparsity,
+                loss_fn,
+                value_and_grad,
+                init_support_set,
+                init_params,
+                data,
+            )
+        # init
+        params = init_params
         support_old = np.array([], dtype="int32")
 
         for iter in range(self.max_iter):
@@ -729,25 +781,14 @@ class GrahtpSolver(BaseSolver):
                 support_old = support_new
             # S3: debise
             params = np.zeros(self.dimensionality)
-            if self.isFast:
-                params[support_new] = params_bias[support_new]
-            else:
-                params[support_new], _ = self._cache_nlopt(
-                    loss_fn, value_and_grad, params_bias, support_new, data
-                )
+            params[support_new] = params_bias[support_new]
 
         # final optimization for IHT
-        if self.isFast:
-            params[support_new], _ = self._cache_nlopt(
-                loss_fn, value_and_grad, params, support_new, data
-            )
+        params[support_new], _ = self._cache_nlopt(
+            loss_fn, value_and_grad, params, support_new, data
+        )
 
         return params, support_new
-
-
-class IHTSolver(GrahtpSolver):
-    isFast = True  # IHT is actually fast version of GraHTP
-
 
 class GraspSolver(BaseSolver):
 

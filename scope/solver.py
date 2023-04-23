@@ -714,7 +714,7 @@ class GrahtpSolver(BaseSolver):
             support_new_tuple = tuple(np.sort(support_new))
             # terminating condition
             if support_new_tuple in results:
-                return results[best_suppport_set], best_suppport_set
+                return results[best_suppport_set_tuple], np.array(best_suppport_set_tuple)
             else:
                 # S3: debise
                 params = np.zeros(self.dimensionality)
@@ -725,7 +725,7 @@ class GrahtpSolver(BaseSolver):
                 # update cache
                 if loss < best_loss:
                     best_loss = loss
-                    best_suppport_set = support_new_tuple
+                    best_suppport_set_tuple = support_new_tuple
                 results[support_new_tuple] = params
 
 

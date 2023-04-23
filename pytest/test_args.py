@@ -18,23 +18,6 @@ solvers_ids = ("scope", "Base")  # , "GraHTP", "GraSP", "IHT")
 
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
-def test_nlopt_solver(model, solver_creator):
-    """
-    Custom nlopt solver
-    """
-    nlopt_solver = nlopt.opt(nlopt.LD_SLSQP, 1)
-    nlopt_solver.set_ftol_rel(0.001)
-
-    solver = solver_creator(
-        model["n_features"], model["n_informative"], nlopt_solver=nlopt_solver
-    )
-    params = solver.solve(model["loss"])
-
-    assert model["params"] == pytest.approx(params, rel=0.01, abs=0.01)
-
-
-@pytest.mark.parametrize("model", models, ids=models_ids)
-@pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_init_support_set(model, solver_creator):
     solver = solver_creator(model["n_features"], model["n_informative"])
     solver.solve(model["loss"], init_support_set=[0, 1, 2], jit=True)

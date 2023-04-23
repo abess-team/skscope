@@ -6,7 +6,7 @@ import nlopt
 import jax
 from jax import numpy as jnp
 from . import _scope
-
+from .util import convex_solver_nlopt
 
 class ScopeSolver(BaseEstimator):
     r"""
@@ -125,7 +125,7 @@ class ScopeSolver(BaseEstimator):
         sample_size=1,
         *,
         always_select=[],
-        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        convex_solver=convex_solver_nlopt,
         max_iter=20,
         ic_type="aic",
         ic_coef=1.0,
@@ -156,7 +156,7 @@ class ScopeSolver(BaseEstimator):
         self.sample_size = sample_size
 
         self.always_select = always_select
-        self.nlopt_solver = nlopt_solver
+        self.convex_solver = convex_solver
         self.max_iter = max_iter
         self.ic_type = ic_type
         self.ic_coef = ic_coef
@@ -252,18 +252,6 @@ class ScopeSolver(BaseEstimator):
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
-
-        nlopt_config = _scope.NloptConfig(
-            self.nlopt_solver.get_algorithm(),
-            self.nlopt_solver.get_algorithm_name(),
-            self.nlopt_solver.get_stopval(),
-            self.nlopt_solver.get_ftol_rel(),
-            self.nlopt_solver.get_ftol_abs(),
-            self.nlopt_solver.get_xtol_rel(),
-            self.nlopt_solver.get_maxtime(),
-            self.nlopt_solver.get_population(),
-            self.nlopt_solver.get_vector_storage(),
-        )
 
         p = self.dimensionality
         BaseSolver._check_positive_integer(p, "dimensionality")
@@ -475,7 +463,7 @@ class ScopeSolver(BaseEstimator):
         result = _scope.pywrap_Universal(
             data,
             self.model,
-            nlopt_config,
+            self.convex_solver,
             p,
             n,
             0,
@@ -654,8 +642,6 @@ class ScopeSolver(BaseEstimator):
 
 
 class GrahtpSolver(BaseSolver):
-    isFast = False  # fast version of GraHTP is actually IHT
-
     def __init__(
         self,
         dimensionality,
@@ -664,7 +650,7 @@ class GrahtpSolver(BaseSolver):
         *,
         always_select=[],
         step_size=0.005,
-        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        convex_solver=convex_solver_nlopt,
         max_iter=100,
         ic_type="aic",
         ic_coef=1.0,
@@ -680,7 +666,7 @@ class GrahtpSolver(BaseSolver):
             sparsity=sparsity,
             sample_size=sample_size,
             always_select=always_select,
-            nlopt_solver=nlopt_solver,
+            convex_solver=convex_solver,
             max_iter=max_iter,
             ic_type=ic_type,
             ic_coef=ic_coef,
@@ -732,8 +718,9 @@ class GrahtpSolver(BaseSolver):
             else:
                 # S3: debise
                 params = np.zeros(self.dimensionality)
-                params[support_new], loss = self._cache_nlopt(
-                    loss_fn, value_and_grad, params_bias, support_new, data
+                params[support_new] = params_bias[support_new]
+                loss, params = self._convex_solver(
+                    loss_fn, value_and_grad, params, support_new, data
                 )
                 # update cache
                 if loss < best_loss:
@@ -743,8 +730,6 @@ class GrahtpSolver(BaseSolver):
 
 
 class IHTSolver(GrahtpSolver):
-    isFast = True  # IHT is actually fast version of GraHTP
-
     def _solve(
         self,
         sparsity,
@@ -784,7 +769,7 @@ class IHTSolver(GrahtpSolver):
             params[support_new] = params_bias[support_new]
 
         # final optimization for IHT
-        params[support_new], _ = self._cache_nlopt(
+        _, params = self._convex_solver(
             loss_fn, value_and_grad, params, support_new, data
         )
 
@@ -842,10 +827,10 @@ class GraspSolver(BaseSolver):
 
             # minimize
             params_bias = np.zeros(self.dimensionality)
-            if support_new.size > 0:
-                params_bias[support_new], _ = self._cache_nlopt(
-                    loss_fn, value_and_grad, params, support_new, data
-                )
+            params_bias[support_new] = params[support_new]
+            _, params_bias = self._convex_solver(
+                loss_fn, value_and_grad, params_bias, support_new, data
+            )
 
             # prune estimate
             score = np.abs(params_bias)
@@ -870,7 +855,7 @@ class FobaSolver(BaseSolver):
         foba_threshold_ratio=0.5,
         strict_sparsity=True,
         always_select=[],
-        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        convex_solver=convex_solver_nlopt,
         max_iter=100,
         ic_type="aic",
         ic_coef=1.0,
@@ -886,7 +871,7 @@ class FobaSolver(BaseSolver):
             sparsity=sparsity,
             sample_size=sample_size,
             always_select=always_select,
-            nlopt_solver=nlopt_solver,
+            convex_solver=convex_solver,
             max_iter=max_iter,
             ic_type=ic_type,
             ic_coef=ic_coef,
@@ -916,55 +901,60 @@ class FobaSolver(BaseSolver):
                 if idx in support_set:
                     score[idx] = -np.inf
                     continue
-                score[idx] = value_old - self._cache_nlopt(
+                cache_param = params[idx]
+                score[idx] = value_old - self._convex_solver(
                     loss_fn,
                     value_and_grad,
                     params,
-                    optim_variable_idx=np.array([idx], dtype=int),
+                    np.array([idx], dtype=int),
                     data=data,
-                    background_params=params,
-                )[1]
+                )[0]
+                params[idx] = cache_param
 
         direction = np.argmax(score)
         if score[direction] < self.threshold:
             return params, support_set, -1.0
         support_set = np.append(support_set, direction)
-        params_temporary, value_new = self._cache_nlopt(
+
+        inactive_set = np.ones_like(params, dtype=bool)
+        inactive_set[support_set] = False
+        params[inactive_set] = 0.0
+        value_new, params = self._convex_solver(
             loss_fn,
             value_and_grad,
             params,
-            optim_variable_idx=support_set,
+            support_set,
             data=data,
         )
-        params = np.zeros(self.dimensionality, dtype=float)
-        params[support_set] = params_temporary
 
         return params, support_set, value_old - value_new
 
     def backward_step(self, loss_fn, value_and_grad, params, support_set, data, backward_threshold):
         score = np.empty(self.dimensionality, dtype=float)
-        params_temporary = params.copy()
         for idx in range(self.dimensionality):
             if idx not in support_set or idx in self.always_select:
                 score[idx] = np.inf
                 continue
-            params_temporary[idx] = 0.0
-            score[idx] = loss_fn(params_temporary, data)
-            params_temporary[idx] = params[idx]
+            cache_param = params[idx]
+            params[idx] = 0.0
+            score[idx] = loss_fn(params, data)
+            params[idx] = cache_param
         direction = np.argmin(score)
         if score[direction] >= backward_threshold:
             return params, support_set, False
 
         support_set = np.delete(support_set, np.argwhere(support_set == direction))
-        params_temporary, _ = self._cache_nlopt(
+        
+        inactive_set = np.ones_like(params, dtype=bool)
+        inactive_set[support_set] = False
+        params[inactive_set] = 0.0
+        _, params = self._convex_solver(
             loss_fn,
             value_and_grad,
             params,
-            optim_variable_idx=support_set,
+            support_set,
             data=data,
         )
-        params = np.zeros(self.dimensionality, dtype=float)
-        params[support_set] = params_temporary
 
         return params, support_set, True
 
@@ -1037,7 +1027,7 @@ class ForwardSolver(FobaSolver):
         threshold=0.0,
         strict_sparsity=True,
         always_select=[],
-        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        convex_solver=convex_solver_nlopt,
         max_iter=100,
         ic_type="aic",
         ic_coef=1.0,
@@ -1057,7 +1047,7 @@ class ForwardSolver(FobaSolver):
         strict_sparsity=strict_sparsity,
         threshold=threshold,
         foba_threshold_ratio=0.5,
-        nlopt_solver=nlopt_solver,
+        convex_solver=convex_solver,
         max_iter=max_iter,
         ic_type=ic_type,
         ic_coef=ic_coef,
@@ -1120,7 +1110,7 @@ class OmpSolver(ForwardSolver):
         threshold=0.0,
         strict_sparsity=True,
         always_select=[],
-        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        convex_solver=convex_solver_nlopt,
         max_iter=100,
         ic_type="aic",
         ic_coef=1.0,
@@ -1139,7 +1129,7 @@ class OmpSolver(ForwardSolver):
             threshold=threshold,
             strict_sparsity=strict_sparsity,
             always_select=always_select,
-            nlopt_solver=nlopt_solver,
+            convex_solver=convex_solver,
             max_iter=max_iter,
             ic_type=ic_type,
             ic_coef=ic_coef,

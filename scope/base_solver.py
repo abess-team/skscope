@@ -2,6 +2,7 @@ from sklearn.base import BaseEstimator
 from sklearn.model_selection import KFold
 import numpy as np
 import jax
+from .util import convex_solver_nlopt
 import nlopt
 import math
 
@@ -35,7 +36,7 @@ class BaseSolver(BaseEstimator):
         sample_size=1,
         *,
         always_select=[],
-        nlopt_solver=nlopt.opt(nlopt.LD_LBFGS, 1),
+        convex_solver=convex_solver_nlopt,
         max_iter=100,
         ic_type="aic",
         ic_coef=1.0,
@@ -59,7 +60,7 @@ class BaseSolver(BaseEstimator):
         self.split_method = split_method
         self.jax_platform = jax_platform
         self.random_state = random_state
-        self.nlopt_solver = nlopt_solver
+        self.convex_solver = convex_solver
 
     def get_config(self, deep=True):
         return super().get_params(deep)
@@ -403,33 +404,34 @@ class BaseSolver(BaseEstimator):
             yield from helper(0, s, always_select)
 
         result = {"params": None, "support_set": None, "value_of_objective": math.inf}
+        params = init_params.copy()
         for support_set in all_subsets(
             self.dimensionality, sparsity, self.always_select
         ):
-            opt_params, loss = self._cache_nlopt(
-                loss_fn, value_and_grad, init_params, support_set, data
+            inactive_set = np.ones_like(init_params, dtype=bool)
+            inactive_set[support_set] = False
+            params[inactive_set] = 0.0
+            params[support_set] = init_params[support_set]
+            loss, params = self._convex_solver(
+                loss_fn, value_and_grad, params, support_set, data
             )
             if loss < result["value_of_objective"]:
-                params = np.zeros(self.dimensionality)
-                params[support_set] = opt_params
-                result["params"] = params
+                result["params"] = params.copy()
                 result["support_set"] = support_set
                 result["value_of_objective"] = loss
 
         return result["params"], result["support_set"]
 
-    def _cache_nlopt(
+    def _convex_solver(
         self,
         loss_fn,
         value_and_grad,
-        init_params,
-        optim_variable_idx,
+        params,
+        optim_variable_set,
         data,
-        background_params=None,
     ):
         """
-        Nlopt often throws RuntimeError even if the optimization is nearly successful.
-        This function is used to cache the best result and return it.
+        Solve the optimization problem with given support set. 
 
         Parameters
         ----------
@@ -437,67 +439,34 @@ class BaseSolver(BaseEstimator):
             The loss function.
         value_and_grad: Callable[[Sequence[float], Any], Tuple[float, Sequence[float]]]
             The function to compute the loss and gradient.
-        init_params: Sequence[float]
+        params: Sequence[float]
             The complete initial parameters.
-        optim_variable_idx: Sequence[int]
+        optim_variable_set: Sequence[int]
             The index of variables to be optimized.
         data: Any
             The data passed to loss_fn and value_and_grad.
-        background_params: Sequence[float] | None
-            The values of parameters that are not optimized, default is all zeros.
 
         Returns
         -------
-        optim_params: Sequence[float]
-            The optimized parameters, whose length is the same as optim_variable_idx.
         loss: float
-            The loss of the optimized parameters.
+            The loss of the optimized parameters, i.e., `loss_fn(params, data)`.
+        optimized_params: Sequence[float]
+            The optimized parameters.
         """
-        if len(optim_variable_idx) == 0:
-            return np.zeros(0), math.inf
-        best_loss = math.inf
-        best_params = None
-        if background_params is None:
-            background_params = np.zeros(self.dimensionality)
-        else:
-            background_params = np.copy(
-                background_params
-            )  # avoid changing the original background_params
+        if not isinstance(params, np.ndarray) or params.ndim != 1:
+            raise ValueError("params should be a 1D np.ndarray.")
+        if (
+            not isinstance(optim_variable_set, np.ndarray)
+            or optim_variable_set.ndim != 1
+        ):
+            raise ValueError("optim_variable_set should be a 1D np.ndarray.")
 
-        def cache_opt_fn(x, grad):
-            nonlocal best_loss, best_params
-            background_params[
-                optim_variable_idx
-            ] = x  # update the nonlocal variable: background_params
-            if grad.size > 0:
-                loss, full_grad = value_and_grad(background_params, data)
-                grad[:] = full_grad[optim_variable_idx]
-            else:
-                loss = loss_fn(background_params, data)
-            if loss < best_loss:
-                best_loss = loss
-                best_params = np.copy(x)
-            return loss
+        if optim_variable_set.size == 0:
+            return loss_fn(params, data)
 
-        nlopt_solver = nlopt.opt(
-            self.nlopt_solver.get_algorithm(), optim_variable_idx.size
+        return self.convex_solver(
+            loss_fn, value_and_grad, params, optim_variable_set, data
         )
-        if nlopt_solver.get_algorithm_name() != self.nlopt_solver.get_algorithm_name():
-            raise ValueError("The algorithm of nlopt_solver is invalid.")
-        nlopt_solver.set_stopval(self.nlopt_solver.get_stopval())
-        nlopt_solver.set_ftol_rel(self.nlopt_solver.get_ftol_rel())
-        nlopt_solver.set_ftol_abs(self.nlopt_solver.get_ftol_abs())
-        nlopt_solver.set_xtol_rel(self.nlopt_solver.get_xtol_rel())
-        nlopt_solver.set_maxtime(self.nlopt_solver.get_maxtime())
-        nlopt_solver.set_population(self.nlopt_solver.get_population())
-        nlopt_solver.set_vector_storage(self.nlopt_solver.get_vector_storage())
-        nlopt_solver.set_min_objective(cache_opt_fn)
-
-        try:
-            opt_params = nlopt_solver.optimize(init_params[optim_variable_idx])
-            return opt_params, nlopt_solver.last_optimum_value()
-        except RuntimeError:
-            return best_params, best_loss
 
     def get_result(self):
         r"""

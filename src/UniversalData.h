@@ -9,7 +9,7 @@
 #include <functional>
 #include <autodiff/forward/dual.hpp>
 
-#include "NloptConfig.h"
+//#include "NloptConfig.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;
@@ -21,6 +21,13 @@ using VectorXdual2nd = Eigen::Matrix<dual2nd,-1,1>;
 using std::function;
 using std::pair;
 
+using ConvexSolver = function<pair<double, VectorXd>(
+    function <double(VectorXd const&, pybind11::object const&)>, // loss_fn
+    function <pair<double, VectorXd>(const VectorXd&, pybind11::object)>, // value_and_grad
+    const VectorXd&, // complete_para
+    const VectorXi&, // effective_para_index
+    pybind11::object const& // data
+)>;
 
 class UniversalModel;
 // UniversalData includes everything about the statistic model like loss, constraints and the statistic data like samples, operations of data.
@@ -36,7 +43,7 @@ class UniversalData {
     //                 out of Class UniversalData, effective_para is invisible. 
 private:
     UniversalModel* model;
-    NloptConfig* nlopt_solver;
+    ConvexSolver convex_solver;
     Eigen::Index sample_size;
     Eigen::Index model_size; // length of complete_para
     VectorXi effective_para_index;// `complete_para[effective_para_index[i]]` is `effective_para[i]`
@@ -44,7 +51,7 @@ private:
     std::shared_ptr<pybind11::object> data; // statistic data from user 
 public:
     UniversalData() = default;
-    UniversalData(Eigen::Index model_size, Eigen::Index sample_size, pybind11::object& data, UniversalModel* model, NloptConfig* nlopt_solver);
+    UniversalData(Eigen::Index model_size, Eigen::Index sample_size, pybind11::object& data, UniversalModel* model, ConvexSolver convex_solver);
     UniversalData slice_by_para(const VectorXi& target_para_index); // used in util func X_seg() and slice()
 
     Eigen::Index rows() const; // getter of sample_size
@@ -55,7 +62,7 @@ public:
     double loss_and_gradient(const VectorXd& effective_para, Eigen::Map<VectorXd>& gradient);
     void gradient_and_hessian(const VectorXd& effective_para, VectorXd& gradient,MatrixXd& hessian);             
     void init_para(VectorXd & effective_para);  // initialize para for primary_model_fit, default is not change.                                                                                        
-    nlopt_opt nlopt_create(unsigned dim) {return this->nlopt_solver->create(dim);}                
+    double optimize(VectorXd& effective_para);                
 };
 
 class UniversalModel{

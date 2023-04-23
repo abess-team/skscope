@@ -428,7 +428,7 @@ void Algorithm::final_fitting(UniversalData &train_x, MatrixXd &train_y, VectorX
                                             this->lambda_level);
     // }
 }
-
+/*
 double nlopt_function(unsigned n, const double* x, double* grad, void* f_data) {
     UniversalData* data = static_cast<UniversalData*>(f_data);
     Map<VectorXd const> effective_para(x, n);
@@ -440,12 +440,15 @@ double nlopt_function(unsigned n, const double* x, double* grad, void* f_data) {
         return data->loss(effective_para);
     }
 };
-
+*/
 bool Algorithm::primary_model_fit(UniversalData& active_data, MatrixXd& y, VectorXd& weights, VectorXd& active_para, VectorXd& aux_para, double loss0,
     VectorXi& A, VectorXi& g_index, VectorXi& g_size) 
 {
     SPDLOG_DEBUG("optimization begin\nactive set: {}\ninit loss: {}\npara:{}", active_data.get_effective_para_index().transpose(), loss0, active_para.transpose());    
-    double value = 0.;
+    double value = active_data.optimize(active_para);
+    SPDLOG_DEBUG("optimization end\nfinal loss: {}\npara:{}", value, active_para.transpose());
+    return true;
+    /*
     active_data.init_para(active_para);
 
     nlopt_opt opt = active_data.nlopt_create(active_para.size());
@@ -457,9 +460,7 @@ bool Algorithm::primary_model_fit(UniversalData& active_data, MatrixXd& y, Vecto
     if(!success){
         SPDLOG_WARN("nlopt failed to optimize, state: {} ", nlopt_result_to_string(result));
     }
-
-    SPDLOG_DEBUG("optimization end\nfinal loss: {}\npara:{}", value, active_para.transpose());
-    return success;
+    */
 }
 
 void Algorithm::sacrifice(UniversalData& data, UniversalData& XA, MatrixXd& y, VectorXd& para, VectorXd& beta_A, VectorXd& aux_para, VectorXi& A, VectorXi& I, VectorXd& weights, VectorXi& g_index, VectorXi& g_size, int g_num, VectorXi& A_ind, VectorXd& sacrifice, VectorXi& U, VectorXi& U_ind, int num)

@@ -79,7 +79,7 @@ def quadratic_objective(Q, p, hessian=False, autodiff=False):
 def convex_solver_nlopt(
     loss_fn,
     value_and_grad,
-    init_params,
+    params,
     optim_variable_set,
     data,
 ):
@@ -95,7 +95,7 @@ def convex_solver_nlopt(
         The loss function.
     value_and_grad: Callable[[Sequence[float], Any], Tuple[float, Sequence[float]]]
         The function to compute the loss and gradient.
-    init_params: Sequence[float]
+    params: Sequence[float]
         The complete initial parameters.
     optim_variable_set: Sequence[int]
         The index of variables to be optimized.
@@ -104,14 +104,13 @@ def convex_solver_nlopt(
 
     Returns
     -------
-    optim_params: Sequence[float]
-        The optimized parameters, which is same as init_params except for the optimized variables.
     loss: float
-        The loss of the optimized parameters, i.e., `loss_fn(optim_params, data)`.
+        The loss of the optimized parameters, i.e., `loss_fn(params, data)`.
+    optimized_params: Sequence[float]
+        The optimized parameters.
     """
     best_loss = math.inf
     best_params = None
-    params = np.copy(init_params)
 
     def cache_opt_fn(x, grad):
         nonlocal best_loss, best_params
@@ -131,7 +130,7 @@ def convex_solver_nlopt(
 
     try:
         params[optim_variable_set] = nlopt_solver.optimize(params[optim_variable_set])
-        return params, nlopt_solver.last_optimum_value()
+        return nlopt_solver.last_optimum_value(), params
     except RuntimeError:
         params[optim_variable_set] = best_params
-        return params, best_loss
+        return best_loss, params

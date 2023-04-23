@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "Algorithm.h"
-#include "NloptConfig.h"
+//#include "NloptConfig.h"
 #include "UniversalData.h"
 #include "Data.h"
 #include "Metric.h"
@@ -98,7 +98,7 @@ using namespace std;
  */
 
 tuple<VectorXd, double, double, double>
-pywrap_Universal(pybind11::object universal_data, UniversalModel universal_model, NloptConfig nlopt_solver, int model_size, int sample_size, int aux_para_size, int max_iter,
+pywrap_Universal(pybind11::object universal_data, UniversalModel universal_model, ConvexSolver convex_solver, int model_size, int sample_size, int aux_para_size, int max_iter,
                  int exchange_num, int path_type, bool is_warm_start, int ic_type, double ic_coef, int Kfold, VectorXi sequence,
                  VectorXd lambda_seq, int s_min, int s_max, int screening_size, VectorXi g_index, VectorXi always_select,
                  int thread, int splicing_type, int sub_search, VectorXi cv_fold_id, VectorXi A_init, VectorXd beta_init, VectorXd coef0_init)
@@ -116,7 +116,7 @@ pywrap_Universal(pybind11::object universal_data, UniversalModel universal_model
 #endif
 
     SPDLOG_DEBUG("SCOPE begin!");
-    UniversalData x(model_size, sample_size, universal_data, &universal_model, &nlopt_solver); // UniversalData is just like a matrix.
+    UniversalData x(model_size, sample_size, universal_data, &universal_model, convex_solver); // UniversalData is just like a matrix.
     MatrixXd y = MatrixXd::Zero(sample_size, aux_para_size);                                   // Invalid variable, create it just for interface compatibility
     int normalize_type = 0;                                                                    // offer normalized data if need
     VectorXd weight = VectorXd::Ones(sample_size);                                             // only can be implemented inside the model
@@ -287,7 +287,7 @@ PYBIND11_MODULE(_scope, m)
     m.def("pywrap_Universal", &pywrap_Universal);
     pybind11::class_<UniversalModel>(m, "UniversalModel").def(pybind11::init<>()).def("set_loss_of_model", &UniversalModel::set_loss_of_model).def("set_gradient_autodiff", &UniversalModel::set_gradient_autodiff).def("set_hessian_autodiff", &UniversalModel::set_hessian_autodiff).def("set_gradient_user_defined", &UniversalModel::set_gradient_user_defined).def("set_hessian_user_defined", &UniversalModel::set_hessian_user_defined).def("set_slice_by_sample", &UniversalModel::set_slice_by_sample).def("set_deleter", &UniversalModel::set_deleter).def("set_init_params_of_sub_optim", &UniversalModel::set_init_params_of_sub_optim);
     m.def("init_spdlog", &init_spdlog);
-    pybind11::class_<NloptConfig>(m, "NloptConfig").def(pybind11::init<int, const char *, double, double, double, double, double, unsigned, unsigned>());
+    //pybind11::class_<NloptConfig>(m, "NloptConfig").def(pybind11::init<int, const char *, double, double, double, double, double, unsigned, unsigned>());
     pybind11::class_<QuadraticData>(m, "QuadraticData")
         .def(pybind11::init<MatrixXd, VectorXd>());
     m.def("quadratic_loss", &quadratic_loss<double>);

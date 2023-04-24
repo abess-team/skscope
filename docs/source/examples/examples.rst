@@ -18,6 +18,9 @@ Linear Model and its Variants
 `Linear mixed model <Linear-mixed-model.ipynb>`_.
 =================
 
+`Positive effect linear regression <positive-effect-linear-regression.ipynb>`_.
+=================
+
 
 Generalized Linear Models
 ------------------------------
@@ -56,6 +59,10 @@ Graphical Models
 `Sparse precision matrix <sparse-precision-matrix.ipynb>`_.
 ====================
 
+`Sparse functional graphical model <sparse-functional-graphical-model.ipynb>`_.
+====================
+
+
 Fusion Models
 --------------------
 
@@ -65,6 +72,8 @@ Fusion Models
 `Trend filtering for graph <depth-first-search-graph-trend-filtering.ipynb>`_.
 ====================
 
+`Isotonic regression <isotonic-regression.ipynb>`_.
+====================
 
 Compositional Data
 ---------------------

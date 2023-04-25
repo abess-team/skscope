@@ -46,7 +46,13 @@ Generalized Linear Models
 Survival Models
 --------------------
 
-`Additive hazards model and Cox's proportional hazards model <survival.ipynb>`_.
+`Additive hazards model <additive hazard model.ipynb>`_.
+====================
+
+`Cox's proportional hazards model <proportional hazard model.ipynb>`_.
+====================
+
+`Multivariate failure time model <multivariate failure time model.ipynb>`_.
 ====================
 
 

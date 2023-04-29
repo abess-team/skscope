@@ -12,7 +12,7 @@ Generalized Linear Models
 `Gamma regression <gamma-regression.ipynb>`_.
 ~~~~~~~~~~~~~~~~~
 
-`Inverse gaussian regression (TODO) <inverse-gaussian-regression.ipynb>`_.
+`Inverse gaussian regression <inverse-gaussian-regression.ipynb>`_.
 ~~~~~~~~~~~~~~~~~
 
 `Multi-response linear regression <multiple-response-linear-regression.ipynb>`_.

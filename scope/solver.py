@@ -186,6 +186,18 @@ class ScopeSolver(BaseEstimator):
 
     def set_config(self, **params):
         return super().set_params(**params)
+    
+    def get_estimated_params(self):
+        r"""
+        Get the parameters of optimization.
+        """
+        return self.params
+    
+    def get_support(self):
+        r"""
+        Get the support set of optimization.
+        """
+        return self.support_set
 
     @staticmethod
     def _set_log_level(console_log_level, file_log_level, log_file_name):
@@ -491,7 +503,7 @@ class ScopeSolver(BaseEstimator):
         )
 
         self.params = np.array(result[0])
-        self.support_set = np.nonzero(self.params)[0]
+        self.support_set = np.sort(np.nonzero(self.params)[0])
         self.cv_train_loss = result[1] if self.cv == 1 else 0.0
         self.cv_test_loss = result[2] if self.cv == 1 else 0.0
         self.information_criterion = result[3]

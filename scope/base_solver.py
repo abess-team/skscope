@@ -262,6 +262,7 @@ class BaseSolver(BaseEstimator):
             self.value_of_objective = loss_fn(self.params, data)
             self.eval_objective = cv_eval[best_sparsity]
 
+        self.support_set = np.sort(self.support_set)
         return self.params
 
     @staticmethod
@@ -478,6 +479,18 @@ class BaseSolver(BaseEstimator):
             "value_of_objective": self.value_of_objective,
             "eval_objective": self.eval_objective,
         }
+    
+    def get_estimated_params(self):
+        r"""
+        Get the parameters of optimization.
+        """
+        return self.params
+    
+    def get_support(self):
+        r"""
+        Get the support set of optimization.
+        """
+        return self.support_set
 
     @staticmethod
     def _check_positive_integer(var, name: str):

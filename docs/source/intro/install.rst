@@ -17,7 +17,7 @@ Building the package from source
 This is recommended if you want to work with the latest development version or if you wish to contribute to scope. In this case, there are some prerequisites:
 
 - A compiler with C++17 support
-- Pip 10+ or CMake >= 3.14
+- Pip 10+
 
 First download the latest source code from GitHub via
 
@@ -27,7 +27,7 @@ First download the latest source code from GitHub via
 
 Note that ``--recurse-submodules`` is required since there are some submodules in the project. If there are any problem about submodules, `this guide <https://git-scm.com/book/en/v2/Git-Tools-Submodules>`_ is all you need.
 
-Then build the package from source using pip (in the editable mode):
+Then build the package from source using pip in the editable mode:
 
 .. code-block:: Bash
 
@@ -35,7 +35,7 @@ Then build the package from source using pip (in the editable mode):
 
 Thanks to the editable mode with the flag ``-e``, we needn't re-build the package :ref:`scope <scope_package>` when the source python code changes. However, if the C++ code changes, we have re-build it by ``pip install -e ./scope`` again.
 
-If the required environment has been installed (especially CMake), we can build the package faster by  
+If the required environment has been installed, we can build the package faster by  
 
 .. code-block:: Bash
 
@@ -49,7 +49,7 @@ This command will not check or prepare the required environment, so it can save 
 Install on Windows
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are some troubles on Windows platform, and here are some tips.
+If you have troubles on Windows platform, here are some helpful tips.
 
 - The easiest way to configure the C++ compile environment on the Windows platform is to download and install the latest version of Visual Studio Community Edition (if you can accept its huge size). 
 

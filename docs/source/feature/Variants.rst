@@ -36,46 +36,6 @@ Note that ``params`` (parameters) must be a vector not matrix and ``sparsity`` r
         )
 
 
-auxiliary parameters
-----------------------
-
-Sometimes, there are some parameters that need to be optimized but are not imposed by sparse-constrain (i.e., the always selected variables). This kind of parameters is called auxiliary parameters or ``aux_params``, which is a useful concept for the convenience. The number of ``aux_params`` is denoted as ``aux_params_size``.
-
-Specifically, denote ``params`` as :math:`x` and ``aux_params`` as :math:`\theta`, then the optimization problem is:
-
-.. math::
-    \min_{x\in R^p} f(x) := \min_{\theta}l(x,\theta) s.t.  ||x||_0 \leq s,
-
-where :math:`f(x)` is the actual objective function but we can set :math:`l(x,\theta)` as objective function of ``ScopeSolver``.
-
-In this case, the following are needed:
-
-1. ``aux_params_size`` needs to be offered to ``ScopeSolver``.
-   
-
-.. code-block:: python
-
-       solver = ScopeSolver(
-           dimensionality=p, ## there are p parameters
-           sparsity=k, ## we want to select k variables
-           aux_params_size=1 ## there is one auxiliary parameter
-       )
-   
-2. ``aux_params`` need to be offered to objective function too.
-   
-
-.. code-block:: python
-
-       def custom_objective(params, aux_params):
-           return jnp.sum(
-               jnp.square(train_data.y - train_data.X @ params - aux_params)
-           )
-        solver.set_objective_jax(custom_objective)
-   
-
-In the above example, the ``aux_params`` is a scalar representing the intercept of linear model.
-
-
 Search support size
 -------------------------
 
@@ -156,3 +116,4 @@ Here is an example:
 
 
 The way of defining objective function is the same as common way.
+

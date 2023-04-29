@@ -3,9 +3,9 @@
 SCOPE
 =================================
 
-Sparse-Constrained Optimization via Splicing Iteration (SCOPE) is an algorithm for getting sparse optimal solution of convex objective function, which also can be used for variables selection. Its characteristic is that the optimization objective can be a user-defined function so that the algorithm can be applied to various problems.
+The Python package **SCOPE** is for getting sparse optimal solution of convex objective function, which also can be used for variables selection. Its characteristic is that the optimization objective can be a user-defined function so that the algorithm can be applied to various problems.
 
-Specifically, SCOPE aims to tackle this problem: 
+Specifically, **SCOPE** aims to tackle this problem: 
 
 .. math:: 
    \min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leq s,
@@ -37,6 +37,21 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
     ---
     :img-top: _static/light_quickStart.png
 
+    Instsall
+    ^^^^^^^^^^^^^^^
+
+    Here is install document.
+
+    +++
+
+    .. link-button:: intro/install
+        :type: ref
+        :text: To the install document
+        :classes: btn-block btn-dark stretched-link btn-sm
+
+    ---
+    :img-top: _static/light_quickStart.png
+
     Quick start
     ^^^^^^^^^^^^^^^
 
@@ -59,7 +74,7 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
 
     +++
 
-    .. link-button:: guide/guide
+    .. link-button:: intro/guide
         :type: ref
         :text: To the user guide
         :classes: btn-block btn-dark stretched-link btn-sm
@@ -75,7 +90,7 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
 
     +++
 
-    .. link-button:: guide/features
+    .. link-button:: feature/features
         :type: ref
         :text: To the user guide
         :classes: btn-block btn-dark stretched-link btn-sm
@@ -96,6 +111,20 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
         :text: To the API
         :classes: btn-block btn-dark stretched-link btn-sm
 
+    ---
+    :img-top: _static/light_api.png
+
+    Examples
+    ^^^^^^^^^^
+
+    Here is Examples document.
+
+    +++
+
+    .. link-button:: examples/index
+        :type: ref
+        :text: To the examples
+        :classes: btn-block btn-dark stretched-link btn-sm
 
 .. toctree::
    :hidden:
@@ -107,11 +136,10 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
 
    Install <intro/install>
    Quick Start <intro/quickStart>
-   Examples <examples/guide>
-   Features <guide/features>
+   User guide <intro/guide>
+   Features <feature/features>
    API <autoapi/scope/index>
-   Reference <reference/reference>
-   Release notes <releaseNote/releaseNote>
+   Examples <examples/index>
 
 Video Guide
 ---------------------------------

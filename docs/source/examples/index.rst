@@ -1,3 +1,5 @@
+.. _examples:
+
 :parenttoc: True
 
 Examples
@@ -7,10 +9,17 @@ Examples
    :numbered:
    :maxdepth: 3
 
-   Examples <./examples>
+   Linear Model and its Variants <Linear Model and its Variants/index>
+   Generalized Linear Models <Generalized Linear Models/index>
+   Survival Models <Survival Models/index>
+   Graphical Models <Graphical Models/index>
+   Fusion Models <Fusion Models/index>
+   Compositional Data <Compositional Data/index>
+   Other <Other/index>
 
-.. raw:: html
    
+.. raw:: html
+
    <style>
   /* Border radius parameter */
   :root {

@@ -1,4 +1,4 @@
-from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, ForwardSolver, OmpSolver
+from scope import ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver, FobaSolver, ForwardSolver, OMPSolver
 import pytest
 from create_test_model import CreateTestModel
 
@@ -10,7 +10,7 @@ models = (linear,)
 models_ids = ("linear",)
 
 foba_gdt_solver = lambda *args, **kwargs: FobaSolver(*args, **kwargs, use_gradient=True)
-solvers = (ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, foba_gdt_solver, ForwardSolver, OmpSolver)
+solvers = (ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver, FobaSolver, foba_gdt_solver, ForwardSolver, OMPSolver)
 solvers_ids = ("scope", "Base", "GraHTP", "GraSP", "IHT", "FOBA", "FOBA_gdt", "Forward", "OMP")
 
 

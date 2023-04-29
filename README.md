@@ -49,7 +49,7 @@ pytest scope/pytest
 ### First sample
 
 ```python
-from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver 
+from scope import ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver 
 import jax.numpy as jnp
 from sklearn.datasets import make_regression
 
@@ -65,7 +65,7 @@ def custom_objective(params):
 
 ## second step: initialize the solver
 solver = ScopeSolver(p, k) # there are p optimization parameters, k of which are non-zero
-# solver = BaseSolver(p, k) ## GrahtpSolver, GraspSolver, IHTSolver are the same
+# solver = BaseSolver(p, k) ## HTPSolver, GraspSolver, IHTSolver are the same
 
 ## third step: solve and get the result 
 params = solver.solve(custom_objective) # set the optimization objective and begin to solve

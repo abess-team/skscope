@@ -10,6 +10,7 @@ Features
    Variants <Variants>
    Beyond Scope <BeyondScope>
    Computational Tips <ComputationalTips>
+   Predefind Model <PredefindModel>
 
 .. raw:: html
    

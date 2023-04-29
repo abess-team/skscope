@@ -2,7 +2,7 @@ from sklearn.base import BaseEstimator
 from sklearn.model_selection import KFold
 import numpy as np
 import jax
-from .util import convex_solver_nlopt
+from .numeric_solver import convex_solver_nlopt
 import nlopt
 import math
 

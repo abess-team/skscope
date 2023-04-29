@@ -11,20 +11,17 @@ __author__ = ("Zezhi Wang, Jin Zhu,"
               "Junxian Zhu, Xueqin Wang")
               
 
-from .solver import (ScopeSolver, GrahtpSolver, GraspSolver, IHTSolver, FobaSolver, ForwardSolver, OmpSolver)
+from .solver import (ScopeSolver, HTPSolver, GraspSolver, IHTSolver, FobaSolver, ForwardSolver, OMPSolver)
 from .base_solver import BaseSolver
-from .util import quadratic_objective, convex_solver_nlopt
-
+from . import model, numeric_solver
 
 __all__ = [
     "ScopeSolver",
-    "GrahtpSolver",
+    "HTPSolver",
     "GraspSolver",
     "IHTSolver",
-    "base_solver", # ASR
+    "BaseSolver",
     "FobaSolver",
     "ForwardSolver",
-    "OmpSolver",
-    "quadratic_objective",
-    "convex_solver_nlopt",
+    "OMPSolver",
 ]

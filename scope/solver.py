@@ -6,7 +6,7 @@ import nlopt
 import jax
 from jax import numpy as jnp
 from . import _scope
-from .util import convex_solver_nlopt
+from .numeric_solver import convex_solver_nlopt
 
 class ScopeSolver(BaseEstimator):
     r"""
@@ -653,7 +653,7 @@ class ScopeSolver(BaseEstimator):
         return loss_fn
 
 
-class GrahtpSolver(BaseSolver):
+class HTPSolver(BaseSolver):
     def __init__(
         self,
         dimensionality,
@@ -741,7 +741,7 @@ class GrahtpSolver(BaseSolver):
                 results[support_new_tuple] = params
 
 
-class IHTSolver(GrahtpSolver):
+class IHTSolver(HTPSolver):
     def _solve(
         self,
         sparsity,
@@ -1109,7 +1109,7 @@ class ForwardSolver(FobaSolver):
         return params, support_set
     
 
-class OmpSolver(ForwardSolver):
+class OMPSolver(ForwardSolver):
     """
     Forward-gdt is equivalent to the orthogonal matching pursuit.
     """

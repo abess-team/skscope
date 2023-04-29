@@ -64,21 +64,6 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
         :text: To the quick start 
         :classes: btn-block btn-dark stretched-link btn-sm
 
-    ---
-    :img-top: _static/light_userguide.png
-
-    User guide
-    ^^^^^^^^^^
-
-    Here is user guide document.
-
-    +++
-
-    .. link-button:: intro/guide
-        :type: ref
-        :text: To the user guide
-        :classes: btn-block btn-dark stretched-link btn-sm
-
 
     ---
     :img-top: _static/light_api.png
@@ -90,9 +75,9 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
 
     +++
 
-    .. link-button:: feature/features
+    .. link-button:: feature/index
         :type: ref
-        :text: To the user guide
+        :text: To the features
         :classes: btn-block btn-dark stretched-link btn-sm
 
 
@@ -136,8 +121,7 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
 
    Install <intro/install>
    Quick Start <intro/quickStart>
-   User guide <intro/guide>
-   Features <feature/features>
+   Features <feature/index>
    API <autoapi/scope/index>
    Examples <examples/index>
 

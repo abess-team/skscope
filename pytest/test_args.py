@@ -3,7 +3,7 @@ import pytest
 import nlopt
 
 from create_test_model import CreateTestModel
-from scope import ScopeSolver, BaseSolver, GrahtpSolver, GraspSolver, IHTSolver
+from scope import ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver
 import scope
 
 
@@ -12,7 +12,7 @@ linear = model_creator.create_linear_model()
 
 models = (linear,)
 models_ids = ("linear",)
-solvers = (ScopeSolver, BaseSolver)  # , GrahtpSolver, GraspSolver, IHTSolver)
+solvers = (ScopeSolver, BaseSolver)  # , HTPSolver, GraspSolver, IHTSolver)
 solvers_ids = ("scope", "Base")  # , "GraHTP", "GraSP", "IHT")
 
 
@@ -127,11 +127,11 @@ def test_add_coverage():
     solver = ScopeSolver(linear["n_features"], linear["n_informative"])
     X, Y = linear["data"]
     solver.solve(
-        **scope.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y), hessian=True)
+        **scope.model.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y), hessian=True)
     )
     set1 = set(solver.support_set)
     solver.solve(
-        **scope.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y), autodiff=True)
+        **scope.model.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y), autodiff=True)
     )
     set2 = set(solver.support_set)
 

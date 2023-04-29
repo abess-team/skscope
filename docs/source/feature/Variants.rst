@@ -117,3 +117,5 @@ Here is an example:
 
 The way of defining objective function is the same as common way.
 
+always select some variables
+--------------------------------

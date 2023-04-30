@@ -125,7 +125,7 @@ class ScopeSolver(BaseEstimator):
         sample_size=1,
         *,
         always_select=[],
-        convex_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_nlopt,
         max_iter=20,
         ic_type="aic",
         ic_coef=1.0,
@@ -134,7 +134,6 @@ class ScopeSolver(BaseEstimator):
         deleter=None,
         cv_fold_id=None,
         group=None,
-        init_params_of_sub_optim=None,
         warm_start=True,
         important_search=128,
         screening_size=-1,
@@ -156,7 +155,7 @@ class ScopeSolver(BaseEstimator):
         self.sample_size = sample_size
 
         self.always_select = always_select
-        self.convex_solver = convex_solver
+        self.numeric_solver = numeric_solver
         self.max_iter = max_iter
         self.ic_type = ic_type
         self.ic_coef = ic_coef
@@ -165,7 +164,6 @@ class ScopeSolver(BaseEstimator):
         self.deleter = deleter
         self.cv_fold_id = cv_fold_id
         self.group = group
-        self.init_params_of_sub_optim = init_params_of_sub_optim
         self.warm_start = warm_start
         self.important_search = important_search
         self.screening_size = screening_size
@@ -439,9 +437,6 @@ class ScopeSolver(BaseEstimator):
         else:
             self.cv_fold_id = np.array([], dtype="int32")
 
-
-        self.__set_init_params_of_sub_optim()
-
         # init_support_set
         if init_support_set is None:
             init_support_set = np.array([], dtype="int32")
@@ -475,7 +470,7 @@ class ScopeSolver(BaseEstimator):
         result = _scope.pywrap_Universal(
             data,
             self.model,
-            self.convex_solver,
+            self.numeric_solver,
             p,
             n,
             0,
@@ -524,46 +519,6 @@ class ScopeSolver(BaseEstimator):
             "information_criterion": self.information_criterion,
         }
     
-    def __set_split_method(self):
-        r"""
-        Register `spliter` as a callback function to split data into training set and validation set for cross-validation.
-
-        Parameters
-        ----------
-        + spliter : function {'data': custom class, 'index': array-like, 'return': custom class}
-            Filter samples in the `data` within `index`.
-        + deleter : function {'data': custom class}
-            If the custom class `data` is defined in Cpp, it is necessary to register its destructor as callback function `deleter` to avoid memory leak. This isn't necessary for Python class because Python has its own garbage collection mechanism.
-
-        Examples
-        --------
-            class CustomData:
-                def __init__(self, X, y):
-                    self.X = X
-                    self.y = y
-
-            solver = ScopeSolver(dimensionality=5, cv=10)
-            solver.set_split_method(lambda data, index:  Data(data.x[index, :], data.y[index]))
-        """
-        if self.split_method is None:
-            self.model.set_slice_by_sample(lambda data, index: data[index])
-        self.model.set_slice_by_sample(self.split_method)
-        self.model.set_deleter(self.deleter)
-
-    def __set_init_params_of_sub_optim(self):
-        r"""
-        Register a callback function to initialize parameters for each sub-problem of optimization.
-
-        Parameters
-        ----------
-        + func : function {'params': array-like, 'data': custom class, 'active_index': array-like, 'return': array-like}
-            - `params` is the default initialization of parameters and auxiliary parameters.
-            - `data` is the training set of sub-problem.
-            - `active_index` is the index of parameters needed initialization, the parameters not in `active_index` must be zeros.
-            - The function should return the initialization of parameters.
-        """
-        self.model.set_init_params_of_sub_optim(self.init_params_of_sub_optim)
-
     def __set_objective_cpp(self, objective, gradient, hessian):
         r"""
         Register objective function as callback function. This method only can register objective function with Cpp library `autodiff`.
@@ -662,7 +617,7 @@ class HTPSolver(BaseSolver):
         *,
         always_select=[],
         step_size=0.005,
-        convex_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_nlopt,
         max_iter=100,
         ic_type="aic",
         ic_coef=1.0,
@@ -678,7 +633,7 @@ class HTPSolver(BaseSolver):
             sparsity=sparsity,
             sample_size=sample_size,
             always_select=always_select,
-            convex_solver=convex_solver,
+            numeric_solver=numeric_solver,
             max_iter=max_iter,
             ic_type=ic_type,
             ic_coef=ic_coef,
@@ -731,7 +686,7 @@ class HTPSolver(BaseSolver):
                 # S3: debise
                 params = np.zeros(self.dimensionality)
                 params[support_new] = params_bias[support_new]
-                loss, params = self._convex_solver(
+                loss, params = self._numeric_solver(
                     loss_fn, value_and_grad, params, support_new, data
                 )
                 # update cache
@@ -781,7 +736,7 @@ class IHTSolver(HTPSolver):
             params[support_new] = params_bias[support_new]
 
         # final optimization for IHT
-        _, params = self._convex_solver(
+        _, params = self._numeric_solver(
             loss_fn, value_and_grad, params, support_new, data
         )
 
@@ -840,7 +795,7 @@ class GraspSolver(BaseSolver):
             # minimize
             params_bias = np.zeros(self.dimensionality)
             params_bias[support_new] = params[support_new]
-            _, params_bias = self._convex_solver(
+            _, params_bias = self._numeric_solver(
                 loss_fn, value_and_grad, params_bias, support_new, data
             )
 
@@ -867,7 +822,7 @@ class FobaSolver(BaseSolver):
         foba_threshold_ratio=0.5,
         strict_sparsity=True,
         always_select=[],
-        convex_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_nlopt,
         max_iter=100,
         ic_type="aic",
         ic_coef=1.0,
@@ -883,7 +838,7 @@ class FobaSolver(BaseSolver):
             sparsity=sparsity,
             sample_size=sample_size,
             always_select=always_select,
-            convex_solver=convex_solver,
+            numeric_solver=numeric_solver,
             max_iter=max_iter,
             ic_type=ic_type,
             ic_coef=ic_coef,
@@ -899,7 +854,7 @@ class FobaSolver(BaseSolver):
         self.foba_threshold_ratio = foba_threshold_ratio
         self.strict_sparsity = strict_sparsity
 
-    def forward_step(self, loss_fn, value_and_grad, params, support_set, data):
+    def _forward_step(self, loss_fn, value_and_grad, params, support_set, data):
         if self.use_gradient:
             # FoBa-gdt algorithm
             value_old, grad = value_and_grad(params, data)
@@ -914,7 +869,7 @@ class FobaSolver(BaseSolver):
                     score[idx] = -np.inf
                     continue
                 cache_param = params[idx]
-                score[idx] = value_old - self._convex_solver(
+                score[idx] = value_old - self._numeric_solver(
                     loss_fn,
                     value_and_grad,
                     params,
@@ -931,7 +886,7 @@ class FobaSolver(BaseSolver):
         inactive_set = np.ones_like(params, dtype=bool)
         inactive_set[support_set] = False
         params[inactive_set] = 0.0
-        value_new, params = self._convex_solver(
+        value_new, params = self._numeric_solver(
             loss_fn,
             value_and_grad,
             params,
@@ -941,7 +896,7 @@ class FobaSolver(BaseSolver):
 
         return params, support_set, value_old - value_new
 
-    def backward_step(self, loss_fn, value_and_grad, params, support_set, data, backward_threshold):
+    def _backward_step(self, loss_fn, value_and_grad, params, support_set, data, backward_threshold):
         score = np.empty(self.dimensionality, dtype=float)
         for idx in range(self.dimensionality):
             if idx not in support_set or idx in self.always_select:
@@ -960,7 +915,7 @@ class FobaSolver(BaseSolver):
         inactive_set = np.ones_like(params, dtype=bool)
         inactive_set[support_set] = False
         params[inactive_set] = 0.0
-        _, params = self._convex_solver(
+        _, params = self._numeric_solver(
             loss_fn,
             value_and_grad,
             params,
@@ -996,7 +951,7 @@ class FobaSolver(BaseSolver):
         for iter in range(self.max_iter):
             if support_set.size >= min(2 * sparsity, self.dimensionality):
                 break
-            params, support_set, backward_threshold = self.forward_step(
+            params, support_set, backward_threshold = self._forward_step(
                 loss_fn, value_and_grad, params, support_set, data
             )
             if backward_threshold < 0:
@@ -1004,7 +959,7 @@ class FobaSolver(BaseSolver):
             threshold[support_set.size] = backward_threshold
 
             while support_set.size > self.always_select.size:
-                params, support_set, success = self.backward_step(
+                params, support_set, success = self._backward_step(
                     loss_fn,
                     value_and_grad,
                     params,
@@ -1017,11 +972,11 @@ class FobaSolver(BaseSolver):
         
         if self.strict_sparsity:
             while support_set.size > sparsity:
-                params, support_set, _ = self.backward_step(
+                params, support_set, _ = self._backward_step(
                     loss_fn, value_and_grad, params, support_set, data, np.inf
                 )
             while support_set.size < sparsity:
-                params, support_set, _ = self.forward_step(
+                params, support_set, _ = self._forward_step(
                     loss_fn, value_and_grad, params, support_set, data
                 )
 
@@ -1039,7 +994,7 @@ class ForwardSolver(FobaSolver):
         threshold=0.0,
         strict_sparsity=True,
         always_select=[],
-        convex_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_nlopt,
         max_iter=100,
         ic_type="aic",
         ic_coef=1.0,
@@ -1059,7 +1014,7 @@ class ForwardSolver(FobaSolver):
         strict_sparsity=strict_sparsity,
         threshold=threshold,
         foba_threshold_ratio=0.5,
-        convex_solver=convex_solver,
+        numeric_solver=numeric_solver,
         max_iter=max_iter,
         ic_type=ic_type,
         ic_coef=ic_coef,
@@ -1094,7 +1049,7 @@ class ForwardSolver(FobaSolver):
         support_set = self.always_select
 
         for iter in range(sparsity - support_set.size):
-            params, support_set, backward_threshold = self.forward_step(
+            params, support_set, backward_threshold = self._forward_step(
                 loss_fn, value_and_grad, params, support_set, data
             )
             if backward_threshold < 0.0:
@@ -1102,7 +1057,7 @@ class ForwardSolver(FobaSolver):
         
         if self.strict_sparsity:
             while support_set.size < sparsity:
-                params, support_set, _ = self.forward_step(
+                params, support_set, _ = self._forward_step(
                     loss_fn, value_and_grad, params, support_set, data
                 )
 
@@ -1122,7 +1077,7 @@ class OMPSolver(ForwardSolver):
         threshold=0.0,
         strict_sparsity=True,
         always_select=[],
-        convex_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_nlopt,
         max_iter=100,
         ic_type="aic",
         ic_coef=1.0,
@@ -1141,7 +1096,7 @@ class OMPSolver(ForwardSolver):
             threshold=threshold,
             strict_sparsity=strict_sparsity,
             always_select=always_select,
-            convex_solver=convex_solver,
+            numeric_solver=numeric_solver,
             max_iter=max_iter,
             ic_type=ic_type,
             ic_coef=ic_coef,

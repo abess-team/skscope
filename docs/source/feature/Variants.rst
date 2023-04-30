@@ -5,6 +5,38 @@ Variants
 
 Here we will introduce some variants of :ref:`scope <scope_package>`.
 
+use custom data in objective function
+--------------------------------------------
+
+Usually, the objective function takes parameters as input and use data in the context of its function definition. 
+However, sometimes we want to use different data with the same objective function. In this case, the objective function must take both parameters and data as input. 
+
+Here is an example:
+
+.. code-block:: python
+    
+    import numpy as np
+    import jax.numpy as jnp
+    from sklearn.datasets import make_regression
+    ## generate data
+    n, p, k= 10, 5, 3
+    X, y, true_params = make_regression(n_samples=n, n_features=p, n_informative=k, coef=True)
+    ## define data class
+    data1 = (X, y)
+    data2 = (X / np.sqrt(n), y / np.sqrt(n))
+    ## define objective function
+    def custom_objective(params, data):
+        return jnp.sum(
+            jnp.square(data[1] - data[0] @ params)
+        )
+
+    solver = ScopeSolver(p, k)
+
+    params_1 = solver.solve(custom_objective, data1)
+    params_2 = solver.solve(custom_objective, data2)
+
+
+
 group variables selection
 ----------------------------
 
@@ -36,7 +68,7 @@ Note that ``params`` (parameters) must be a vector not matrix and ``sparsity`` r
         )
 
 
-Search support size
+search support size
 -------------------------
 
 In the previous section, we have introduced how to set the sparsity level. However, sometimes we do not know the sparsity level and need to search it. In this case, we can set ``sparsity`` as a list of int, and the solver will search the best sparsity level from the given list.
@@ -59,7 +91,32 @@ cross validation
 ^^^^^^^^^^^^^^^^^^^^
 
 For cross validation, there are some requirements:
-1. When initializing ``ScopeSolver``, ``sample_size`` and ``cv`` must be offered. If ``cv`` is not None, the solver will use cross validation to evaluate the sparsity level. ``cv`` is the number of folds.
+    
+1. The objective function must take data as input.
+    
+.. code-block:: python
+
+    import numpy as np
+    import jax.numpy as jnp
+    from sklearn.datasets import make_regression
+    ## generate data
+    n, p, k= 10, 5, 3
+    X, y, true_params = make_regression(n_samples=n, n_features=p, n_informative=k, coef=True)
+    ## define objective function
+    def custom_objective(params, data):
+        return jnp.sum(
+            jnp.square(data[1] - data[0] @ params)
+        )
+    
+    
+2. The data needs to be split into training and validation set. We can use ``set_split_method`` to set the split method. The split method must be a function that takes two arguments: ``data`` and ``index``, and returns a new data object. The ``index`` is the index of training set.
+    
+.. code-block:: python
+
+    def split_method(data, index):
+        return CustomData(data[0][index, :], data[1][index])
+    
+3. When initializing ``ScopeSolver``, ``sample_size`` and ``cv`` must be offered. If ``cv`` is not None, the solver will use cross validation to evaluate the sparsity level. ``cv`` is the number of folds.
    
 .. code-block:: python
 
@@ -67,35 +124,37 @@ For cross validation, there are some requirements:
         dimensionality=p, ## there are p parameters
         sparsity=[1, 2, 3, 4, 5] ## we want to select 1-5 variables
         sample_size=n, ## the number of samples
+        split_method=split_method, ## use split_method to split data
         cv=10 ## use cross validation
     )
-    
-2. The objective function must take data as input.
-    
-.. code-block:: python
 
-        def custom_objective(params, data):
-            return jnp.sum(
-                jnp.square(data.y - data.X @ params)
-            )
-    
-    If there are auxiliary parameters, the data must be the last argument.
-    
-.. code-block:: python
+    params = solver.solve(custom_objective, data = (X, y))
 
-        def custom_objective(params, aux_params, data):
-            return jnp.sum(
-                jnp.square(data.y - data.X @ params - aux_params)
-            )
-    
-3. The data needs to be split into training and validation set. We can use ``set_split_method`` to set the split method. The split method must be a function that takes two arguments: ``data`` and ``index``, and returns a new data object. The ``index`` is the index of training set.
-    
-.. code-block:: python
+There is a simplier way to use cross validation: let custom data be indeies of training set. In this case, we do not need to set ``split_method``.
 
-        def split_method(data, index):
-            return CustomData(data.x[index, :], data.y[index])
-        solver.set_split_method(split_method)
+.. code-block:: python
     
+    import numpy as np
+    import jax.numpy as jnp
+    from sklearn.datasets import make_regression
+    ## generate data
+    n, p, k= 10, 5, 3
+    X, y, true_params = make_regression(n_samples=n, n_features=p, n_informative=k, coef=True)
+
+    def custom_objective(params, index):
+        return jnp.sum(
+            jnp.square(y[index] - X[index,:] @ params)
+        )
+    
+    solver = ScopeSolver(
+        dimensionality=p, ## there are p parameters
+        sparsity=[1, 2, 3, 4, 5] ## we want to select 1-5 variables
+        sample_size=n, ## the number of samples
+        cv=10 ## use cross validation
+    )
+
+    params = solver.solve(custom_objective)
+
 
 
 information criterion
@@ -117,5 +176,19 @@ Here is an example:
 
 The way of defining objective function is the same as common way.
 
+
 always select some variables
 --------------------------------
+
+:ref:`Scope <scope_package>` allows users to specify some variables which must be selected. 
+We can use ``always_select`` to set the variables that we want to select. 
+``always_select`` is a list of int, and the solver will always select these variables.
+
+Here is an example:
+
+.. code-block:: python
+
+    solver = ScopeSolver(
+        dimensionality=p, ## there are p parameters
+        always_select=[0, 1] ## we want to select the first two variables
+    )

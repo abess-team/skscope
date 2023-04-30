@@ -98,6 +98,7 @@ html_show_sourcelink = False
 
 # -- autoapi configuration ----------------------------------------------------
 autoapi_dirs = ['../../scope']
-autoapi_ignore = ['test_*', 'util*']
+#autoapi_ignore = ['test_*', 'util*']
 autoapi_add_toctree_entry = False
 autoapi_options = [ 'members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'imported-members', ]
+autoapi_template_dir = "_templates/autoapi"

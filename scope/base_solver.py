@@ -36,7 +36,7 @@ class BaseSolver(BaseEstimator):
         sample_size=1,
         *,
         always_select=[],
-        convex_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_nlopt,
         max_iter=100,
         ic_type="aic",
         ic_coef=1.0,
@@ -60,7 +60,7 @@ class BaseSolver(BaseEstimator):
         self.split_method = split_method
         self.jax_platform = jax_platform
         self.random_state = random_state
-        self.convex_solver = convex_solver
+        self.numeric_solver = numeric_solver
 
     def get_config(self, deep=True):
         return super().get_params(deep)
@@ -413,7 +413,7 @@ class BaseSolver(BaseEstimator):
             inactive_set[support_set] = False
             params[inactive_set] = 0.0
             params[support_set] = init_params[support_set]
-            loss, params = self._convex_solver(
+            loss, params = self._numeric_solver(
                 loss_fn, value_and_grad, params, support_set, data
             )
             if loss < result["value_of_objective"]:
@@ -423,7 +423,7 @@ class BaseSolver(BaseEstimator):
 
         return result["params"], result["support_set"]
 
-    def _convex_solver(
+    def _numeric_solver(
         self,
         loss_fn,
         value_and_grad,
@@ -465,7 +465,7 @@ class BaseSolver(BaseEstimator):
         if optim_variable_set.size == 0:
             return loss_fn(params, data)
 
-        return self.convex_solver(
+        return self.numeric_solver(
             loss_fn, value_and_grad, params, optim_variable_set, data
         )
 

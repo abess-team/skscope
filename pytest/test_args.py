@@ -108,7 +108,6 @@ def test_add_coverage():
         path_type="gs",
         important_search=1,
         always_select=[linear["support_set"][0]],
-        init_params_of_sub_optim=lambda x, data, index: x,
         console_log_level="error",
     )
     solver.solve(linear["loss"], jit=True)

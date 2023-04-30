@@ -3,14 +3,14 @@
 SCOPE
 =================================
 
-The Python package **SCOPE** is for getting sparse optimal solution of convex objective function, which also can be used for variables selection. Its characteristic is that the optimization objective can be a user-defined function so that the algorithm can be applied to various problems.
+The Python package **SCOPE** is for getting solution of sparsity-constrained optimization, which also can be used for variables selection. Its characteristic is that the optimization objective can be a user-defined function so that the algorithm can be applied to various problems.
 
 Specifically, **SCOPE** aims to tackle this problem: 
 
 .. math:: 
    \min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leq s,
 
-where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity level. Each element of :math:`x` can be seen as a variable, and the nonzero elements of :math:`x` are the selected variables.
+where :math:`f(x)` is a differential objective function and :math:`s` is the sparsity level. Each element of :math:`x` can be seen as a variable, and the nonzero elements of :math:`x` are the selected variables.
 
 .. raw:: html
 
@@ -37,7 +37,7 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
     ---
     :img-top: _static/light_quickStart.png
 
-    Instsall
+    Install
     ^^^^^^^^^^^^^^^
 
     Here is install document.
@@ -67,6 +67,18 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
 
     ---
     :img-top: _static/light_api.png
+
+    Examples
+    ^^^^^^^^^^
+
+    Here is Examples document.
+
+    +++
+
+    .. link-button:: examples/index
+        :type: ref
+        :text: To the examples
+        :classes: btn-block btn-dark stretched-link btn-sm
 
     Features
     ^^^^^^^^^^
@@ -99,18 +111,6 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
     ---
     :img-top: _static/light_api.png
 
-    Examples
-    ^^^^^^^^^^
-
-    Here is Examples document.
-
-    +++
-
-    .. link-button:: examples/index
-        :type: ref
-        :text: To the examples
-        :classes: btn-block btn-dark stretched-link btn-sm
-
 .. toctree::
    :hidden:
 
@@ -121,18 +121,19 @@ where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity 
 
    Install <intro/install>
    Quick Start <intro/quickStart>
+   Examples <examples/index>
    Features <feature/index>
    API <autoapi/scope/index>
-   Examples <examples/index>
+   Contributing <contribute/index>
 
-Video Guide
----------------------------------
+.. Video Guide
+.. ---------------------------------
 
-.. raw:: html
+.. .. raw:: html
 
-    <p align="center">
-        <iframe width="500" height="400" src="https://www.bilibili.com/video/BV13g41187rQ" title="The Twenty" frameborder="0" allowfullscreen></iframe>
-    </p>
+..     <p align="center">
+..         <iframe width="500" height="400" src="https://www.bilibili.com/video/BV13g41187rQ" title="The Twenty" frameborder="0" allowfullscreen></iframe>
+..     </p>
 
 
 Main Features
@@ -144,7 +145,7 @@ Main Features
 Citation
 --------
 
-If you use the scope package a citation is highly appreciated:
+If you use the `scope` package a citation is highly appreciated:
 
-Acknowledgements
-----------------
+.. Acknowledgements
+.. ----------------

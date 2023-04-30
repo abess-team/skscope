@@ -10,4 +10,4 @@ Fusion Models
 ~~~~~~~~~~~~~~~~~~~~~
 
 `Isotonic regression <isotonic-regression.ipynb>`_.
-^^^^^^^^^^^^^^^^^^^
+~~~~~~~~~~~~~~~~~~~~~

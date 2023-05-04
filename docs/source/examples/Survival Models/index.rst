@@ -11,3 +11,6 @@ Survival Models
 
 `Multivariate failure time model <survival-multivariate-failure-time-model.ipynb>`_.
 ~~~~~~~~~~~~~~~~~
+
+`Competing risk model <survival-competing-risk-model.ipynb>`_.
+~~~~~~~~~~~~~~~~~

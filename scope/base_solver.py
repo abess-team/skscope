@@ -38,6 +38,7 @@ class BaseSolver(BaseEstimator):
         always_select=[],
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
+        group=None,
         ic_type="aic",
         ic_coef=1.0,
         metric_method=None,
@@ -52,6 +53,7 @@ class BaseSolver(BaseEstimator):
         self.sparsity = sparsity
         self.always_select = always_select
         self.max_iter = max_iter
+        self.group = group
         self.ic_type = ic_type
         self.ic_coef = ic_coef
         self.metric_method = metric_method
@@ -102,11 +104,32 @@ class BaseSolver(BaseEstimator):
         BaseSolver._check_positive_integer(self.dimensionality, "dimensionality")
         BaseSolver._check_positive_integer(self.sample_size, "sample_size")
         BaseSolver._check_non_negative_integer(self.max_iter, "max_iter")
+        
+        # group
+        if self.group is None:
+            self.group = np.arange(self.dimensionality, dtype="int32")
+            group_num = self.dimensionality  # len(np.unique(group))
+        else:
+            self.group = np.array(self.group)
+            if self.group.ndim > 1:
+                raise ValueError("Group should be an 1D array of integers.")
+            if self.group.size != self.dimensionality:
+                raise ValueError(
+                    "The length of group should be equal to dimensionality."
+                )
+            group_num = len(np.unique(self.group))
+            if self.group[0] != 0:
+                raise ValueError("Group should start from 0.")
+            if any(self.group[1:] - self.group[:-1] < 0):
+                raise ValueError("Group should be an incremental integer array.")
+            if not group_num == max(self.group) + 1:
+                raise ValueError("There is a gap in group.")
+            
 
         # always_select
         self.always_select = np.unique(np.array(self.always_select, dtype="int32"))
         if self.always_select.size > 0 and (
-            self.always_select[0] < 0 or self.always_select[-1] >= self.dimensionality
+            self.always_select[0] < 0 or self.always_select[-1] >= group_num
         ):
             raise ValueError("always_select should be between 0 and dimensionality.")
 
@@ -114,12 +137,12 @@ class BaseSolver(BaseEstimator):
         force_min_sparsity = self.always_select.size
         default_max_sparsity = max(
             force_min_sparsity,
-            self.dimensionality
-            if self.dimensionality <= 5
+            group_num
+            if group_num <= 5
             else int(
-                self.dimensionality
-                / np.log(np.log(self.dimensionality))
-                / np.log(self.dimensionality)
+                group_num
+                / np.log(np.log(group_num))
+                / np.log(group_num)
             ),
         )
 
@@ -134,7 +157,7 @@ class BaseSolver(BaseEstimator):
             self.sparsity = np.unique(np.array(self.sparsity, dtype="int32"))
             if (
                 self.sparsity[0] < force_min_sparsity
-                or self.sparsity[-1] > self.dimensionality
+                or self.sparsity[-1] > group_num
             ):
                 raise ValueError(
                     "All sparsity should be between 0 (when `always_select` is default) and dimensionality."
@@ -376,10 +399,12 @@ class BaseSolver(BaseEstimator):
             raise ValueError(
                 "The number of always selected variables is larger than the sparsity."
             )
+        group_num = len(np.unique(self.group))
+        group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
         if (
             math.comb(
-                self.dimensionality - self.always_select.size,
+                group_num - self.always_select.size,
                 sparsity - self.always_select.size,
             )
             > self.max_iter
@@ -389,7 +414,7 @@ class BaseSolver(BaseEstimator):
             )
 
         def all_subsets(p: int, s: int, always_select: np.ndarray = np.zeros(0)):
-            universal_set = np.setdiff1d(np.arange(p), always_select)
+            universal_set = np.setdiff1d(np.arange(group_num), always_select)
             p = p - always_select.size
             s = s - always_select.size
 
@@ -406,9 +431,10 @@ class BaseSolver(BaseEstimator):
 
         result = {"params": None, "support_set": None, "value_of_objective": math.inf}
         params = init_params.copy()
-        for support_set in all_subsets(
-            self.dimensionality, sparsity, self.always_select
+        for support_set_group in all_subsets(
+            group_num, sparsity, self.always_select
         ):
+            support_set = np.concatenate([group_indices[i] for i in support_set_group])
             inactive_set = np.ones_like(init_params, dtype=bool)
             inactive_set[support_set] = False
             params[inactive_set] = 0.0

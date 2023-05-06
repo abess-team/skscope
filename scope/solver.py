@@ -287,7 +287,7 @@ class ScopeSolver(BaseEstimator):
 
         # group
         if self.group is None:
-            group = np.array(range(p), dtype="int32")
+            group = np.arange(p, dtype="int32")
             group_num = p  # len(np.unique(group))
         else:
             group = np.array(self.group)
@@ -619,6 +619,7 @@ class HTPSolver(BaseSolver):
         step_size=0.005,
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
+        group=None,
         ic_type="aic",
         ic_coef=1.0,
         metric_method=None,
@@ -635,6 +636,7 @@ class HTPSolver(BaseSolver):
             always_select=always_select,
             numeric_solver=numeric_solver,
             max_iter=max_iter,
+            group=group,
             ic_type=ic_type,
             ic_coef=ic_coef,
             metric_method=metric_method,
@@ -666,25 +668,27 @@ class HTPSolver(BaseSolver):
             )
         # init
         params = init_params
-        best_suppport_set_tuple = None
+        best_suppport_group_tuple = None
         best_loss = np.inf
         results = {} # key: tuple of ordered support set, value: params
-
+        group_num = len(np.unique(self.group))
+        group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
         for iter in range(self.max_iter):
             # S1: gradient descent
             params_bias = params - self.step_size * value_and_grad(params, data)[1]
             # S2: Gradient Hard Thresholding
-            score = np.abs(params_bias)
+            score = np.array([np.sum(np.square(params_bias[group_indices[i]])) for i in range(group_num)])
             score[self.always_select] = np.inf
-            support_new = np.argpartition(score, -sparsity)[-sparsity:]
-            support_new_tuple = tuple(np.sort(support_new))
+            support_new_group = np.argpartition(score, -sparsity)[-sparsity:]
+            support_new_group_tuple = tuple(np.sort(support_new_group))
             # terminating condition
-            if support_new_tuple in results:
-                return results[best_suppport_set_tuple], np.array(best_suppport_set_tuple)
+            if support_new_group_tuple in results:
+                return results[best_suppport_group_tuple], np.concatenate([group_indices[i] for i in best_suppport_group_tuple])
             else:
                 # S3: debise
                 params = np.zeros(self.dimensionality)
+                support_new = np.concatenate([group_indices[i] for i in support_new_group])
                 params[support_new] = params_bias[support_new]
                 loss, params = self._numeric_solver(
                     loss_fn, value_and_grad, params, support_new, data
@@ -692,8 +696,8 @@ class HTPSolver(BaseSolver):
                 # update cache
                 if loss < best_loss:
                     best_loss = loss
-                    best_suppport_set_tuple = support_new_tuple
-                results[support_new_tuple] = params
+                    best_suppport_group_tuple = support_new_group_tuple
+                results[support_new_group_tuple] = params
 
 
 class IHTSolver(HTPSolver):
@@ -717,22 +721,25 @@ class IHTSolver(HTPSolver):
             )
         # init
         params = init_params
-        support_old = np.array([], dtype="int32")
+        support_old_group = np.array([], dtype="int32")
+        group_num = len(np.unique(self.group))
+        group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
         for iter in range(self.max_iter):
             # S1: gradient descent
             params_bias = params - self.step_size * value_and_grad(params, data)[1]
             # S2: Gradient Hard Thresholding
-            score = np.abs(params_bias)
+            score = np.array([np.sum(np.square(params_bias[group_indices[i]])) for i in range(group_num)])
             score[self.always_select] = np.inf
-            support_new = np.argpartition(score, -sparsity)[-sparsity:]
+            support_new_group = np.argpartition(score, -sparsity)[-sparsity:]
             # terminating condition
-            if np.all(set(support_old) == set(support_new)):
+            if np.all(set(support_old_group) == set(support_new_group)):
                 break
             else:
-                support_old = support_new
+                support_old_group = support_new_group
             # S3: debise
             params = np.zeros(self.dimensionality)
+            support_new = np.concatenate([group_indices[i] for i in support_new_group])
             params[support_new] = params_bias[support_new]
 
         # final optimization for IHT
@@ -767,14 +774,16 @@ class GraspSolver(BaseSolver):
         # init
         params = init_params
         support_old = np.array([], dtype="int32")
+        group_num = len(np.unique(self.group))
+        group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
         for iter in range(self.max_iter):
             # compute local gradient
             grad_values = value_and_grad(params, data)[1]
-            score = np.abs(grad_values)
+            score = np.array([np.sum(np.square(grad_values[group_indices[i]])) for i in range(group_num)])
             score[self.always_select] = np.inf
             # identify directions
-            if 2 * sparsity < self.dimensionality:
+            if 2 * sparsity < group_num:
                 Omega = [
                     idx
                     for idx in np.argpartition(score, -2 * sparsity)[-2 * sparsity :]
@@ -784,7 +793,8 @@ class GraspSolver(BaseSolver):
                 Omega = np.nonzero(score)[0]  # supp(z)
 
             # merge supports
-            support_new = np.unique(np.append(Omega, params.nonzero()[0]))
+            support_new = np.concatenate([group_indices[i] for i in Omega])
+            support_new = np.unique(np.append(support_new, params.nonzero()[0]))
 
             # terminating condition
             if iter > 0 and np.all(set(support_old) == set(support_new)):
@@ -800,9 +810,10 @@ class GraspSolver(BaseSolver):
             )
 
             # prune estimate
-            score = np.abs(params_bias)
+            score = np.array([np.sum(np.square(params_bias[group_indices[i]])) for i in range(group_num)])
             score[self.always_select] = np.inf
-            support_set = np.argpartition(score, -sparsity)[-sparsity:]
+            support_set_group = np.argpartition(score, -sparsity)[-sparsity:]
+            support_set = np.concatenate([group_indices[i] for i in support_set_group])
             params = np.zeros(self.dimensionality)
             params[support_set] = params_bias[support_set]
 
@@ -824,6 +835,7 @@ class FobaSolver(BaseSolver):
         always_select=[],
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
+        group=None,
         ic_type="aic",
         ic_coef=1.0,
         metric_method=None,
@@ -840,6 +852,7 @@ class FobaSolver(BaseSolver):
             always_select=always_select,
             numeric_solver=numeric_solver,
             max_iter=max_iter,
+            group=group,
             ic_type=ic_type,
             ic_coef=ic_coef,
             metric_method=metric_method,
@@ -854,36 +867,37 @@ class FobaSolver(BaseSolver):
         self.foba_threshold_ratio = foba_threshold_ratio
         self.strict_sparsity = strict_sparsity
 
-    def _forward_step(self, loss_fn, value_and_grad, params, support_set, data):
+    def _forward_step(self, loss_fn, value_and_grad, params, support_set_group, data, group_indices):
         if self.use_gradient:
             # FoBa-gdt algorithm
             value_old, grad = value_and_grad(params, data)
-            score = np.abs(grad)
-            score[support_set] = -np.inf
+            score = np.array([np.sum(np.square(grad[group_indices[i]])) for i in range(len(group_indices))])
+            score[support_set_group] = -np.inf
         else:
             # FoBa-obj algorithm
             value_old = loss_fn(params, data)
-            score = np.empty(self.dimensionality, dtype=float)
-            for idx in range(self.dimensionality):
-                if idx in support_set:
+            score = np.empty(len(group_indices), dtype=float)
+            for idx in range(len(group_indices)):
+                if idx in support_set_group:
                     score[idx] = -np.inf
                     continue
-                cache_param = params[idx]
+                cache_param = params[group_indices[idx]]
                 score[idx] = value_old - self._numeric_solver(
                     loss_fn,
                     value_and_grad,
                     params,
-                    np.array([idx], dtype=int),
+                    group_indices[idx],
                     data=data,
                 )[0]
-                params[idx] = cache_param
+                params[group_indices[idx]] = cache_param
 
         direction = np.argmax(score)
         if score[direction] < self.threshold:
-            return params, support_set, -1.0
-        support_set = np.append(support_set, direction)
+            return params, support_set_group, -1.0
+        support_set_group = np.append(support_set_group, direction)
 
         inactive_set = np.ones_like(params, dtype=bool)
+        support_set = np.concatenate([group_indices[i] for i in support_set_group])
         inactive_set[support_set] = False
         params[inactive_set] = 0.0
         value_new, params = self._numeric_solver(
@@ -894,25 +908,26 @@ class FobaSolver(BaseSolver):
             data=data,
         )
 
-        return params, support_set, value_old - value_new
+        return params, support_set_group, value_old - value_new
 
-    def _backward_step(self, loss_fn, value_and_grad, params, support_set, data, backward_threshold):
-        score = np.empty(self.dimensionality, dtype=float)
-        for idx in range(self.dimensionality):
-            if idx not in support_set or idx in self.always_select:
+    def _backward_step(self, loss_fn, value_and_grad, params, support_set_group, data, backward_threshold, group_indices):
+        score = np.empty(len(group_indices), dtype=float)
+        for idx in range(len(group_indices)):
+            if idx not in support_set_group or idx in self.always_select:
                 score[idx] = np.inf
                 continue
-            cache_param = params[idx]
-            params[idx] = 0.0
+            cache_param = params[group_indices[idx]]
+            params[group_indices[idx]] = 0.0
             score[idx] = loss_fn(params, data)
-            params[idx] = cache_param
+            params[group_indices[idx]] = cache_param
         direction = np.argmin(score)
         if score[direction] >= backward_threshold:
-            return params, support_set, False
+            return params, support_set_group, False
 
-        support_set = np.delete(support_set, np.argwhere(support_set == direction))
+        support_set_group = np.delete(support_set_group, np.argwhere(support_set_group == direction))
         
         inactive_set = np.ones_like(params, dtype=bool)
+        support_set = np.concatenate([group_indices[i] for i in support_set_group])
         inactive_set[support_set] = False
         params[inactive_set] = 0.0
         _, params = self._numeric_solver(
@@ -923,7 +938,7 @@ class FobaSolver(BaseSolver):
             data=data,
         )
 
-        return params, support_set, True
+        return params, support_set_group, True
 
     def _solve(
         self,
@@ -945,42 +960,45 @@ class FobaSolver(BaseSolver):
             )
         # init
         params = np.zeros(self.dimensionality, dtype=float)
-        support_set = self.always_select
+        support_set_group = self.always_select
         threshold = {}
+        group_num = len(np.unique(self.group))
+        group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
         for iter in range(self.max_iter):
-            if support_set.size >= min(2 * sparsity, self.dimensionality):
+            if support_set_group.size >= min(2 * sparsity, group_num):
                 break
-            params, support_set, backward_threshold = self._forward_step(
-                loss_fn, value_and_grad, params, support_set, data
+            params, support_set_group, backward_threshold = self._forward_step(
+                loss_fn, value_and_grad, params, support_set_group, data, group_indices
             )
             if backward_threshold < 0:
                 break
-            threshold[support_set.size] = backward_threshold
+            threshold[support_set_group.size] = backward_threshold
 
-            while support_set.size > self.always_select.size:
-                params, support_set, success = self._backward_step(
+            while support_set_group.size > self.always_select.size:
+                params, support_set_group, success = self._backward_step(
                     loss_fn,
                     value_and_grad,
                     params,
-                    support_set,
+                    support_set_group,
                     data,
-                    backward_threshold=loss_fn(params, data) + threshold[support_set.size] * self.foba_threshold_ratio,
+                    loss_fn(params, data) + threshold[support_set_group.size] * self.foba_threshold_ratio,
+                    group_indices,
                 )
                 if not success:
                     break
         
         if self.strict_sparsity:
-            while support_set.size > sparsity:
-                params, support_set, _ = self._backward_step(
-                    loss_fn, value_and_grad, params, support_set, data, np.inf
+            while support_set_group.size > sparsity:
+                params, support_set_group, _ = self._backward_step(
+                    loss_fn, value_and_grad, params, support_set_group, data, np.inf, group_indices
                 )
-            while support_set.size < sparsity:
-                params, support_set, _ = self._forward_step(
-                    loss_fn, value_and_grad, params, support_set, data
+            while support_set_group.size < sparsity:
+                params, support_set_group, _ = self._forward_step(
+                    loss_fn, value_and_grad, params, support_set_group, data, group_indices
                 )
 
-        return params, support_set
+        return params, np.concatenate([group_indices[i] for i in support_set_group])
 
 
 class ForwardSolver(FobaSolver):
@@ -996,6 +1014,7 @@ class ForwardSolver(FobaSolver):
         always_select=[],
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
+        group=None,
         ic_type="aic",
         ic_coef=1.0,
         metric_method=None,
@@ -1016,6 +1035,7 @@ class ForwardSolver(FobaSolver):
         foba_threshold_ratio=0.5,
         numeric_solver=numeric_solver,
         max_iter=max_iter,
+        group=group,
         ic_type=ic_type,
         ic_coef=ic_coef,
         metric_method=metric_method,
@@ -1046,22 +1066,24 @@ class ForwardSolver(FobaSolver):
             )
         # init
         params = np.zeros(self.dimensionality, dtype=float)
-        support_set = self.always_select
+        support_set_group = self.always_select
+        group_num = len(np.unique(self.group))
+        group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
-        for iter in range(sparsity - support_set.size):
-            params, support_set, backward_threshold = self._forward_step(
-                loss_fn, value_and_grad, params, support_set, data
+        for iter in range(sparsity - support_set_group.size):
+            params, support_set_group, backward_threshold = self._forward_step(
+                loss_fn, value_and_grad, params, support_set_group, data, group_indices
             )
             if backward_threshold < 0.0:
                 break
         
         if self.strict_sparsity:
-            while support_set.size < sparsity:
-                params, support_set, _ = self._forward_step(
-                    loss_fn, value_and_grad, params, support_set, data
+            while support_set_group.size < sparsity:
+                params, support_set_group, _ = self._forward_step(
+                    loss_fn, value_and_grad, params, support_set_group, data, group_indices
                 )
 
-        return params, support_set
+        return params, np.concatenate([group_indices[i] for i in support_set_group])
     
 
 class OMPSolver(ForwardSolver):
@@ -1079,6 +1101,7 @@ class OMPSolver(ForwardSolver):
         always_select=[],
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
+        group=None,
         ic_type="aic",
         ic_coef=1.0,
         metric_method=None,
@@ -1098,6 +1121,7 @@ class OMPSolver(ForwardSolver):
             always_select=always_select,
             numeric_solver=numeric_solver,
             max_iter=max_iter,
+            group=group,
             ic_type=ic_type,
             ic_coef=ic_coef,
             metric_method=metric_method,

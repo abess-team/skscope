@@ -36,6 +36,19 @@ def test_always_select(model, solver_creator):
     assert 0 in solver.support_set
     assert 1 in solver.support_set
 
+@pytest.mark.parametrize("model", models, ids=models_ids)
+@pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
+def test_group(model, solver_creator):
+    solver = solver_creator(
+        model["n_features"], 1, group=[0, 0, 1, 1, 1]
+    )
+    solver.solve(model["loss"], jit=True)
+    support_set = set(solver.get_support())
+    if len(support_set) == 2:
+        assert support_set == {0, 1}
+    else:
+        assert support_set == {2, 3, 4}
+
 
 
 

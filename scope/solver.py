@@ -226,12 +226,12 @@ class ScopeSolver(BaseEstimator):
     def solve(
         self,
         objective,
+        *data,
         init_support_set=None,
         init_params=None,
         gradient=None,
         hessian=None,
         cpp=False,
-        data=None,
         jit=False,
     ):
         r"""
@@ -239,9 +239,14 @@ class ScopeSolver(BaseEstimator):
 
         Parameters
         ----------
-        + objective : function('params': array, ('data': custom class)) ->  float
-            Defined the objective of optimization, must be written in JAX if gradient and hessian are not provided.
+        + objective : callable
+            The objective function to be minimized: ``objective(params, *data) -> float`` 
+            where ``params`` is a 1-D array with shape (dimensionality,) and 
+            ``data`` is a tuple of the fixed parameters needed to completely specify the function.
+            ``objective`` must be written in JAX if gradient and hessian are not provided.
             If `cpp` is `True`, `objective` can be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
+        + data : tuple, optional
+            Extra arguments passed to the objective function and its derivatives (if existed).
         + init_support_set : array-like of int, optional, default=[]
             The index of the variables in initial active set.
         + init_params : array-like of float, optional, default is an all-zero vector
@@ -252,8 +257,6 @@ class ScopeSolver(BaseEstimator):
             Defined the hessian of objective function, return the hessian matrix of the parameters in `compute_index`.
         + cpp : bool, optional, default=False
             If `cpp` is `True`, `objective` must be a wrap of Cpp overloaded function which defined the objective of optimization with Cpp library `autodiff`, examples can be found in https://github.com/abess-team/scope_example.
-        + data : custom class, optional, default=None
-            Any class which is match to objective function. It can cantain all data that objective should be known, like samples, responses, weights, etc.
         """
         ScopeSolver._set_log_level(
             self.console_log_level, self.file_log_level, self.log_file_name
@@ -405,11 +408,12 @@ class ScopeSolver(BaseEstimator):
         if self.cv > n:
             raise ValueError("cv should not be greater than sample_size")
         if self.cv > 1:
-            if data is None and self.split_method is None:
-                data = np.arange(n)
-                self.split_method = lambda data, index: index
-            if data is None:
-                raise ValueError("data should be provided when cv > 1")
+            if len(data) == 0 and self.split_method is None:
+                data = (np.arange(n),)
+                if cpp:
+                    self.split_method = lambda data, index: index
+                else:
+                    self.split_method = lambda data, index: (index,)
             if self.split_method is None:
                 raise ValueError("split_method should be provided when cv > 1")
             self.model.set_slice_by_sample(self.split_method)
@@ -461,10 +465,12 @@ class ScopeSolver(BaseEstimator):
 
         # set optimization objective
         if cpp:
+            if len(data) == 1:
+                data = data[0]
             loss_fn = self.__set_objective_cpp(objective, gradient, hessian)
         else:
-            loss_fn = self.__set_objective_py(
-                objective, gradient, hessian, jit, init_params, data
+            loss_fn, data = self.__set_objective_py(
+                objective, gradient, hessian, jit, data
             )
 
         result = _scope.pywrap_Universal(
@@ -539,7 +545,7 @@ class ScopeSolver(BaseEstimator):
         + hessian : function {'params': array-like, 'data': custom class, 'return': 2D array-like}
             Defined the hessian of objective function, return the hessian matrix of the parameters.
         """
-        self.model.set_loss_of_model(objective)
+        self.model.set_loss_of_model(lambda params, data: objective(params, data))
         if gradient is None:
             self.model.set_gradient_autodiff(objective)
         else:
@@ -556,7 +562,7 @@ class ScopeSolver(BaseEstimator):
         return objective
 
     def __set_objective_py(
-        self, objective, gradient, hessian, jit, test_params, test_data
+        self, objective, gradient, hessian, jit, data
     ):
         r"""
         Register objective function as callback function. This method only can register objective function with Python package `JAX`.
@@ -583,12 +589,10 @@ class ScopeSolver(BaseEstimator):
         # hess
         if hessian is None:
             hess_ = lambda params, data: jax.hessian(loss_)(params, data)
-        elif hessian.__code__.co_argcount == 2:
-            hess_ = hessian
         elif hessian.__code__.co_argcount == 1:
             hess_ = lambda params, data: hessian(params)
         else:
-            raise ValueError("The hessian function should have 1 or 2 arguments.")
+            hess_ = lambda params, data: hessian(params, *data)
         if jit:
             hess_ = jax.jit(hess_)
 
@@ -605,7 +609,7 @@ class ScopeSolver(BaseEstimator):
         self.model.set_gradient_user_defined(value_and_grad)
         self.model.set_hessian_user_defined(hess_fn)
 
-        return loss_fn
+        return loss_fn, data
 
 
 class HTPSolver(BaseSolver):

@@ -2,7 +2,7 @@ from . import _scope
 import numpy as np
 
 
-def quadratic_objective(Q, p, hessian=False, autodiff=False):
+def quadratic_objective(Q, p, autodiff=False):
     """
     Create a model of quadratic objective function which is $L(x) = <x, Qx> / 2 + <p, x>$.
 
@@ -12,8 +12,6 @@ def quadratic_objective(Q, p, hessian=False, autodiff=False):
         The matrix of quadratic term.
     + p : array-like, shape (n_features,)
         The vector of linear term.
-    + hessian : bool, default False
-        Whether to return the hessian of objective function.
     + autodiff : bool, default False
         Whether to return a overloaded function of objective function for cpp library `autodiff`.
 
@@ -36,13 +34,23 @@ def quadratic_objective(Q, p, hessian=False, autodiff=False):
         from scope import ScopeSolver, GraspSolver
         from scope.model import quadratic_objective
 
-        solver = ScopeSolver(dimensionality=5)
-        solver.solve(**quadratic_objective(np.eye(5), np.ones(5), hessian=True))
-        print(solver.get_result())
+        model = quadratic_objective(np.eye(5), np.ones(5))
+        solver1 = ScopeSolver(dimensionality=5)
+        solver1.solve(
+            model["objective"],
+            model["data"],
+            gradient=model["gradient"],
+            hessian=model["hessian"],
+        )
+        print(solver1.get_result())
 
-        solver = GraspSolver(dimensionality=5)
-        solver.solve(**quadratic_objective(np.eye(5), np.ones(5), hessian=False))
-        print(solver.get_result())
+        solver2 = GraspSolver(dimensionality=5)
+        solver2.solve(
+            model['objective'],
+            model['data'],
+            gradient = model['gradient'],
+        )
+        print(solver2.get_result())
         ```
     """
     Q = np.array(Q, dtype=float)
@@ -52,25 +60,16 @@ def quadratic_objective(Q, p, hessian=False, autodiff=False):
     if p.ndim != 1 or p.shape[0] != Q.shape[0]:
         raise ValueError("p must be a vector with length of Q.shape[0].")
 
-    if hessian and not autodiff:
+    if autodiff:
+        return {
+            "objective": _scope.quadratic_loss,
+            "data": _scope.QuadraticData(Q, p),
+        }
+    else:
         return {
             "objective": lambda x, d: np.array(_scope.quadratic_loss(x, d)),
             "gradient": lambda x, d: np.array(_scope.quadratic_grad(x, d)),
             "hessian": lambda x, d: np.array(_scope.quadratic_hess(x, d)),
             "data": _scope.QuadraticData(Q, p),
         }
-    elif not hessian and not autodiff:
-        return {
-            "objective": lambda x, d: np.array(_scope.quadratic_loss(x, d)),
-            "gradient": lambda x, d: np.array(_scope.quadratic_grad(x, d)),
-            "data": _scope.QuadraticData(Q, p),
-        }
-    elif not hessian and autodiff:
-        return {
-            "objective": _scope.quadratic_loss,
-            "data": _scope.QuadraticData(Q, p),
-            "cpp": True,
-        }
-    else:
-        raise ValueError("hessian and autodiff cannot be both True.")
 

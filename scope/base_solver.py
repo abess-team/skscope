@@ -73,10 +73,10 @@ class BaseSolver(BaseEstimator):
     def solve(
         self,
         objective,
+        *data,
         gradient=None,
         init_support_set=None,
         init_params=None,
-        data=None,
         jit=False,
     ):
         r"""
@@ -174,11 +174,9 @@ class BaseSolver(BaseEstimator):
         else:
             if self.cv > self.sample_size:
                 raise ValueError("cv should not be greater than sample_size")
-            if data is None and self.split_method is None:
-                data = np.arange(self.sample_size)
-                self.split_method = lambda data, index: index
-            if data is None:
-                raise ValueError("data should be provided when cv > 1")
+            if len(data) == 0 and self.split_method is None:
+                data = (np.arange(self.sample_size),)
+                self.split_method = lambda data, index: (index,)
             if self.split_method is None:
                 raise ValueError("split_method should be provided when cv > 1")
             if self.cv_fold_id is None:
@@ -291,23 +289,19 @@ class BaseSolver(BaseEstimator):
     @staticmethod
     def _set_objective(objective, gradient, jit):
         # objective function
-        if objective.__code__.co_argcount == 2:
-            loss_ = objective
-        elif objective.__code__.co_argcount == 1:
+        if objective.__code__.co_argcount == 1:
             loss_ = lambda params, data: objective(params)
         else:
-            raise ValueError("The objective function should have 1 or 2 arguments.")
+            loss_ = lambda params, data: objective(params, *data)
         if jit:
             loss_ = jax.jit(loss_)
 
         if gradient is None:
             grad_ = lambda params, data: jax.value_and_grad(loss_)(params, data)
-        elif gradient.__code__.co_argcount == 2:
-            grad_ = lambda params, data: (loss_(params, data), gradient(params, data))
         elif gradient.__code__.co_argcount == 1:
             grad_ = lambda params, data: (loss_(params, data), gradient(params))
         else:
-            raise ValueError("The gradient function should have 1 or 2 arguments.")
+            grad_ = lambda params, data: (loss_(params, data), gradient(params, *data))
         if jit:
             grad_ = jax.jit(grad_)
 

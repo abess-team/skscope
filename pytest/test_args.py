@@ -96,8 +96,30 @@ def test_no_autodiff(model, solver_creator):
 
     assert set(model["support_set"]) == set(solver.support_set)
 
+def test_scope_cpp():
+    solver = ScopeSolver(linear["n_features"], linear["n_informative"])
+    X, Y = linear["data"]
+    model = scope.model.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y))
+    solver.solve(
+        model["objective"],
+        model["data"],
+        gradient=model["gradient"],
+        hessian=model["hessian"],
+    )
+    assert set(solver.support_set) == set(linear["support_set"])
 
-def test_add_coverage():
+def test_scope_autodiff():
+    solver = ScopeSolver(linear["n_features"], linear["n_informative"])
+    X, Y = linear["data"]
+    model = scope.model.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y), autodiff=True)
+    solver.solve(
+        model["objective"],
+        model["data"],
+        cpp=True,
+    )
+    assert set(solver.support_set) == set(linear["support_set"])
+
+def test_add_cpp_coverage():
     solver = ScopeSolver(
         linear["n_features"],
         gs_lower_bound=linear["n_informative"] - 1,
@@ -123,16 +145,4 @@ def test_add_coverage():
     )
     solver.solve(linear["loss_data"])
 
-    solver = ScopeSolver(linear["n_features"], linear["n_informative"])
-    X, Y = linear["data"]
-    solver.solve(
-        **scope.model.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y), hessian=True)
-    )
-    set1 = set(solver.support_set)
-    solver.solve(
-        **scope.model.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y), autodiff=True)
-    )
-    set2 = set(solver.support_set)
 
-    assert set(linear["support_set"]) == set1
-    assert set(linear["support_set"]) == set2

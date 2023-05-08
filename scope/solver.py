@@ -226,7 +226,7 @@ class ScopeSolver(BaseEstimator):
     def solve(
         self,
         objective,
-        *data,
+        data=(),
         init_support_set=None,
         init_params=None,
         gradient=None,
@@ -265,6 +265,9 @@ class ScopeSolver(BaseEstimator):
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
+
+        if not isinstance(data, tuple):
+            data = (data,)
 
         p = self.dimensionality
         BaseSolver._check_positive_integer(p, "dimensionality")
@@ -469,8 +472,8 @@ class ScopeSolver(BaseEstimator):
                 data = data[0]
             loss_fn = self.__set_objective_cpp(objective, gradient, hessian)
         else:
-            loss_fn, data = self.__set_objective_py(
-                objective, gradient, hessian, jit, data
+            loss_fn = self.__set_objective_py(
+                objective, gradient, hessian, jit
             )
 
         result = _scope.pywrap_Universal(
@@ -562,7 +565,7 @@ class ScopeSolver(BaseEstimator):
         return objective
 
     def __set_objective_py(
-        self, objective, gradient, hessian, jit, data
+        self, objective, gradient, hessian, jit
     ):
         r"""
         Register objective function as callback function. This method only can register objective function with Python package `JAX`.
@@ -609,7 +612,7 @@ class ScopeSolver(BaseEstimator):
         self.model.set_gradient_user_defined(value_and_grad)
         self.model.set_hessian_user_defined(hess_fn)
 
-        return loss_fn, data
+        return loss_fn
 
 
 class HTPSolver(BaseSolver):

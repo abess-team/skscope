@@ -73,7 +73,7 @@ class BaseSolver(BaseEstimator):
     def solve(
         self,
         objective,
-        *data,
+        data=(),
         gradient=None,
         init_support_set=None,
         init_params=None,
@@ -100,7 +100,10 @@ class BaseSolver(BaseEstimator):
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
-
+        
+        if not isinstance(data, tuple):
+            data = (data,)
+            
         BaseSolver._check_positive_integer(self.dimensionality, "dimensionality")
         BaseSolver._check_positive_integer(self.sample_size, "sample_size")
         BaseSolver._check_non_negative_integer(self.max_iter, "max_iter")

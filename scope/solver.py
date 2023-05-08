@@ -705,7 +705,8 @@ class HTPSolver(BaseSolver):
                     best_loss = loss
                     best_suppport_group_tuple = support_new_group_tuple
                 results[support_new_group_tuple] = params
-
+                
+        return results[best_suppport_group_tuple], np.concatenate([group_indices[i] for i in best_suppport_group_tuple])
 
 class IHTSolver(HTPSolver):
     def _solve(

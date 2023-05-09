@@ -783,7 +783,9 @@ class GraspSolver(BaseSolver):
             )
         # init
         params = init_params
-        support_old = np.array([], dtype="int32")
+        best_suppport_tuple = None
+        best_loss = np.inf
+        results = {} # key: tuple of ordered support set, value: params
         group_num = len(np.unique(self.group))
         group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
@@ -792,6 +794,7 @@ class GraspSolver(BaseSolver):
             grad_values = value_and_grad(params, data)[1]
             score = np.array([np.sum(np.square(grad_values[group_indices[i]])) for i in range(group_num)])
             score[self.always_select] = np.inf
+
             # identify directions
             if 2 * sparsity < group_num:
                 Omega = [
@@ -805,13 +808,12 @@ class GraspSolver(BaseSolver):
             # merge supports
             support_new = np.concatenate([group_indices[i] for i in Omega])
             support_new = np.unique(np.append(support_new, params.nonzero()[0]))
-
+            suppport_tuple = tuple(np.sort(support_new))
+            
             # terminating condition
-            if n_iters > 0 and np.all(set(support_old) == set(support_new)):
+            if suppport_tuple in results:
                 break
-            else:
-                support_old = support_new
-
+            
             # minimize
             params_bias = np.zeros(self.dimensionality)
             params_bias[support_new] = params[support_new]
@@ -827,8 +829,15 @@ class GraspSolver(BaseSolver):
             params = np.zeros(self.dimensionality)
             params[support_set] = params_bias[support_set]
 
+            # update cache
+            loss = loss_fn(params, data)
+            if loss < best_loss:
+                best_loss = loss
+                best_suppport_tuple = suppport_tuple
+            results[suppport_tuple] = params
+
         self.n_iters = n_iters
-        return params, support_set
+        return results[best_suppport_tuple], np.nonzero(results[best_suppport_tuple])[0]
 
 
 class FobaSolver(BaseSolver):

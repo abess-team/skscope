@@ -59,6 +59,7 @@ double UniversalData::loss_and_gradient(const VectorXd &effective_para, Map<Vect
 
     if (model->gradient_user_defined)
     {
+        // Note: using complete_para to store gradient isn't a good idea, just for saving memory
         tie(value, complete_para) = model->gradient_user_defined(complete_para, *this->data);
         gradient = complete_para(this->effective_para_index);
     }
@@ -84,13 +85,14 @@ void UniversalData::gradient_and_hessian(const VectorXd &effective_para, VectorX
     gradient.resize(this->effective_size);
     hessian.resize(this->effective_size, this->effective_size);
     VectorXd complete_para = VectorXd::Zero(this->model_size);
+    VectorXd complete_grad = VectorXd::Zero(this->model_size);
     complete_para(this->effective_para_index) = effective_para;
 
     if (model->hessian_user_defined)
     {
         double value = 0.0;
-        tie(value, complete_para) = model->gradient_user_defined(complete_para, *this->data);
-        gradient = complete_para(this->effective_para_index);
+        tie(value, complete_grad) = model->gradient_user_defined(complete_para, *this->data);
+        gradient = complete_grad(this->effective_para_index);
         hessian = model->hessian_user_defined(complete_para, *this->data)(this->effective_para_index, this->effective_para_index);
     }
     else

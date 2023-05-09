@@ -472,6 +472,7 @@ class ScopeSolver(BaseEstimator):
                 data = data[0]
             loss_fn = self.__set_objective_cpp(objective, gradient, hessian)
         else:
+            self.n_iters = 0
             loss_fn = self.__set_objective_py(
                 objective, gradient, hessian, jit
             )
@@ -606,6 +607,7 @@ class ScopeSolver(BaseEstimator):
             return value.item(), np.array(grad)
 
         def hess_fn(params, data):
+            self.n_iters += 1
             return np.array(hess_(jnp.array(params), data))
 
         self.model.set_loss_of_model(loss_fn)
@@ -681,7 +683,7 @@ class HTPSolver(BaseSolver):
         group_num = len(np.unique(self.group))
         group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
-        for iter in range(self.max_iter):
+        for n_iters in range(self.max_iter):
             # S1: gradient descent
             params_bias = params - self.step_size * value_and_grad(params, data)[1]
             # S2: Gradient Hard Thresholding
@@ -691,21 +693,21 @@ class HTPSolver(BaseSolver):
             support_new_group_tuple = tuple(np.sort(support_new_group))
             # terminating condition
             if support_new_group_tuple in results:
-                return results[best_suppport_group_tuple], np.concatenate([group_indices[i] for i in best_suppport_group_tuple])
-            else:
-                # S3: debise
-                params = np.zeros(self.dimensionality)
-                support_new = np.concatenate([group_indices[i] for i in support_new_group])
-                params[support_new] = params_bias[support_new]
-                loss, params = self._numeric_solver(
-                    loss_fn, value_and_grad, params, support_new, data
-                )
-                # update cache
-                if loss < best_loss:
-                    best_loss = loss
-                    best_suppport_group_tuple = support_new_group_tuple
-                results[support_new_group_tuple] = params
-                
+                break
+            # S3: debise
+            params = np.zeros(self.dimensionality)
+            support_new = np.concatenate([group_indices[i] for i in support_new_group])
+            params[support_new] = params_bias[support_new]
+            loss, params = self._numeric_solver(
+                loss_fn, value_and_grad, params, support_new, data
+            )
+            # update cache
+            if loss < best_loss:
+                best_loss = loss
+                best_suppport_group_tuple = support_new_group_tuple
+            results[support_new_group_tuple] = params
+
+        self.n_iters = n_iters       
         return results[best_suppport_group_tuple], np.concatenate([group_indices[i] for i in best_suppport_group_tuple])
 
 class IHTSolver(HTPSolver):
@@ -733,7 +735,7 @@ class IHTSolver(HTPSolver):
         group_num = len(np.unique(self.group))
         group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
-        for iter in range(self.max_iter):
+        for n_iters in range(self.max_iter):
             # S1: gradient descent
             params_bias = params - self.step_size * value_and_grad(params, data)[1]
             # S2: Gradient Hard Thresholding
@@ -754,7 +756,7 @@ class IHTSolver(HTPSolver):
         _, params = self._numeric_solver(
             loss_fn, value_and_grad, params, support_new, data
         )
-
+        self.n_iters = n_iters
         return params, support_new
 
 class GraspSolver(BaseSolver):
@@ -785,7 +787,7 @@ class GraspSolver(BaseSolver):
         group_num = len(np.unique(self.group))
         group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
-        for iter in range(self.max_iter):
+        for n_iters in range(self.max_iter):
             # compute local gradient
             grad_values = value_and_grad(params, data)[1]
             score = np.array([np.sum(np.square(grad_values[group_indices[i]])) for i in range(group_num)])
@@ -805,7 +807,7 @@ class GraspSolver(BaseSolver):
             support_new = np.unique(np.append(support_new, params.nonzero()[0]))
 
             # terminating condition
-            if iter > 0 and np.all(set(support_old) == set(support_new)):
+            if n_iters > 0 and np.all(set(support_old) == set(support_new)):
                 break
             else:
                 support_old = support_new
@@ -825,6 +827,7 @@ class GraspSolver(BaseSolver):
             params = np.zeros(self.dimensionality)
             params[support_set] = params_bias[support_set]
 
+        self.n_iters = n_iters
         return params, support_set
 
 
@@ -973,7 +976,7 @@ class FobaSolver(BaseSolver):
         group_num = len(np.unique(self.group))
         group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
-        for iter in range(self.max_iter):
+        for n_iters in range(self.max_iter):
             if support_set_group.size >= min(2 * sparsity, group_num):
                 break
             params, support_set_group, backward_threshold = self._forward_step(

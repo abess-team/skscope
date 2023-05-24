@@ -143,6 +143,7 @@ class ScopeSolver(BaseEstimator):
         path_type="seq",
         gs_lower_bound=None,
         gs_upper_bound=None,
+        use_hessian=False,
         thread=1,
         jax_platform="cpu",
         random_state=None,
@@ -170,6 +171,7 @@ class ScopeSolver(BaseEstimator):
         self.screening_size = screening_size
         self.max_exchange_num = max_exchange_num
         self.greedy = greedy
+        self.use_hessian = use_hessian
         self.splicing_type = splicing_type
         self.path_type = path_type
         self.gs_lower_bound = gs_lower_bound
@@ -490,6 +492,7 @@ class ScopeSolver(BaseEstimator):
             self.max_exchange_num,
             path_type,
             self.greedy,
+            self.use_hessian,
             self.warm_start,
             ic_type,
             self.ic_coef,

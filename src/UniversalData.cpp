@@ -51,7 +51,7 @@ double UniversalData::loss(const VectorXd &effective_para)
     return model->loss(complete_para, *this->data);
 }
 
-double UniversalData::loss_and_gradient(const VectorXd &effective_para, Map<VectorXd> &gradient)
+double UniversalData::loss_and_gradient(const VectorXd &effective_para, VectorXd &gradient)
 {
     double value = 0.0;
     VectorXd complete_para = VectorXd::Zero(this->model_size);

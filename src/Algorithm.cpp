@@ -450,8 +450,13 @@ void Algorithm::sacrifice(UniversalData &data, UniversalData &XA, MatrixXd &y, V
     SPDLOG_DEBUG("sacrifice begin");
     VectorXd gradient_full;
     MatrixXd hessian_full;
-    data.gradient_and_hessian(para, gradient_full, hessian_full);
-
+    if (this->use_hessian){
+        data.gradient_and_hessian(para, gradient_full, hessian_full);
+    }
+    else{
+        data.loss_and_gradient(para, gradient_full);
+        hessian_full = MatrixXd::Identity(para.size(), para.size());
+    }
     int size, index;
     for (auto group_index : A)
     {

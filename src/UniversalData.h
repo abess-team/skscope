@@ -59,7 +59,7 @@ public:
     const VectorXi& get_effective_para_index() const; // getter of effective_para_index, only used for log
     UniversalData slice_by_sample(const VectorXi& target_sample_index);
     double loss(const VectorXd& effective_para); // compute the loss with effective_para
-    double loss_and_gradient(const VectorXd& effective_para, Eigen::Map<VectorXd>& gradient);
+    double loss_and_gradient(const VectorXd& effective_para, Eigen::VectorXd& gradient);
     void gradient_and_hessian(const VectorXd& effective_para, VectorXd& gradient,MatrixXd& hessian);             
     void init_para(VectorXd & effective_para);  // initialize para for primary_model_fit, default is not change.                                                                                        
     double optimize(VectorXd& effective_para);                

@@ -96,6 +96,7 @@ public:
     int U_size;
     double enough_small = 1e-9;
     bool is_greedy;
+    bool use_hessian;
 
     Algorithm(int max_iter = 30,
               bool warm_start = true,
@@ -103,7 +104,8 @@ public:
               Eigen::VectorXi always_select = Eigen::VectorXi::Zero(0),
               int splicing_type = 0,
               bool is_greedy = true,
-              int sub_search = 0)
+              int sub_search = 0,
+              bool use_hessian = false)
         : algorithm_type(6),
           model_type(0),
           max_iter(max_iter),
@@ -114,7 +116,8 @@ public:
           always_select(always_select),
           splicing_type(splicing_type),
           is_greedy(is_greedy),
-          sub_search(sub_search) {}
+          sub_search(sub_search),
+          use_hessian(use_hessian) {}
 
     void set_warm_start(bool warm_start) { this->warm_start = warm_start; }
 

@@ -95,12 +95,14 @@ public:
     int sub_search;          // size of sub_searching in splicing
     int U_size;
     double enough_small = 1e-9;
+    bool is_greedy;
 
     Algorithm(int max_iter = 30,
               bool warm_start = true,
               int exchange_num = 5,
               Eigen::VectorXi always_select = Eigen::VectorXi::Zero(0),
               int splicing_type = 0,
+              bool is_greedy = true,
               int sub_search = 0)
         : algorithm_type(6),
           model_type(0),
@@ -111,6 +113,7 @@ public:
           exchange_num(exchange_num),
           always_select(always_select),
           splicing_type(splicing_type),
+          is_greedy(is_greedy),
           sub_search(sub_search) {}
 
     void set_warm_start(bool warm_start) { this->warm_start = warm_start; }
@@ -243,5 +246,5 @@ public:
      *
      * @return a double value indicating the effective number of parameters
      */
-    double effective_number_of_parameter(UniversalData& X, UniversalData& active_data, MatrixXd& y, VectorXd& weights, VectorXd& beta, VectorXd& active_para, VectorXd& aux_para) { return active_data.cols(); }
+    double effective_number_of_parameter(UniversalData &X, UniversalData &active_data, MatrixXd &y, VectorXd &weights, VectorXd &beta, VectorXd &active_para, VectorXd &aux_para) { return active_data.cols(); }
 };

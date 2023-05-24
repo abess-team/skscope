@@ -138,6 +138,7 @@ class ScopeSolver(BaseEstimator):
         important_search=128,
         screening_size=-1,
         max_exchange_num=5,
+        greedy=True,
         splicing_type="halve",
         path_type="seq",
         gs_lower_bound=None,
@@ -168,6 +169,7 @@ class ScopeSolver(BaseEstimator):
         self.important_search = important_search
         self.screening_size = screening_size
         self.max_exchange_num = max_exchange_num
+        self.greedy = greedy
         self.splicing_type = splicing_type
         self.path_type = path_type
         self.gs_lower_bound = gs_lower_bound
@@ -487,6 +489,7 @@ class ScopeSolver(BaseEstimator):
             self.max_iter,
             self.max_exchange_num,
             path_type,
+            self.greedy,
             self.warm_start,
             ic_type,
             self.ic_coef,

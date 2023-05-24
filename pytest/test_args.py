@@ -119,6 +119,13 @@ def test_scope_autodiff():
     )
     assert set(solver.support_set) == set(linear["support_set"])
 
+@pytest.mark.parametrize("greedy", (True, False))
+def test_scope_greed(greedy):
+    solver = ScopeSolver(linear["n_features"], linear["n_informative"], greedy=greedy)
+    solver.solve(linear["loss"], jit=True)
+
+    assert set(linear["support_set"]) == set(solver.support_set)
+
 def test_add_cpp_coverage():
     solver = ScopeSolver(
         linear["n_features"],

@@ -1,11 +1,11 @@
 #include "Algorithm.h"
-#include <nlopt.h> 
+#include <nlopt.h>
 
 using namespace std;
 using namespace Eigen;
 
 void Algorithm::fit(UniversalData &train_x, MatrixXd &train_y, VectorXd &train_weight, VectorXi &g_index, VectorXi &g_size,
-            int train_n, int p, int N)
+                    int train_n, int p, int N)
 {
     int T0 = this->sparsity_level;
     this->x = &train_x;
@@ -34,15 +34,15 @@ void Algorithm::fit(UniversalData &train_x, MatrixXd &train_y, VectorXd &train_w
         // VectorXd beta_old = this->beta;
         // VectorXd coef0_old = this->coef0;
         bool success = this->primary_model_fit(train_x, train_y, train_weight, this->beta, this->coef0, DBL_MAX,
-                                                this->A_out, g_index, g_size);
+                                               this->A_out, g_index, g_size);
         // if (!success){
         //   this->beta = beta_old;
         //   this->coef0 = coef0_old;
         // }
         this->train_loss = this->loss_function(train_x, train_y, train_weight, this->beta, this->coef0, this->A_out,
-                                                g_index, g_size, this->lambda_level);
+                                               g_index, g_size, this->lambda_level);
         this->effective_number = this->effective_number_of_parameter(train_x, train_x, train_y, train_weight,
-                                                                        this->beta, this->beta, this->coef0);
+                                                                     this->beta, this->beta, this->coef0);
         return;
     }
 
@@ -51,7 +51,7 @@ void Algorithm::fit(UniversalData &train_x, MatrixXd &train_y, VectorXd &train_w
     //     If there is no `bd_init` (may be no warm-start), compute it on `beta_init`, `coef0_init`, `A_init`.
     //     However, you can also define your own criterion by rewrite the function.
     VectorXi A = this->inital_screening(train_x, train_y, this->beta, this->coef0, this->A_init,
-                                                this->I_init, this->bd, train_weight, g_index, g_size, N);
+                                        this->I_init, this->bd, train_weight, g_index, g_size, N);
     VectorXi I = complement(A, N);
 
     // `A_ind` stores all indexes of active set.
@@ -73,7 +73,7 @@ void Algorithm::fit(UniversalData &train_x, MatrixXd &train_y, VectorXd &train_w
     // }else{
     slice_restore(beta_A, A_ind, this->beta);
     this->train_loss = this->loss_function(X_A, train_y, train_weight, beta_A, this->coef0, A, g_index, g_size,
-                                            this->lambda_level);
+                                           this->lambda_level);
     // }
 
     this->beta_warmstart = this->beta;
@@ -104,8 +104,8 @@ void Algorithm::fit(UniversalData &train_x, MatrixXd &train_y, VectorXd &train_w
 };
 
 void Algorithm::get_A(UniversalData &X, MatrixXd &y, VectorXi &A, VectorXi &I, int &C_max, VectorXd &beta, VectorXd &coef0,
-            VectorXd &bd, int T0, VectorXd &weights, VectorXi &g_index, VectorXi &g_size,
-            int N, double tau, double &train_loss)
+                      VectorXd &bd, int T0, VectorXd &weights, VectorXi &g_index, VectorXi &g_size,
+                      int N, double tau, double &train_loss)
 {
     // Universal set:
     //     We only consider splicing on a set `U`,
@@ -226,7 +226,7 @@ void Algorithm::get_A(UniversalData &X, MatrixXd &y, VectorXi &A, VectorXi &I, i
             //     If new loss is smaller, accept it and return TRUE.
             double l0 = train_loss;
             bool exchange = this->splicing(*X_U, y, A_U, I_U, C_max, beta_U, coef0, bd_U, weights, g_index_U,
-                                            g_size_U, this->U_size, tau, l0);
+                                           g_size_U, this->U_size, tau, l0);
 
             if (exchange)
                 train_loss = l0;
@@ -290,91 +290,73 @@ void Algorithm::get_A(UniversalData &X, MatrixXd &y, VectorXi &A, VectorXi &I, i
 };
 
 bool Algorithm::splicing(UniversalData &X, MatrixXd &y, VectorXi &A, VectorXi &I, int &C_max, VectorXd &beta, VectorXd &coef0,
-                VectorXd &bd, VectorXd &weights, VectorXi &g_index, VectorXi &g_size,
-                int N, double tau, double &train_loss)
+                         VectorXd &bd, VectorXd &weights, VectorXi &g_index, VectorXi &g_size,
+                         int N, double tau, double &train_loss)
 {
     if (C_max <= 0)
         return false;
 
-    // init
-    // int p = X.cols();
-    int n = X.rows();
-
-    int A_size = A.size();
-    int I_size = I.size();
-
-    VectorXd beta_A_group(A_size);
-    VectorXd d_I_group(I_size);
-    for (int i = 0; i < A_size; i++)
-    {
-        beta_A_group(i) = bd(A(i));
-    }
-
-    for (int i = 0; i < I_size; i++)
-    {
-        d_I_group(i) = bd(I(i));
-    }
+    VectorXd beta_A_group = bd(A);
+    VectorXd d_I_group = bd(I);
 
     VectorXi A_min_k = min_k(beta_A_group, C_max, true);
     VectorXi I_max_k = max_k(d_I_group, C_max, true);
-    VectorXi s1 = vector_slice(A, A_min_k);
-    VectorXi s2 = vector_slice(I, I_max_k);
+    VectorXi s1 = A(A_min_k);
+    VectorXi s2 = I(I_max_k);
 
-    // for (int i=0;i<C_max;i++){
-    //   cout<<"try: ("<<s1(i)<<","<<bd(s1(i))<<") -> ("<<s2(i)<<","<<bd(s2(i))<<")"<<endl;///
-    // }
-
-    VectorXi A_exchange(A_size);
-    VectorXi A_ind_exchage;
+    VectorXi A_exchange, best_A_exchange;
+    VectorXi A_ind_exchage, best_A_ind_exchage;
     UniversalData X_A_exchage;
-    VectorXd beta_A_exchange;
-    VectorXd coef0_A_exchange;
+    VectorXd beta_A_exchange, best_beta_A_exchange;
+    VectorXd coef0_A_exchange, best_coef0_A_exchange;
 
-    double L;
+    double L, best_loss = train_loss;
+    int best_exchange_num = 0;
+
     for (int k = C_max; k >= 1;)
     {
-        // SPDLOG_DEBUG("splicing operator, exchange num is {}", k);
+        SPDLOG_INFO("exchange num is {}", k);
         A_exchange = diff_union(A, s1, s2);
         A_ind_exchage = find_ind(A_exchange, g_index, g_size, (this->beta).rows(), N);
-        X_A_exchage = X_seg(X, n, A_ind_exchage, this->model_type);
-        slice(beta, A_ind_exchage, beta_A_exchange);
+        X_A_exchage = X.slice_by_para(A_ind_exchage); 
+        beta_A_exchange = beta(A_ind_exchage);
         coef0_A_exchange = coef0;
         bool success = this->primary_model_fit(X_A_exchage, y, weights, beta_A_exchange, coef0_A_exchange,
-                                                train_loss, A_exchange, g_index, g_size);
-        // if (success){
+                                               train_loss, A_exchange, g_index, g_size);
         L = this->loss_function(X_A_exchage, y, weights, beta_A_exchange, coef0_A_exchange, A_exchange, g_index,
                                 g_size, this->lambda_level);
-        // }else{
-        //   L = train_loss + 1;
-        // }
-        if (train_loss - L > tau)
+        if (L < best_loss)
         {
-            train_loss = L;
-            A = A_exchange;
-            I = complement(A_exchange, N);
-            slice_restore(beta_A_exchange, A_ind_exchage, beta);
-            coef0 = coef0_A_exchange;
-            C_max = k;
-
-            return true;
+            best_A_exchange = A_exchange;
+            best_A_ind_exchage = A_ind_exchage;
+            best_beta_A_exchange = beta_A_exchange;
+            best_coef0_A_exchange = coef0_A_exchange;
+            best_loss = L;
+            best_exchange_num = k;
+            if (this->is_greedy)
+                break;
         }
-        else
-        {
-            if (this->splicing_type == 1)
-                k = k - 1;
-            else
-                k = k / 2;
-            s1 = s1.head(k).eval();
-            s2 = s2.head(k).eval();
-        }
+        k = this->splicing_type == 1 ? k - 1 : k / 2;
+        s1 = s1.head(k).eval();
+        s2 = s2.head(k).eval();
     }
 
-    return false;
+    if (train_loss - best_loss <= tau)
+        return false;
+
+    train_loss = best_loss;
+    A = best_A_exchange;
+    I = complement(best_A_exchange, N);
+    slice_restore(best_beta_A_exchange, best_A_ind_exchage, beta);
+    coef0 = best_coef0_A_exchange;
+    C_max = best_exchange_num;
+    SPDLOG_INFO("best exchange num is {}", best_exchange_num);
+    return true;
 };
 
 VectorXi Algorithm::inital_screening(UniversalData &X, MatrixXd &y, VectorXd &beta, VectorXd &coef0, VectorXi &A, VectorXi &I,
-                                            VectorXd &bd, VectorXd &weights, VectorXi &g_index,
-                                            VectorXi &g_size, int &N)
+                                     VectorXd &bd, VectorXd &weights, VectorXi &g_index,
+                                     VectorXi &g_size, int &N)
 {
     if (bd.size() == 0)
     {
@@ -410,7 +392,7 @@ VectorXi Algorithm::inital_screening(UniversalData &X, MatrixXd &y, VectorXd &be
 }
 
 void Algorithm::final_fitting(UniversalData &train_x, MatrixXd &train_y, VectorXd &train_weight, VectorXi &A,
-                    VectorXi &g_index, VectorXi &g_size, int train_n, int N)
+                              VectorXi &g_index, VectorXi &g_size, int train_n, int N)
 {
     VectorXi A_ind = find_ind(A, g_index, g_size, (this->beta).rows(), N);
     UniversalData X_A = X_seg(train_x, train_n, A_ind, this->model_type);
@@ -425,7 +407,7 @@ void Algorithm::final_fitting(UniversalData &train_x, MatrixXd &train_y, VectorX
     // }else{
     slice_restore(beta_A, A_ind, this->beta);
     this->train_loss = this->loss_function(X_A, train_y, train_weight, beta_A, this->coef0, A, g_index, g_size,
-                                            this->lambda_level);
+                                           this->lambda_level);
     // }
 }
 /*
@@ -441,10 +423,10 @@ double nlopt_function(unsigned n, const double* x, double* grad, void* f_data) {
     }
 };
 */
-bool Algorithm::primary_model_fit(UniversalData& active_data, MatrixXd& y, VectorXd& weights, VectorXd& active_para, VectorXd& aux_para, double loss0,
-    VectorXi& A, VectorXi& g_index, VectorXi& g_size) 
+bool Algorithm::primary_model_fit(UniversalData &active_data, MatrixXd &y, VectorXd &weights, VectorXd &active_para, VectorXd &aux_para, double loss0,
+                                  VectorXi &A, VectorXi &g_index, VectorXi &g_size)
 {
-    SPDLOG_DEBUG("optimization begin\nactive set: {}\ninit loss: {}\npara:{}", active_data.get_effective_para_index().transpose(), loss0, active_para.transpose());    
+    SPDLOG_DEBUG("optimization begin\nactive set: {}\ninit loss: {}\npara:{}", active_data.get_effective_para_index().transpose(), loss0, active_para.transpose());
     double value = active_data.optimize(active_para);
     SPDLOG_DEBUG("optimization end\nfinal loss: {}\npara:{}", value, active_para.transpose());
     return true;
@@ -453,7 +435,7 @@ bool Algorithm::primary_model_fit(UniversalData& active_data, MatrixXd& y, Vecto
 
     nlopt_opt opt = active_data.nlopt_create(active_para.size());
     nlopt_set_min_objective(opt, nlopt_function, &active_data);
-    nlopt_result result = nlopt_optimize(opt, active_para.data(), &value); 
+    nlopt_result result = nlopt_optimize(opt, active_para.data(), &value);
     nlopt_destroy(opt);
 
     bool success = result > 0;
@@ -463,7 +445,7 @@ bool Algorithm::primary_model_fit(UniversalData& active_data, MatrixXd& y, Vecto
     */
 }
 
-void Algorithm::sacrifice(UniversalData& data, UniversalData& XA, MatrixXd& y, VectorXd& para, VectorXd& beta_A, VectorXd& aux_para, VectorXi& A, VectorXi& I, VectorXd& weights, VectorXi& g_index, VectorXi& g_size, int g_num, VectorXi& A_ind, VectorXd& sacrifice, VectorXi& U, VectorXi& U_ind, int num)
+void Algorithm::sacrifice(UniversalData &data, UniversalData &XA, MatrixXd &y, VectorXd &para, VectorXd &beta_A, VectorXd &aux_para, VectorXi &A, VectorXi &I, VectorXd &weights, VectorXi &g_index, VectorXi &g_size, int g_num, VectorXi &A_ind, VectorXd &sacrifice, VectorXi &U, VectorXi &U_ind, int num)
 {
     SPDLOG_DEBUG("sacrifice begin");
     VectorXd gradient_full;
@@ -471,40 +453,50 @@ void Algorithm::sacrifice(UniversalData& data, UniversalData& XA, MatrixXd& y, V
     data.gradient_and_hessian(para, gradient_full, hessian_full);
 
     int size, index;
-    for (auto group_index : A) {
+    for (auto group_index : A)
+    {
         size = g_size(group_index);
         index = g_index(group_index);
         VectorXd gradient_group = gradient_full.segment(index, size);
         MatrixXd hessian_group = hessian_full.block(index, index, size, size);
-        if (size == 1) { // optimize for frequent degradation situations
+        if (size == 1)
+        { // optimize for frequent degradation situations
             sacrifice(group_index) = para(index) * para(index) * hessian_group(0, 0);
         }
-        else {
+        else
+        {
             sacrifice(group_index) = para.segment(index, size).transpose() * hessian_group * para.segment(index, size);
             sacrifice(group_index) /= size;
         }
     }
-    for (auto group_index : I) {
+    for (auto group_index : I)
+    {
         size = g_size(group_index);
         index = g_index(group_index);
         VectorXd gradient_group = gradient_full.segment(index, size);
         MatrixXd hessian_group = hessian_full.block(index, index, size, size);
-        if (size == 1) { // optimize for frequent degradation situations
-            if (hessian_group(0, 0) < this->enough_small) {
-                SPDLOG_ERROR("there exists a submatrix of hessian which is not positive definite!\nactive set is{}\nactive params are {}\ngroup index is {}, hessian is {}", data.get_effective_para_index().transpose(),para.transpose(), index, hessian_group(0,0));
+        if (size == 1)
+        { // optimize for frequent degradation situations
+            if (hessian_group(0, 0) < this->enough_small)
+            {
+                SPDLOG_ERROR("there exists a submatrix of hessian which is not positive definite!\nactive set is{}\nactive params are {}\ngroup index is {}, hessian is {}", data.get_effective_para_index().transpose(), para.transpose(), index, hessian_group(0, 0));
                 sacrifice(group_index) = gradient_group(0, 0) * gradient_group(0, 0);
             }
-            else {
+            else
+            {
                 sacrifice(group_index) = gradient_group(0, 0) * gradient_group(0, 0) / hessian_group(0, 0);
             }
         }
-        else {
+        else
+        {
             LLT<MatrixXd> hessian_group_llt(hessian_group);
-            if (hessian_group_llt.info() == NumericalIssue){
+            if (hessian_group_llt.info() == NumericalIssue)
+            {
                 SPDLOG_ERROR("there exists a submatrix of hessian which is not positive definite!\nactive set is {}\nactive params are {}\ngroup index is {}\nhessian is {}", data.get_effective_para_index().transpose(), para.transpose(), VectorXi::LinSpaced(size, index, size + index - 1), hessian_group);
                 sacrifice(group_index) = gradient_group.squaredNorm();
             }
-            else{
+            else
+            {
                 MatrixXd inv_hessian_group = hessian_group_llt.solve(MatrixXd::Identity(size, size));
                 sacrifice(group_index) = gradient_group.transpose() * inv_hessian_group * gradient_group;
                 sacrifice(group_index) /= size;
@@ -514,4 +506,3 @@ void Algorithm::sacrifice(UniversalData& data, UniversalData& XA, MatrixXd& y, V
     SPDLOG_DEBUG("sacrifice end with {}", sacrifice.transpose());
     return;
 }
-

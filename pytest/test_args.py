@@ -131,6 +131,12 @@ def test_scope_hessian():
 
     assert set(linear["support_set"]) == set(solver.support_set)
 
+def test_scope_dynamic_max_exchange_num():
+    solver = ScopeSolver(linear["n_features"], linear["n_informative"], is_dynamic_max_exchange_num=False)
+    solver.solve(linear["loss"], jit=True)
+
+    assert set(linear["support_set"]) == set(solver.support_set)
+
 def test_add_cpp_coverage():
     solver = ScopeSolver(
         linear["n_features"],

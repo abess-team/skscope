@@ -315,7 +315,7 @@ bool Algorithm::splicing(UniversalData &X, MatrixXd &y, VectorXi &A, VectorXi &I
 
     for (int k = C_max; k >= 1;)
     {
-        SPDLOG_INFO("exchange num is {}", k);
+        //SPDLOG_INFO("exchange num is {}", k);
         A_exchange = diff_union(A, s1, s2);
         A_ind_exchage = find_ind(A_exchange, g_index, g_size, (this->beta).rows(), N);
         X_A_exchage = X.slice_by_para(A_ind_exchage); 
@@ -349,8 +349,9 @@ bool Algorithm::splicing(UniversalData &X, MatrixXd &y, VectorXi &A, VectorXi &I
     I = complement(best_A_exchange, N);
     slice_restore(best_beta_A_exchange, best_A_ind_exchage, beta);
     coef0 = best_coef0_A_exchange;
-    C_max = best_exchange_num;
-    SPDLOG_INFO("best exchange num is {}", best_exchange_num);
+    if (this->is_dynamic_exchange_num)
+        C_max = best_exchange_num;
+    //SPDLOG_INFO("best exchange num is {}", best_exchange_num);
     return true;
 };
 

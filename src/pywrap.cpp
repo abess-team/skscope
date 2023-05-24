@@ -99,7 +99,7 @@ using namespace std;
 
 tuple<VectorXd, double, double, double>
 pywrap_Universal(pybind11::object universal_data, UniversalModel universal_model, ConvexSolver convex_solver, int model_size, int sample_size, int aux_para_size, int max_iter,
-                 int exchange_num, int path_type, bool is_greedy, bool use_hessian, bool is_warm_start, int ic_type, double ic_coef, int Kfold, VectorXi sequence,
+                 int exchange_num, int path_type, bool is_greedy, bool use_hessian, bool is_dynamic_exchange_num, bool is_warm_start, int ic_type, double ic_coef, int Kfold, VectorXi sequence,
                  VectorXd lambda_seq, int s_min, int s_max, int screening_size, VectorXi g_index, VectorXi always_select,
                  int thread, int splicing_type, int sub_search, VectorXi cv_fold_id, VectorXi A_init, VectorXd beta_init, VectorXd coef0_init)
 {
@@ -126,7 +126,7 @@ pywrap_Universal(pybind11::object universal_data, UniversalModel universal_model
     vector<Algorithm *> algorithm_list(algorithm_list_size);
     for (int i = 0; i < algorithm_list_size; i++)
     {
-        algorithm_list[i] = new Algorithm(max_iter, is_warm_start, exchange_num, always_select, splicing_type, is_greedy, sub_search, use_hessian);
+        algorithm_list[i] = new Algorithm(max_iter, is_warm_start, exchange_num, always_select, splicing_type, is_greedy, sub_search, use_hessian, is_dynamic_exchange_num);
     }
 
     bool early_stop = true, sparse_matrix = true;

@@ -97,6 +97,7 @@ public:
     double enough_small = 1e-9;
     bool is_greedy;
     bool use_hessian;
+    bool is_dynamic_exchange_num;
 
     Algorithm(int max_iter = 30,
               bool warm_start = true,
@@ -105,7 +106,8 @@ public:
               int splicing_type = 0,
               bool is_greedy = true,
               int sub_search = 0,
-              bool use_hessian = false)
+              bool use_hessian = false,
+              bool is_dynamic_exchange_num = true)
         : algorithm_type(6),
           model_type(0),
           max_iter(max_iter),
@@ -117,7 +119,8 @@ public:
           splicing_type(splicing_type),
           is_greedy(is_greedy),
           sub_search(sub_search),
-          use_hessian(use_hessian) {}
+          use_hessian(use_hessian),
+          is_dynamic_exchange_num(is_dynamic_exchange_num) {}
 
     void set_warm_start(bool warm_start) { this->warm_start = warm_start; }
 

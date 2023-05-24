@@ -138,6 +138,7 @@ class ScopeSolver(BaseEstimator):
         important_search=128,
         screening_size=-1,
         max_exchange_num=5,
+        is_dynamic_max_exchange_num=True,
         greedy=True,
         splicing_type="halve",
         path_type="seq",
@@ -170,6 +171,7 @@ class ScopeSolver(BaseEstimator):
         self.important_search = important_search
         self.screening_size = screening_size
         self.max_exchange_num = max_exchange_num
+        self.is_dynamic_max_exchange_num = is_dynamic_max_exchange_num
         self.greedy = greedy
         self.use_hessian = use_hessian
         self.splicing_type = splicing_type
@@ -476,7 +478,7 @@ class ScopeSolver(BaseEstimator):
                 data = data[0]
             loss_fn = self.__set_objective_cpp(objective, gradient, hessian)
         else:
-            self.n_iters = 0
+            self.n_iters = -1
             loss_fn = self.__set_objective_py(
                 objective, gradient, hessian, jit
             )
@@ -493,6 +495,7 @@ class ScopeSolver(BaseEstimator):
             path_type,
             self.greedy,
             self.use_hessian,
+            self.is_dynamic_max_exchange_num,
             self.warm_start,
             ic_type,
             self.ic_coef,

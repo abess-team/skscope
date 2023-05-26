@@ -6,7 +6,7 @@ Linear Model and its Variants
 `Linear model <linear-regression.ipynb>`_.
 ~~~~~~~~~~~~~~~~~
 
-`Expectile regression <expectile-regression.ipynb>`_.
+`Quantile regression and expectile regression <quantile-expectile-regression.ipynb>`_.
 ~~~~~~~~~~~~~~~~~
 
 `LAD regression <lad-regression.ipynb>`_.

@@ -18,5 +18,5 @@ Linear Model and its Variants
 `Linear mixed model <linear-mixed-model.ipynb>`_.
 ~~~~~~~~~~~~~~~~~
 
-`Positive effect linear regression <positive-effect-linear-regression.ipynb>`_.
+`Non-negative least squares <non-negative-least-squares.ipynb>`_.
 ~~~~~~~~~~~~~~~~~

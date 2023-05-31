@@ -8,3 +8,6 @@ Other
 
 `hsic-splicing <hsic-splicing.ipynb>`_.
 ~~~~~~~~~~~~~~~~~
+
+`portfolio-selection <portfolio-selection.ipynb>`_.
+~~~~~~~~~~~~~~~~~

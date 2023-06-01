@@ -478,7 +478,6 @@ class ScopeSolver(BaseEstimator):
                 data = data[0]
             loss_fn = self.__set_objective_cpp(objective, gradient, hessian)
         else:
-            self.n_iters = -1
             loss_fn = self.__set_objective_py(
                 objective, gradient, hessian, jit
             )
@@ -609,15 +608,25 @@ class ScopeSolver(BaseEstimator):
         if jit:
             hess_ = jax.jit(hess_)
 
-        loss_fn = lambda params, data: loss_(params, data).item()
-
+        def loss_fn(params, data):
+            value = loss_(params, data)
+            if not np.isfinite(value):
+                raise ValueError("The objective function returned {}.".format(value))
+            return value.item()
+        
         def value_and_grad(params, data):
             value, grad = grad_(params, data)
+            if not np.isfinite(value):
+                raise ValueError("The objective function returned {}.".format(value))
+            if not np.all(np.isfinite(grad)):
+                raise ValueError("The gradient returned contains NaN or Inf.")
             return value.item(), np.array(grad)
 
         def hess_fn(params, data):
-            self.n_iters += 1
-            return np.array(hess_(jnp.array(params), data))
+            h = np.array(hess_(jnp.array(params), data))
+            if not np.all(np.isfinite(h)):
+                raise ValueError("The hessian returned contains NaN or Inf.")
+            return h
 
         self.model.set_loss_of_model(loss_fn)
         self.model.set_gradient_user_defined(value_and_grad)

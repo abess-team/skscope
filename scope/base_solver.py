@@ -100,14 +100,14 @@ class BaseSolver(BaseEstimator):
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
-        
+
         if not isinstance(data, tuple):
             data = (data,)
-            
+
         BaseSolver._check_positive_integer(self.dimensionality, "dimensionality")
         BaseSolver._check_positive_integer(self.sample_size, "sample_size")
         BaseSolver._check_non_negative_integer(self.max_iter, "max_iter")
-        
+
         # group
         if self.group is None:
             self.group = np.arange(self.dimensionality, dtype="int32")
@@ -127,7 +127,6 @@ class BaseSolver(BaseEstimator):
                 raise ValueError("Group should be an incremental integer array.")
             if not group_num == max(self.group) + 1:
                 raise ValueError("There is a gap in group.")
-            
 
         # always_select
         self.always_select = np.unique(np.array(self.always_select, dtype="int32"))
@@ -142,11 +141,7 @@ class BaseSolver(BaseEstimator):
             force_min_sparsity,
             group_num
             if group_num <= 5
-            else int(
-                group_num
-                / np.log(np.log(group_num))
-                / np.log(group_num)
-            ),
+            else int(group_num / np.log(np.log(group_num)) / np.log(group_num)),
         )
 
         # sparsity
@@ -158,10 +153,7 @@ class BaseSolver(BaseEstimator):
             )
         else:
             self.sparsity = np.unique(np.array(self.sparsity, dtype="int32"))
-            if (
-                self.sparsity[0] < force_min_sparsity
-                or self.sparsity[-1] > group_num
-            ):
+            if self.sparsity[0] < force_min_sparsity or self.sparsity[-1] > group_num:
                 raise ValueError(
                     "All sparsity should be between 0 (when `always_select` is default) and dimensionality."
                 )
@@ -227,10 +219,18 @@ class BaseSolver(BaseEstimator):
                 )
 
         loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
-        loss_fn = lambda params, data: loss_(params, data).item()
-
+        def loss_fn(params, data):
+            value = loss_(params, data)
+            if not np.isfinite(value):
+                raise ValueError("The objective function returned {}.".format(value))
+            return value.item()
+        
         def value_and_grad(params, data):
             value, grad = grad_(params, data)
+            if not np.isfinite(value):
+                raise ValueError("The objective function returned {}.".format(value))
+            if not np.all(np.isfinite(grad)):
+                raise ValueError("The gradient returned contains NaN or Inf.")
             return value.item(), np.array(grad)
 
         if self.cv == 1:
@@ -428,9 +428,7 @@ class BaseSolver(BaseEstimator):
 
         result = {"params": None, "support_set": None, "value_of_objective": math.inf}
         params = init_params.copy()
-        for support_set_group in all_subsets(
-            group_num, sparsity, self.always_select
-        ):
+        for support_set_group in all_subsets(group_num, sparsity, self.always_select):
             support_set = np.concatenate([group_indices[i] for i in support_set_group])
             inactive_set = np.ones_like(init_params, dtype=bool)
             inactive_set[support_set] = False
@@ -455,7 +453,7 @@ class BaseSolver(BaseEstimator):
         data,
     ):
         """
-        Solve the optimization problem with given support set. 
+        Solve the optimization problem with given support set.
 
         Parameters
         ----------
@@ -502,13 +500,13 @@ class BaseSolver(BaseEstimator):
             "value_of_objective": self.value_of_objective,
             "eval_objective": self.eval_objective,
         }
-    
+
     def get_estimated_params(self):
         r"""
         Get the parameters of optimization.
         """
         return self.params
-    
+
     def get_support(self):
         r"""
         Get the support set of optimization.

@@ -14,3 +14,6 @@ Survival Models
 
 `Competing risk model <competing-risk-model.ipynb>`_.
 ~~~~~~~~~~~~~~~~~
+
+`Interval-censoring <interval-censoring.ipynb>`_.
+~~~~~~~~~~~~~~~~~

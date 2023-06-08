@@ -14,8 +14,7 @@ Examples
    Survival Models <Survival Models/index>
    Graphical Models <Graphical Models/index>
    Fusion Models <Fusion Models/index>
-   Compositional Data <Compositional Data/index>
-   Other <Other/index>
+   Miscellaneous <Miscellaneous/index>
 
    
 .. raw:: html

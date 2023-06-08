@@ -17,3 +17,6 @@ Linear Model and its Variants
 
 `Non-negative least squares <non-negative-least-squares.ipynb>`_.
 ~~~~~~~~~~~~~~~~~
+
+`Isotonic regression <isotonic-regression.ipynb>`_.
+~~~~~~~~~~~~~~~~~~~~~

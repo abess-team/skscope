@@ -9,5 +9,5 @@ Graphical Models
 `Sparse precision matrix <sparse-precision-matrix.ipynb>`_.
 ~~~~~~~~~~~~~~~~~
 
-`Sparse functional graphical model <sparse-functional-graphical-model.ipynb>`_.
+`Ising model <ising-model.ipynb>`_.
 ~~~~~~~~~~~~~~~~~

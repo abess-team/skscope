@@ -12,8 +12,8 @@ Examples
    Linear Model and its Variants <Linear Model and its Variants/index>
    Generalized Linear Models <Generalized Linear Models/index>
    Survival Models <Survival Models/index>
-   Graphical Models <Graphical Models/index>
    Fusion Models <Fusion Models/index>
+   Graphical Models <Graphical Models/index>
    Miscellaneous <Miscellaneous/index>
 
    

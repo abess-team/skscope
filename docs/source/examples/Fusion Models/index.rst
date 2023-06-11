@@ -12,3 +12,5 @@ Fusion Models
 `Trend filtering for graph <depth-first-search-graph-trend-filtering.ipynb>`_.
 ~~~~~~~~~~~~~~~~~~~~~
 
+`Spatial trend filtering <spatial-trend-filtering.ipynb>`_.
+~~~~~~~~~~~~~~~~~~~~~

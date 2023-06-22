@@ -29,3 +29,4 @@ make html
 You can see the website's contents by opening `index.html` file
 in the directory `docs/build/html` with your browser.
 
+For more components and details, please refer to [pydata-sphinx-theme](pydata-sphinx-theme.readthedocs.io)

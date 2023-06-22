@@ -12,140 +12,87 @@ Specifically, **SCOPE** aims to tackle this problem:
 
 where :math:`f(x)` is a differential objective function and :math:`s` is the sparsity level. Each element of :math:`x` can be seen as a variable, and the nonzero elements of :math:`x` are the selected variables.
 
-.. raw:: html
+.. grid:: 1 2 2 3
+   :gutter: 1
 
-    <script type="text/javascript">
-        // Change icons to light or dark mode icons when theme-switch occures
-        var panel_icons = document.getElementsByClassName('panel-icon');
-        var observer = new MutationObserver(function(mutations) {
-            const dark = document.documentElement.dataset.theme == 'dark';
-            for (let i = 0; i < panel_icons.length; i++) {
-                var filename = panel_icons[i].src.split('/').slice(-1)[0].split('_')[1];
-                panel_icons[i].src = dark ? '_static/dark_' + filename : '_static/light_' + filename;
-            }
-        });
-    observer.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
-  </script>
+   .. grid-item-card::
+      :link: userguide/install.html
 
-.. panels::
-    :column: col-lg-4 col-md-4 col-sm-6 col-xs-12 p-2
-    :card: text-center
-    :img-top-cls: pl-5 pr-5 pt-5 pb-5 panel-icon
-    :header: font-weight-bold border-0 h4
-    :footer: border-0
+      :fas:`download;pst-color-primary` **Installation**
+      ^^^
+      Installation
 
-    ---
-    :img-top: _static/light_quickStart.png
+   .. grid-item-card::
+      :link: userguide/quickstart.html
 
-    Install
-    ^^^^^^^^^^^^^^^
+      :fas:`bolt;pst-color-primary` **Quick Start**
+      ^^^
+      Quick Start
 
-    Here is install document.
+   .. grid-item-card::
+      :link: userguide/examples/index.html
 
-    +++
+      :fas:`list;pst-color-primary` **Examples Gallery**
+      ^^^
+      Examples Gallery
 
-    .. link-button:: intro/install
-        :type: ref
-        :text: To the install document
-        :classes: btn-block btn-dark stretched-link btn-sm
+   .. grid-item-card::
+      :link: feature/index.html
 
-    ---
-    :img-top: _static/light_quickStart.png
+      :fas:`palette;pst-color-primary` **Software Features**
+      ^^^
+      Software Features
 
-    Quick start
-    ^^^^^^^^^^^^^^^
+   .. grid-item-card::
+      :link: autoapi/scope/index_page.html
 
-    Here is quick start document.
+      :fas:`file;pst-color-primary` **API Reference**
+      ^^^
+      API Reference
 
-    +++
+   .. grid-item-card::
+      :link: contribute/index.html
 
-    .. link-button:: intro/quickStart
-        :type: ref
-        :text: To the quick start 
-        :classes: btn-block btn-dark stretched-link btn-sm
+      :fas:`terminal;pst-color-primary` **Contributor's Guide**
+      ^^^
+      Contributor's Guide
 
+User Guide
+--------------------
 
-    ---
-    :img-top: _static/light_api.png
-
-    Examples
-    ^^^^^^^^^^
-
-    Here is Examples document.
-
-    +++
-
-    .. link-button:: examples/index
-        :type: ref
-        :text: To the examples
-        :classes: btn-block btn-dark stretched-link btn-sm
-
-    Features
-    ^^^^^^^^^^
-
-    Here is a page for features.
-
-    +++
-
-    .. link-button:: feature/index
-        :type: ref
-        :text: To the features
-        :classes: btn-block btn-dark stretched-link btn-sm
-
-
-    ---
-    :img-top: _static/light_api.png
-
-    API
-    ^^^^^^^^^^
-
-    Here is API document.
-
-    +++
-
-    .. link-button:: autoapi/scope/index
-        :type: ref
-        :text: To the API
-        :classes: btn-block btn-dark stretched-link btn-sm
-
-    ---
-    :img-top: _static/light_api.png
+Information about how to use the software.
 
 .. toctree::
-   :hidden:
+   :maxdepth: 3
 
-   self
+   userguide/index
+
+
+Software Features
+-------------------------------
+
+Some special features to notice.
 
 .. toctree::
-   :hidden:
+   :maxdepth: 3
 
-   Install <intro/install>
-   Quick Start <intro/quickStart>
-   Examples <examples/index>
-   Features <feature/index>
-   API <autoapi/scope/index>
-   Contributing <contribute/index>
+   feature/index
 
-.. Video Guide
-.. ---------------------------------
+API Reference
+--------------------------
 
-.. .. raw:: html
+Refer to API.
 
-..     <p align="center">
-..         <iframe width="500" height="400" src="https://www.bilibili.com/video/BV13g41187rQ" title="The Twenty" frameborder="0" allowfullscreen></iframe>
-..     </p>
+.. toctree::
+   :maxdepth: 3
+
+   autoapi/scope/index_page
 
 
-Main Features
--------------
-* **User-defined objective function**: The objective function can be a user-defined function, which can be applied to various problems.
-* **Fast**: The algorithm is fast and can be applied to large-scale problems.
-* **Easy to use**: The algorithm is easy to use and can be applied to various problems.
+Contributor's Guide
+----------------------------
 
-Citation
---------
+.. toctree::
+   :maxdepth: 3
 
-If you use the `scope` package a citation is highly appreciated:
-
-.. Acknowledgements
-.. ----------------
+   contribute/index

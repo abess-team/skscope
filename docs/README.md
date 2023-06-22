@@ -15,7 +15,7 @@ Install dependent libraries:
 ```bash
 cd docs
 pip install -r requirements.txt
-conda install -c conda-forge pandoc
+# conda install -c conda-forge pandoc # it works well on windows11, python3.9 without pandoc
 ```
 
 ## Generate Website's Content  
@@ -28,6 +28,4 @@ make html
 
 You can see the website's contents by opening `index.html` file
 in the directory `docs/build/html` with your browser.
-
-
 

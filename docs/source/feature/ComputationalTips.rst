@@ -1,11 +1,11 @@
 :parenttoc: True
 
 Computational Tips
-======================
+=============================
 
 
 Just In Time Compilation
--------------------
+--------------------------------------------------
 
 `Just In Time Compilation (JIT) <https://jax.readthedocs.io/en/latest/jax-101/02-jitting.html#>`_ is a technology which can make Python function be executed more efficiently.
 
@@ -24,7 +24,7 @@ Build with C++
 
 
 change numeric solver platform
--------------------
+---------------------------------------------------------
 
 All solvers in :ref:`scope <scope_package>` use `nlopt <https://nlopt.readthedocs.io/en/latest/>`_ as the default numeric solver platform, but users can change it 
 by setting the ``numeric_solver`` parameter to a function which has the same interface as ``scope.numeric_solver.convex_solver_nlopt``.

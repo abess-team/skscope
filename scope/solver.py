@@ -686,9 +686,7 @@ class HTPSolver(BaseSolver):
             )
         # init
         params = init_params
-        best_suppport_group_tuple = None
-        best_loss = np.inf
-        results = {} # key: tuple of ordered support set, value: params
+        old_suppport_group_tuple = None
         group_num = len(np.unique(self.group))
         group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
@@ -701,7 +699,7 @@ class HTPSolver(BaseSolver):
             support_new_group = np.argpartition(score, -sparsity)[-sparsity:]
             support_new_group_tuple = tuple(np.sort(support_new_group))
             # terminating condition
-            if support_new_group_tuple in results:
+            if support_new_group_tuple == old_suppport_group_tuple:
                 break
             # S3: debise
             params = np.zeros(self.dimensionality)
@@ -710,14 +708,10 @@ class HTPSolver(BaseSolver):
             loss, params = self._numeric_solver(
                 loss_fn, value_and_grad, params, support_new, data
             )
-            # update cache
-            if loss < best_loss:
-                best_loss = loss
-                best_suppport_group_tuple = support_new_group_tuple
-            results[support_new_group_tuple] = params
+            old_suppport_group_tuple = support_new_group_tuple
 
         self.n_iters = n_iters       
-        return results[best_suppport_group_tuple], np.concatenate([group_indices[i] for i in best_suppport_group_tuple])
+        return params, np.concatenate([group_indices[i] for i in support_new_group_tuple])
 
 class IHTSolver(HTPSolver):
     def _solve(
@@ -792,9 +786,7 @@ class GraspSolver(BaseSolver):
             )
         # init
         params = init_params
-        best_suppport_tuple = None
-        best_loss = np.inf
-        results = {} # key: tuple of ordered support set, value: params
+        old_suppport_tuple = None
         group_num = len(np.unique(self.group))
         group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
@@ -820,7 +812,7 @@ class GraspSolver(BaseSolver):
             suppport_tuple = tuple(np.sort(support_new))
             
             # terminating condition
-            if suppport_tuple in results:
+            if suppport_tuple == old_suppport_tuple:
                 break
             
             # minimize
@@ -838,15 +830,10 @@ class GraspSolver(BaseSolver):
             params = np.zeros(self.dimensionality)
             params[support_set] = params_bias[support_set]
 
-            # update cache
-            loss = loss_fn(params, data)
-            if loss < best_loss:
-                best_loss = loss
-                best_suppport_tuple = suppport_tuple
-            results[suppport_tuple] = params
+            old_suppport_tuple = suppport_tuple
 
         self.n_iters = n_iters
-        return results[best_suppport_tuple], np.nonzero(results[best_suppport_tuple])[0]
+        return params, support_set
 
 
 class FobaSolver(BaseSolver):

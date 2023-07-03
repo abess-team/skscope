@@ -104,8 +104,8 @@ autosummary_generate = True
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "pydata_sphinx_theme"
-html_logo = "_static/logo.svg"
-html_favicon = "_static/logo.svg"
+html_logo = "_static/scope-bright.svg"
+html_favicon = "_static/logo-short.svg"
 html_sourcelink_suffix = ""
 
 # Define the json_url for our version switcher.
@@ -134,31 +134,31 @@ html_theme_options = {
     "header_links_before_dropdown": 4,
     "icon_links": [
         {
-            "name": "Twitter",
-            "url": "https://twitter.com/PyData",
-            "icon": "fa-brands fa-twitter",
-        },
-        {
             "name": "GitHub",
-            "url": "https://github.com/pydata/pydata-sphinx-theme",
+            "url": "https://github.com/abess-team/scope",
             "icon": "fa-brands fa-github",
         },
         {
             "name": "PyPI",
-            "url": "https://pypi.org/project/pydata-sphinx-theme",
+            "url": "https://pypi.org/",
             "icon": "fa-brands fa-python",
+        },
+        {
+            "name": "Conda",
+            "url": "https://anaconda.org/",
+            "icon": "fa-solid fa-box",
         },
     ],
     # alternative way to set twitter and github header icons
     # "github_url": "https://github.com/pydata/pydata-sphinx-theme",
     # "twitter_url": "https://twitter.com/PyData",
     "logo": {
-        "text": "SCOPE",
-        "image_dark": "_static/logo-dark.svg",
+        #"text": "SCOPE",
+        "image_dark": "_static/scope-dark.svg",
         "alt_text": "SCOPE",
     },
     "use_edit_page_button": True,
-    "show_toc_level": 1,
+    "show_toc_level": 2,
     "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
     "navbar_center": ["version-switcher", "navbar-nav"],
     "announcement": """<div class="sidebar-message">
@@ -263,12 +263,13 @@ html_sidebars = {
 # nbsphinx_assume_equations = True
 
 autoapi_dirs = ['../../scope']
-autoapi_ignore = ['test_*', 'util*']
-autoapi_add_toctree_entry = False
+#autoapi_ignore = ['test_*', 'util*']
+#autoapi_add_toctree_entry = False
 autoapi_options = [ 'members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'imported-members', ]
 autoapi_template_dir = "_templates/autoapi/"
-autoapi_generate_api_docs = True
-autoapi_keep_files = True
+autoapi_generate_api_docs = False
+#autoapi_keep_files = True
+#autoapi_root = 'api'
 
 def setup_to_main(
     app: Sphinx, pagename: str, templatename: str, context, doctree

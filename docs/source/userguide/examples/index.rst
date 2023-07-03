@@ -2,55 +2,59 @@
 
 :parenttoc: True
 
-Examples
-==========
+Examples Overview
+===================
 
 Here are lots of examples, you can follow the examples to do what you want to do.
 
-.. grid:: 1 2 2 3
+.. grid:: 1 2 2 2
    :gutter: 1
 
    .. grid-item-card::
-      :link: userguide/install.html
+      :link: Linear%20Model%20and%20its%20Variants/index.html
+      :img-bottom: image/linear.png
 
-      :fas:`download;pst-color-primary` **Linear Model and its Variants**
+      **Linear Model and its Variants**
       ^^^
-      Linear Model and its Variants
 
    .. grid-item-card::
-      :link: userguide/quickstart.html
+      :link: Generalized%20Linear%20Models/index.html
+      :img-bottom: image/logistic.png
 
-      :fas:`bolt;pst-color-primary` **Generalized Linear Models**
+      **Generalized Linear Models**
       ^^^
-      Generalized Linear Models
 
    .. grid-item-card::
-      :link: userguide/examples/index.html
+      :link: Survival%20Models/index.html
+      :img-bottom: image/survival.png
 
-      :fas:`list;pst-color-primary` **Survival Models**
+      **Survival Models**
       ^^^
-      Survival Models
+
 
    .. grid-item-card::
-      :link: index.html
+      :link: Fusion%20Models/index.html
+      :img-bottom: image/filtering.png
 
-      :fas:`palette;pst-color-primary` **Fusion Models**
+      **Fusion Models**
       ^^^
-      Fusion Models
+
 
    .. grid-item-card::
-      :link: index.html
+      :link: Graphical%20Models/index.html
+      :img-bottom: image/graph.png
 
-      :fas:`file;pst-color-primary` **Graphical Models**
+      **Graphical Models**
       ^^^
-      Graphical Models
+
 
    .. grid-item-card::
-      :link: index.html
+      :link: Miscellaneous/index.html
+      :img-bottom: image/mis.png
 
-      :fas:`terminal;pst-color-primary` **Miscellaneous**
+      **Miscellaneous**
       ^^^
-      Miscellaneous
+
 
 .. toctree::
     :titlesonly:

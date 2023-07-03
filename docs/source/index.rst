@@ -18,12 +18,12 @@ where :math:`f(x)` is a differential objective function and :math:`s` is the spa
    .. grid-item-card::
       :link: userguide/install.html
 
-      :fas:`download;pst-color-primary` **Installation**
+      :fas:`download;pst-color-primary` **What is scope**
       ^^^
-      Installation
+      What is scope ?
 
    .. grid-item-card::
-      :link: userguide/quickstart.html
+      :link: userguide/install.html
 
       :fas:`bolt;pst-color-primary` **Quick Start**
       ^^^
@@ -44,7 +44,7 @@ where :math:`f(x)` is a differential objective function and :math:`s` is the spa
       Software Features
 
    .. grid-item-card::
-      :link: autoapi/scope/index_page.html
+      :link: autoapi/index.html
 
       :fas:`file;pst-color-primary` **API Reference**
       ^^^
@@ -86,7 +86,7 @@ Refer to API.
 .. toctree::
    :maxdepth: 3
 
-   autoapi/scope/index_page
+   autoapi/index
 
 
 Contributor's Guide

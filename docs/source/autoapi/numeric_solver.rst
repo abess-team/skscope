@@ -1,6 +1,9 @@
 `Optimization functions`
 =============================
 
+Functions
+---------------
+
 .. autoapisummary::
 
     scope.numeric_solver.convex_solver_nlopt

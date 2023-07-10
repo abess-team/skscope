@@ -15,7 +15,7 @@ User Guide
 
 
 .. toctree::
-  :caption: Installation
+  :caption: Quick Start
 
   install
   quickstart

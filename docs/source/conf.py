@@ -115,9 +115,9 @@ json_url = "./_static/switcher.json"
 version_match = os.environ.get("READTHEDOCS_VERSION")
 if not version_match or version_match.isdigit():
     # For local development, infer the version to match from the package.
-    release = "0.0"
+    release = "dev"
     if "dev" in release or "rc" in release:
-        version_match = "latest"
+        version_match = "dev"
         # We want to keep the relative reference if we are in dev mode
         # but we want the whole url if we are effectively in a released version
         json_url = "_static/switcher.json"
@@ -262,10 +262,10 @@ html_sidebars = {
 
 # nbsphinx_assume_equations = True
 
-autoapi_dirs = ['../../scope']
+autoapi_dirs = ['../../']
 #autoapi_ignore = ['test_*', 'util*']
 #autoapi_add_toctree_entry = False
-autoapi_options = [ 'members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'imported-members', ]
+#autoapi_options = [ 'members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'imported-members', ]
 autoapi_template_dir = "_templates/autoapi/"
 autoapi_generate_api_docs = False
 #autoapi_keep_files = True

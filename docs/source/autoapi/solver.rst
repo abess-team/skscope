@@ -6,6 +6,7 @@ Classes
 
 .. autoapisummary::
 
+    scope.solver.BaseSolver
     scope.solver.ScopeSolver
     scope.solver.HTPSolver
     scope.solver.IHTSolver
@@ -16,4 +17,5 @@ Classes
 
 .. autoapimodule:: scope.solver
     :members: 
+    :undoc-members:
 

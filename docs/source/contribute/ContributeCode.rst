@@ -12,7 +12,7 @@ Before Contribution
 
 Before contributing, we strongly recommend you conduct self-check for the points listed below.
 
-- You has always open an `issue <https://github.com/abess-team/scope/issues>`__ and make sure someone from the `abess-team <https://github.com/abess-team>`__ agrees that it is really contributive. We don't want you to spend a bunch of time on something that we are working on or we don't think is a good idea.
+- You has always open an `issue <https://github.com/abess-team/skscope/issues>`__ and make sure someone from the `abess-team <https://github.com/abess-team>`__ agrees that it is really contributive. We don't want you to spend a bunch of time on something that we are working on or we don't think is a good idea.
 
 - Fork the `master repository <https://github.com/abess-team/skscope>`__ by clicking on the “Fork” button on the top right of the page, which would create a copy to your own GitHub account.
 

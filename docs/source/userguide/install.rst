@@ -18,7 +18,7 @@ This is the recommended approach for most users. Simply install the latest offic
 Install library from source
 ----------------------------------------
 
-This is recommended if you want to work with the latest development version or if you wish to contribute to scope. 
+This is recommended if you want to work with the latest development version or if you wish to contribute to ``skscope``. 
 
 In this case, there are some prerequisites:
 
@@ -29,7 +29,7 @@ In this case, there are some prerequisites:
 
 .. code-block:: Bash
 
-    git clone git@github.com:abess-team/scope.git --recurse-submodules
+    git clone git@github.com:abess-team/skscope.git --recurse-submodules
 
 Note that ``--recurse-submodules`` is required since there are some submodules in the project. If there are any problem about submodules, you can search the solution in the `guide <https://git-scm.com/book/en/v2/Git-Tools-Submodules>`_ or simply raise a `github issue <https://github.com/abess-team/skscope/issues>`_.
 
@@ -42,7 +42,7 @@ Build the package from source using pip in the editable mode:
 
     pip install -e .
 
-Thanks to the editable mode with the flag ``-e``, we needn't re-build the package :ref:`scope <scope_package>` when the source python code changes. 
+Thanks to the editable mode with the flag ``-e``, we needn't re-build the package :ref:`skscope <scope_package>` when the source python code changes. 
 
 .. However, if the C++ code changes, we have re-build it by ``pip install -e .`` again.
 

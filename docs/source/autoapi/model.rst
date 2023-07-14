@@ -1,12 +1,12 @@
-`Common models`
-===========================
+.. `Common models`
+.. ===========================
 
-Functions
--------------
+.. Functions
+.. -------------
 
-.. autoapisummary::
+.. .. autoapisummary::
 
-    skscope.model.quadratic_objective
+..     skscope.model.quadratic_objective
 
-.. autoapimodule:: skscope.model
-    :members: 
+.. .. autoapimodule:: skscope.model
+..     :members: 

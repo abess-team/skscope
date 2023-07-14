@@ -26,13 +26,13 @@ Build with C++
 change numeric solver platform
 ---------------------------------------------------------
 
-All solvers in :ref:`scope <scope_package>` use `nlopt <https://nlopt.readthedocs.io/en/latest/>`_ as the default numeric solver platform, but users can change it 
-by setting the ``numeric_solver`` parameter to a function which has the same interface as ``scope.numeric_solver.convex_solver_nlopt``.
+All solvers in :ref:`skscope <scope_package>` use `nlopt <https://nlopt.readthedocs.io/en/latest/>`_ as the default numeric solver platform, but users can change it 
+by setting the ``numeric_solver`` parameter to a function which has the same interface as ``skscope.numeric_solver.convex_solver_nlopt``.
 
 .. code-block:: python
 
-    from scope import ScopeSolver
-    from scope.numeric_solver import convex_solver_nlopt
+    from skscope import ScopeSolver
+    from skscope.numeric_solver import convex_solver_nlopt
     def custom_numeric_solver(*args, **kwargs):
         # do something
         return convex_solver_nlopt(*args, **kwargs)

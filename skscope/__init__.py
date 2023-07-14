@@ -13,7 +13,7 @@ __author__ = ("Zezhi Wang, Jin Zhu,"
 
 from .solver import (ScopeSolver, HTPSolver, GraspSolver, IHTSolver, FobaSolver, ForwardSolver, OMPSolver)
 from .base_solver import BaseSolver
-from . import model, numeric_solver
+from .numeric_solver import convex_solver_nlopt
 
 __all__ = [
     "ScopeSolver",
@@ -24,4 +24,5 @@ __all__ = [
     "FobaSolver",
     "ForwardSolver",
     "OMPSolver",
+    "convex_solver_nlopt",
 ]

@@ -6,16 +6,16 @@ Classes
 
 .. autoapisummary::
 
-    scope.solver.BaseSolver
-    scope.solver.ScopeSolver
-    scope.solver.HTPSolver
-    scope.solver.IHTSolver
-    scope.solver.GraspSolver
-    scope.solver.FobaSolver
-    scope.solver.ForwardSolver
-    scope.solver.OMPSolver
+    skscope.solver.BaseSolver
+    skscope.solver.ScopeSolver
+    skscope.solver.HTPSolver
+    skscope.solver.IHTSolver
+    skscope.solver.GraspSolver
+    skscope.solver.FobaSolver
+    skscope.solver.ForwardSolver
+    skscope.solver.OMPSolver
 
-.. autoapimodule:: scope.solver
+.. autoapimodule:: skscope.solver
     :members: 
     :undoc-members:
 

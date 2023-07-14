@@ -3,32 +3,66 @@ from sklearn.model_selection import KFold
 import numpy as np
 import jax
 from .numeric_solver import convex_solver_nlopt
-import nlopt
 import math
 
-
 class BaseSolver(BaseEstimator):
-    """
-    # attributes
-    params: ArrayLike | None
-    support_set: ArrayLike | None
+    r"""
+    Get sparse optimal solution of convex objective function by searching all possible combinations of variables.
+    Specifically, ``BaseSolver`` aims to tackle this problem: :math:`\min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leq s`, where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity level. Each element of :math:`x` can be seen as a variable, and the nonzero elements of :math:`x` are the selected variables.
+
+
+    Parameters
+    ----------
+    dimensionality : int
+        Dimension of the optimization problem, which is also the total number of variables that will be considered to select or not, denoted as :math:`p`.
+    sparsity : int or array of int, optional
+        The sparsity level, which is the number of nonzero elements of the optimal solution, denoted as :math:`s`.
+        Default is ``range(int(p/log(log(p))/log(p)))``.
+    sample_size : int, default=1
+        sample size, denoted as :math:`n`.
+    always_select : array of int, default=[]
+        An array contains the indexes of variables which must be selected.
+    numeric_solver : callable, optional
+        A solver for the convex optimization problem. ``HTPSolver`` will call this function to solve the convex optimization problem in each iteration.
+        It should have the same interface as ``skscope.convex_solver_nlopt``.
+    max_iter : int, default=100
+        Maximum number of iterations taken for converging.
+    group : array of shape (dimensionality,), default=range(dimensionality)
+        The group index for each variable, and it must be an incremental integer array starting from 0 without gap.
+        The variables in the same group must be adjacent, and they will be selected together or not.
+        Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
+        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
+        and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
+    ic_type : {'aic', 'bic', 'gic', 'ebic'}, default='aic'
+        The type of information criterion for choosing the sparsity level.
+        Used only when ``sparsity`` is not int and ``cv`` is 1.
+    cv : int, default=1
+        The folds number when use the cross-validation method.
+        - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
+        - If ``cv`` > 1, the sparsity level will be chosen by the cross-validation method.
+    split_method : callable, optional
+        A function to get the part of data used in each fold of cross-validation.
+        Its interface should be ``(data, index) -> part_data`` where ``index`` is an array of int.
+    cv_fold_id : array of shape (sample_size,), optional
+        An array indicates different folds in CV, which samples in the same fold should be given the same number.
+        The number of different elements should be equal to ``cv``.
+        Used only when `cv` > 1.
+    metric_method : callable, optional
+        A function to calculate the information criterion.
+        `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
+    random_state : int, optional
+        The random seed used for cross-validation.  
+
+    Attributes
+    ----------
+    params : array of shape(dimensionality,)
+        The sparse optimal solution.
     value_of_objective: float
-    eval_objective: float
+        The value of objective function on the solution.
+    support_set : array of int
+        The indices of selected variables, sorted in ascending order.
 
-        dimensionality: int,
-        sparsity: int | ArrayLike | None = None,
-        sample_size: int = 1,
-        *,
-        max_iter: int = 1000,
-        ic_type: str = "aic",
-        ic_coef: float = 1.0,
-        metric_method: Callable = None,
-            (loss: float, p: int, s: int, n: int) -> float
-        cv: int = 1,
-        split_method: Callable[[Any, ArrayLike], Any] | None = None,
-        random_state: int | np.random.RandomState | None  = None,
     """
-
     def __init__(
         self,
         dimensionality,
@@ -40,12 +74,10 @@ class BaseSolver(BaseEstimator):
         max_iter=100,
         group=None,
         ic_type="aic",
-        ic_coef=1.0,
         metric_method=None,
         cv=1,
         cv_fold_id=None,
         split_method=None,
-        jax_platform="cpu",
         random_state=None,
     ):
         self.dimensionality = dimensionality
@@ -55,19 +87,45 @@ class BaseSolver(BaseEstimator):
         self.max_iter = max_iter
         self.group = group
         self.ic_type = ic_type
-        self.ic_coef = ic_coef
+        self.ic_coef = 1.0
         self.metric_method = metric_method
         self.cv = cv
         self.cv_fold_id = cv_fold_id
         self.split_method = split_method
-        self.jax_platform = jax_platform
+        self.jax_platform = "cpu"
         self.random_state = random_state
         self.numeric_solver = numeric_solver
 
     def get_config(self, deep=True):
+        """
+        Get parameters for this solver.
+
+        Parameters
+        ----------
+        deep : bool, default=True
+            If True, will return the parameters for this solver and
+            contained subobjects that are estimators.
+
+        Returns
+        -------
+        params : dict
+            Parameter names mapped to their values.
+        """
         return super().get_params(deep)
 
     def set_config(self, **params):
+        """Set the parameters of this solver.
+
+        Parameters
+        ----------
+        **params : dict
+            Solver parameters.
+
+        Returns
+        -------
+        self : estimator instance
+            Solver instance.
+        """
         return super().set_params(**params)
 
     def solve(
@@ -80,22 +138,27 @@ class BaseSolver(BaseEstimator):
         jit=False,
     ):
         r"""
-        Set the optimization objective and begin to solve
+        Optimize the optimization objective function.
 
         Parameters
         ----------
-        + objective : function('params': array of float(, 'data': custom class)) ->  float
-            Defined the objective of optimization, must be written in JAX if gradient is not provided.
-        + gradient : function('params': array of float(, 'data': custom class)) -> array of float
-            Defined the gradient of objective function, return the gradient of parameters.
-        + init_support_set : array-like of int, optional, default=[]
+        + objective : callable
+            The objective function to be minimized: ``objective(params, *data) -> loss``
+            where ``params`` is a 1-D array with shape (dimensionality,) and
+            ``data`` is a tuple of the fixed parameters needed to completely specify the function.
+            ``objective`` must be written in JAX if ``gradient`` is not provided.
+        + data : tuple, optional
+            Extra arguments passed to the objective function and its derivatives (if existed).
+        + init_support_set : array of int, default=[]
             The index of the variables in initial active set.
-        + init_params : array-like of float, optional, default is an all-zero vector
-            An initial value of parameters.
-        + data : custom class, optional, default=None
-            The data that objective function should be known, like samples, responses, weights, etc, which is necessary for cross validation. It can be any class which is match to objective function.
-        + jit : bool, optional, default=False
-            just-in-time compilation with XLA, but it should be a pure function.
+        + init_params : array of shape (dimensionality,), optional
+            The initial value of parameters, default is an all-zero vector.
+        + gradient : callable, optional
+            A function that returns the gradient vector of parameters: ``gradient(params, *data) -> array of shape (dimensionality,)``,
+            where ``params`` is a 1-D array with shape (dimensionality,) and ``data`` is a tuple of the fixed parameters needed to completely specify the function.
+            If ``gradient`` is not provided, ``objective`` must be written in JAX.
+        + jit : bool, default=False
+            If ``objective`` and ``gradient`` are written in JAX, ``jit`` can be set to True to speed up the optimization.
         """
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
@@ -223,14 +286,19 @@ class BaseSolver(BaseEstimator):
             value = loss_(params, data)
             if not np.isfinite(value):
                 raise ValueError("The objective function returned {}.".format(value))
+            if isinstance(value, float):
+                return value
             return value.item()
         
         def value_and_grad(params, data):
             value, grad = grad_(params, data)
             if not np.isfinite(value):
+                grad_(params, data)
                 raise ValueError("The objective function returned {}.".format(value))
             if not np.all(np.isfinite(grad)):
                 raise ValueError("The gradient returned contains NaN or Inf.")
+            if isinstance(value, float):
+                return value, np.array(grad)
             return value.item(), np.array(grad)
 
         if self.cv == 1:
@@ -366,30 +434,6 @@ class BaseSolver(BaseEstimator):
         init_params,
         data,
     ):
-        """
-        Solve the optimization problem with given sparsity. Need to be implemented by corresponding concrete class.
-
-        Parameters
-        ----------
-        sparsity: int
-            The number of non-zero parameters.
-        loss_fn: Callable[[Sequence[float], Any], float]
-            The loss function.
-        value_and_grad: Callable[[Sequence[float], Any], Tuple[float, Sequence[float]]]
-            The function to compute the loss and gradient.
-        init_params: Sequence[float]
-            The complete initial parameters. This is only a suggestion. Whether it is effective depends on the specific algorithm
-        init_support_set: Sequence[int]
-            The initial support_set. This is only a suggestion. Whether it is effective depends on the specific algorithm
-        data: Any
-            The data passed to loss_fn and value_and_grad.
-        Returns
-        -------
-        params: Sequence[float]
-            The solution of optimization.
-        support_set: Sequence[int]
-            The index of selected variables which is the non-zero parameters.
-        """
         if sparsity == 0:
             return np.zeros(self.dimensionality), np.array([], dtype=int)
         if sparsity < self.always_select.size:
@@ -492,24 +536,44 @@ class BaseSolver(BaseEstimator):
 
     def get_result(self):
         r"""
-        Get the solution of optimization, include the parameters ...
+        Get the result of optimization.
+
+        Returns
+        -------
+        results : dict 
+            The result of optimization, including the following keys:
+            + ``params`` : array of shape (dimensionality,) 
+                The optimal parameters.
+            + ``support_set`` : array of int
+                The support set of the optimal parameters.
+            + ``value_of_objective`` : float
+                The value of objective function at the optimal parameters.
         """
         return {
             "params": self.params,
             "support_set": self.support_set,
             "value_of_objective": self.value_of_objective,
-            "eval_objective": self.eval_objective,
         }
 
     def get_estimated_params(self):
         r"""
-        Get the parameters of optimization.
+        Get the optimal parameters of the objective function.
+
+        Returns
+        -------
+        parameters : array of shape (dimensionality,)
+            The optimal solution of optimization.
         """
         return self.params
 
     def get_support(self):
         r"""
-        Get the support set of optimization.
+        Get the support set of the optimal parameters.
+
+        Returns
+        -------
+        support_set : array of int
+            The indices of selected variables, sorted in ascending order.
         """
         return self.support_set
 

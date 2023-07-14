@@ -3,10 +3,10 @@
 Installing SCOPE
 ===================
 
-There are two different ways to install the python package :ref:`scope <scope_package>`:
+There are two different ways to install the python package :ref:`skscope <scope_package>`:
 
 - Install the latest official release via pip or conda. This is the recommended approach for most users.
-- Building the package from source. This is recommended if you want to work with the latest development version or if you wish to contribute to scope.
+- Building the package from source. This is recommended if you want to work with the latest development version or if you wish to contribute to skscope.
 
 
 
@@ -18,7 +18,7 @@ Install the latest official release via pip or conda
 Building the package from source
 ----------------------------------------
 
-This is recommended if you want to work with the latest development version or if you wish to contribute to scope. In this case, there are some prerequisites:
+This is recommended if you want to work with the latest development version or if you wish to contribute to skscope. In this case, there are some prerequisites:
 
 - A compiler with C++17 support
 - Pip 10+
@@ -40,7 +40,7 @@ Then build the package from source using pip in the editable mode:
 
     $ pip install -e ./scope
 
-Thanks to the editable mode with the flag ``-e``, we needn't re-build the package :ref:`scope <scope_package>` when the source python code changes. However, if the C++ code changes, we have re-build it by ``pip install -e ./scope`` again.
+Thanks to the editable mode with the flag ``-e``, we needn't re-build the package :ref:`skscope <scope_package>` when the source python code changes. However, if the C++ code changes, we have re-build it by ``pip install -e ./scope`` again.
 
 If the required environment has been installed, we can build the package faster by  
 

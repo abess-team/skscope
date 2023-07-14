@@ -1,9 +1,9 @@
 :parenttoc: True
 
-Beyond scope
+Beyond skscope
 ==================
 
-There are many solvers besides ``ScopeSolver`` in :ref:`scope <scope_package>`.
+There are many solvers besides ``ScopeSolver`` in :ref:`skscope <scope_package>`.
 These solvers has similar interface as ``ScopeSolver`` and can be used for solving the same problem.
 Here we list them.
 

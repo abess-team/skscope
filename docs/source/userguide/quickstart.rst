@@ -6,7 +6,7 @@ A Quick Example
 Introduction
 --------------------------------------
 
-Here, we will take linear regression as an example, introduce the basic usage of :ref:`scope <scope_package>`. to solve a variables selection problem.
+Here, we will take linear regression as an example, introduce the basic usage of :ref:`skscope <scope_package>`. to solve a variables selection problem.
 
 Suppose we collect :math:`n` independent observations for a response variable and :math:`p` explanatory variables, say :math:`y \in R^n` and :math:`X \in R^{n\times p}`. Let :math:`\epsilon_1, \ldots, \epsilon_n` be i.i.d zero-mean random noises and :math:`\epsilon = (\epsilon_1, \ldots, \epsilon_n)`, the linear model has a form:
 

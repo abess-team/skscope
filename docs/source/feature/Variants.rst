@@ -3,7 +3,7 @@
 Variants
 ====================
 
-Here we will introduce some variants of :ref:`scope <scope_package>`.
+Here we will introduce some variants of :ref:`skscope <scope_package>`.
 
 use custom data in objective function
 --------------------------------------------

@@ -9,7 +9,7 @@ User Guide
   The project is still in development now, take notice of the environment requirements and carefully install it.
 
 .. toctree::
-  :caption: What is scope ?
+  :caption: What is skscope ?
 
   whatscope
 

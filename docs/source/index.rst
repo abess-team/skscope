@@ -18,9 +18,9 @@ where :math:`f(x)` is a differential objective function and :math:`s` is the spa
    .. grid-item-card::
       :link: userguide/install.html
 
-      :fas:`download;pst-color-primary` **What is scope**
+      :fas:`download;pst-color-primary` **What is skscope**
       ^^^
-      What is scope ?
+      What is skscope ?
 
    .. grid-item-card::
       :link: userguide/install.html

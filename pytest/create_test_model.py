@@ -1,7 +1,6 @@
 from sklearn.datasets import make_regression
 from jax import numpy as jnp
 import numpy as np
-import scope
 
 
 class CreateTestModel:

@@ -4,5 +4,5 @@
 Classes
 ---------
 
-.. autoapimodule:: scope.base_solver
+.. autoapimodule:: skscope.base_solver
    :members:

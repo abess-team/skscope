@@ -6,7 +6,7 @@ Functions
 
 .. autoapisummary::
 
-    scope.model.quadratic_objective
+    skscope.model.quadratic_objective
 
-.. autoapimodule:: scope.model
+.. autoapimodule:: skscope.model
     :members: 

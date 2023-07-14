@@ -13,14 +13,14 @@ This page contains auto-generated API reference documentation [#f1]_.
 
 .. autoapisummary::
 
-   scope.base_solver.BaseSolver
-   scope.solver.ScopeSolver
-   scope.solver.HTPSolver
-   scope.solver.IHTSolver
-   scope.solver.GraspSolver
-   scope.solver.FobaSolver
-   scope.solver.ForwardSolver
-   scope.solver.OMPSolver
+   skscope.base_solver.BaseSolver
+   skscope.solver.ScopeSolver
+   skscope.solver.HTPSolver
+   skscope.solver.IHTSolver
+   skscope.solver.GraspSolver
+   skscope.solver.FobaSolver
+   skscope.solver.ForwardSolver
+   skscope.solver.OMPSolver
 
 
 .. [#f1] Created with `sphinx-autoapi <https://github.com/readthedocs/sphinx-autoapi>`_

@@ -1,6 +1,6 @@
 [![codecov](https://codecov.io/gh/abess-team/scope/branch/master/graphs/sunburst.svg)](https://codecov.io/gh/abess-team/scope)
 
-## What is `scope`?
+## What is `skscope`?
 
 Sparsity-Constraint OPtimization via itErative (scope) are algorithms for getting sparse optimal solution of convex objective function, which also can be used for variables selection. Its characteristic is that the optimization objective can be a user-defined function so that the algorithm can be applied to various problems.
 
@@ -22,7 +22,7 @@ Now, this library has supported these algorithm: `scope`, `GraHTP`, `GraSP`, `IH
 
 ```bash
 git clone git@github.com:abess-team/scope.git --recurse-submodules
-pip install ./scope
+pip install ./skscope
 ```
 
 ### Building the documentation
@@ -49,7 +49,7 @@ pytest scope/pytest
 ### First sample
 
 ```python
-from scope import ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver 
+from skscope import ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver 
 import jax.numpy as jnp
 from sklearn.datasets import make_regression
 

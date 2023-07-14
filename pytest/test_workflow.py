@@ -1,4 +1,4 @@
-from scope import ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver, FobaSolver, ForwardSolver, OMPSolver
+from skscope import ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver, FobaSolver, ForwardSolver, OMPSolver
 import pytest
 from create_test_model import CreateTestModel
 

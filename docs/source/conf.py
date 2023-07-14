@@ -18,13 +18,13 @@ from typing import Any, Dict
 import pydata_sphinx_theme
 from sphinx.application import Sphinx
 sys.path.insert(0, os.path.abspath('..'))
-sys.path.insert(0, os.path.abspath('../../scope'))
+sys.path.insert(0, os.path.abspath('../../skscope'))
 sys.path.append(str(Path(".").resolve()))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'scope'
+project = 'skscope'
 copyright = '2023, abess-team'
 author = 'abess-team'
 

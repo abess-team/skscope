@@ -13,15 +13,15 @@ Here is an example of using quadratic objective function in linear regression.
 .. code-block:: python
     
     import numpy as np
-    from scope import ScopeSolver, GraspSolver
-    from scope.model import quadratic_objective
+    from skscope import ScopeSolver, GraspSolver
+    from skscope.model import quadratic_objective
     from sklearn.datasets import make_regression
 
     ## generate data
     n, p, k= 10, 5, 3
     X, y, true_params = make_regression(n_samples=n, n_features=p, n_informative=k, coef=True)
 
-    # scope solver need hessian information
+    # skscope solver need hessian information
     solver1 = ScopeSolver(dimensionality=5)
     solver1.solve(**quadratic_objective(
                     np.matmul(X.T, X) / n,

@@ -22,7 +22,7 @@ def get_info():
     # get information from `__init__.py`
     labels = ["__version__", "__author__"]
     values = ["" for label in labels]
-    with open(os.path.join(CURRENT_DIR, "scope/__init__.py")) as f:
+    with open(os.path.join(CURRENT_DIR, "skscope/__init__.py")) as f:
         for line in f.read().splitlines():
             for i, label in enumerate(labels):
                 if line.startswith(label):
@@ -134,7 +134,7 @@ with open(os.path.join(CURRENT_DIR, 'README.rst'), encoding='utf-8') as f:
 package_info = get_info()
 
 setup(
-    name='scope',
+    name='skscope',
     version=package_info['__version__'],
     author=package_info['__author__'],
     author_email="homura@mail.ustc.edu.cn",
@@ -178,6 +178,6 @@ setup(
     ],
     ## there is no wheel version available for nlopt with python 3.11 now
     python_requires='>=3.7,<3.11', 
-    ext_modules=[CMakeExtension("scope._scope")],
+    ext_modules=[CMakeExtension("skscope._scope")],
     cmdclass={"build_ext": CMakeBuild}
 )

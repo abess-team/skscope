@@ -3,13 +3,13 @@ name: Code Coverage
 on:
   push:
     paths:
-      - "scope/*.py"
+      - "skscope/*.py"
       - "src/**"
       - "pytest/*.py"
       - ".github/workflows/code_coverage.yml"
   pull_request:
     paths:
-      - "scope/*.py"
+      - "skscope/*.py"
       - "src/**"
       - "pytest/*.py"
       - ".github/workflows/code_coverage.yml"
@@ -31,7 +31,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           submodules: recursive
-      - name: Install scope & dependencies
+      - name: Install skscope & dependencies
         run: |
           export PROFILE=1
           pip install .
@@ -42,7 +42,7 @@ jobs:
           pip install pytest-cov
           pip install gcovr
           cd ./pytest
-          pytest --cov=scope -v --cov-report=xml
+          pytest --cov=skscope -v --cov-report=xml
           ls * -al
           cd ..
           gcovr --filter src/ --exclude-throw-branches --exclude-unreachable-branches --print-summary --xml cpp_coverage.xml

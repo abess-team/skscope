@@ -1,11 +1,9 @@
 import numpy as np
 import pytest
-import nlopt
 
 from create_test_model import CreateTestModel
-from scope import ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver
-import scope
-
+from skscope import ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver
+import skscope._scope as _scope
 
 model_creator = CreateTestModel()
 linear = model_creator.create_linear_model()
@@ -89,33 +87,34 @@ def test_no_autodiff(model, solver_creator):
     Test that the user can provide the gradient and hessian
     """
     solver = solver_creator(model["n_features"], model["n_informative"])
-    if str(solver)[:5] == "Scope":
-        solver.solve(model["loss_numpy"], gradient=model["grad"], hessian=model["hess"])
-    else:
-        solver.solve(model["loss_numpy"], gradient=model["grad"])
-
+    solver.use_hessian = True
+    solver.hessian = model["hess"]
+    solver.solve(model["loss_numpy"], gradient=model["grad"])
+    
     assert set(model["support_set"]) == set(solver.support_set)
 
 def test_scope_cpp():
     solver = ScopeSolver(linear["n_features"], linear["n_informative"])
     X, Y = linear["data"]
-    model = scope.model.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y))
+    solver.use_hessian = True
+    solver.hessian = lambda x, d: np.array(_scope.quadratic_hess(x, d))
     solver.solve(
-        model["objective"],
-        model["data"],
-        gradient=model["gradient"],
-        hessian=model["hessian"],
+        lambda x, d: np.array(_scope.quadratic_loss(x, d)),
+        _scope.QuadraticData(np.matmul(X.T, X), -np.matmul(X.T, Y)),
+        gradient=lambda x, d: np.array(_scope.quadratic_grad(x, d)),
     )
+    
+
     assert set(solver.support_set) == set(linear["support_set"])
 
 def test_scope_autodiff():
     solver = ScopeSolver(linear["n_features"], linear["n_informative"])
     X, Y = linear["data"]
-    model = scope.model.quadratic_objective(np.matmul(X.T, X), -np.matmul(X.T, Y), autodiff=True)
+    solver.use_hessian = True
+    solver.cpp = True
     solver.solve(
-        model["objective"],
-        model["data"],
-        cpp=True,
+        _scope.quadratic_loss,
+        _scope.QuadraticData(np.matmul(X.T, X), -np.matmul(X.T, Y)),
     )
     assert set(solver.support_set) == set(linear["support_set"])
 
@@ -126,7 +125,8 @@ def test_scope_greed():
     assert set(linear["support_set"]) == set(solver.support_set)
 
 def test_scope_hessian():
-    solver = ScopeSolver(linear["n_features"], linear["n_informative"], use_hessian=True)
+    solver = ScopeSolver(linear["n_features"], linear["n_informative"])
+    solver.use_hessian = True
     solver.solve(linear["loss"], jit=True)
 
     assert set(linear["support_set"]) == set(solver.support_set)
@@ -137,7 +137,7 @@ def test_scope_dynamic_max_exchange_num():
 
     assert set(linear["support_set"]) == set(solver.support_set)
 
-def test_add_cpp_coverage():
+def test_scope_args():
     solver = ScopeSolver(
         linear["n_features"],
         gs_lower_bound=linear["n_informative"] - 1,

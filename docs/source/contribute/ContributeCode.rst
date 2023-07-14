@@ -25,7 +25,7 @@ Before contributing, we strongly recommend you conduct self-check for the points
       git clone https://github.com/your_account_name/skscope.git
       cd skscope
 
-- Install ``skscope`` via the code in github by following `Installation <../Installation.html>`__ instruction;
+- Install ``skscope`` via the code in github by following `installation instruction <../userguide/install.html>`__;
 
 General Workflow 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

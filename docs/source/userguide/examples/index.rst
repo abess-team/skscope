@@ -2,7 +2,7 @@
 
 :parenttoc: True
 
-Examples Overview
+Examples Gallery
 ===================
 
 Here are lots of examples, you can follow the examples to do what you want to do.
@@ -11,21 +11,21 @@ Here are lots of examples, you can follow the examples to do what you want to do
    :gutter: 1
 
    .. grid-item-card::
-      :link: Linear%20Model%20and%20its%20Variants/index.html
+      :link: LinearModelAndVariants/index.html
       :img-bottom: image/linear.png
 
       **Linear Model and its Variants**
       ^^^
 
    .. grid-item-card::
-      :link: Generalized%20Linear%20Models/index.html
+      :link: GeneralizedLinearModels/index.html
       :img-bottom: image/logistic.png
 
       **Generalized Linear Models**
       ^^^
 
    .. grid-item-card::
-      :link: Survival%20Models/index.html
+      :link: SurvivalModels/index.html
       :img-bottom: image/survival.png
 
       **Survival Models**
@@ -33,7 +33,7 @@ Here are lots of examples, you can follow the examples to do what you want to do
 
 
    .. grid-item-card::
-      :link: Fusion%20Models/index.html
+      :link: FusionModels/index.html
       :img-bottom: image/filtering.png
 
       **Fusion Models**
@@ -41,7 +41,7 @@ Here are lots of examples, you can follow the examples to do what you want to do
 
 
    .. grid-item-card::
-      :link: Graphical%20Models/index.html
+      :link: GraphicalModels/index.html
       :img-bottom: image/graph.png
 
       **Graphical Models**
@@ -61,10 +61,10 @@ Here are lots of examples, you can follow the examples to do what you want to do
     :glob:
     :numbered:
 
-    Linear Model and its Variants/index
-    Generalized Linear Models/index
-    Survival Models/index
-    Fusion Models/index
-    Graphical Models/index
+    LinearModelAndVariants/index
+    GeneralizedLinearModels/index
+    SurvivalModels/index
+    FusionModels/index
+    GraphicalModels/index
     Miscellaneous/index   
 

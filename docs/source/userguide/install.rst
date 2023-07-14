@@ -1,52 +1,56 @@
 :parenttoc: True
 
-Installing SCOPE
+Installation
 ===================
 
-There are two different ways to install the python package :ref:`skscope <scope_package>`:
+There are two ways to install the python package ``skscope`` depending on your main purpose.
 
-- Install the latest official release via pip or conda. This is the recommended approach for most users.
-- Building the package from source. This is recommended if you want to work with the latest development version or if you wish to contribute to skscope.
-
-
-
-Install the latest official release via pip or conda
+Install official release
 -------------------------------------------------------------------------
 
+This is the recommended approach for most users. Simply install the latest official release via ``pip``:
+
+.. code-block:: Bash
+
+    pip install skscope
 
 
-Building the package from source
+Install library from source
 ----------------------------------------
 
-This is recommended if you want to work with the latest development version or if you wish to contribute to skscope. In this case, there are some prerequisites:
+This is recommended if you want to work with the latest development version or if you wish to contribute to scope. 
+
+In this case, there are some prerequisites:
 
 - A compiler with C++17 support
-- Pip 10+
+- pip 10+
 
-Install on Linux
+- clone the latest source code from GitHub via
+
+.. code-block:: Bash
+
+    git clone git@github.com:abess-team/scope.git --recurse-submodules
+
+Note that ``--recurse-submodules`` is required since there are some submodules in the project. If there are any problem about submodules, you can search the solution in the `guide <https://git-scm.com/book/en/v2/Git-Tools-Submodules>`_ or simply raise a `github issue <https://github.com/abess-team/skscope/issues>`_.
+
+Install on Linux or Mac
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First download the latest source code from GitHub via
+Build the package from source using pip in the editable mode:
 
 .. code-block:: Bash
 
-    $ git clone git@github.com:abess-team/scope.git --recurse-submodules
+    pip install -e .
 
-Note that ``--recurse-submodules`` is required since there are some submodules in the project. If there are any problem about submodules, `this guide <https://git-scm.com/book/en/v2/Git-Tools-Submodules>`_ is all you need.
+Thanks to the editable mode with the flag ``-e``, we needn't re-build the package :ref:`scope <scope_package>` when the source python code changes. 
 
-Then build the package from source using pip in the editable mode:
+.. However, if the C++ code changes, we have re-build it by ``pip install -e .`` again.
 
-.. code-block:: Bash
-
-    $ pip install -e ./scope
-
-Thanks to the editable mode with the flag ``-e``, we needn't re-build the package :ref:`skscope <scope_package>` when the source python code changes. However, if the C++ code changes, we have re-build it by ``pip install -e ./scope`` again.
-
-If the required environment has been installed, we can build the package faster by  
+If the dependence packages has been installed, we can build the package faster by  
 
 .. code-block:: Bash
 
-    $ python scope/setup.py develop
+    python setup.py develop
 
 where the function of the flag ``develop`` is similar with ``-e`` of command ``pip``.
 
@@ -58,6 +62,6 @@ Install on Windows
 
 If you have troubles on Windows platform, here are some helpful tips.
 
-- The easiest way to configure the C++ compile environment on the Windows platform is to download and install the latest version of Visual Studio Community Edition (if you can accept its huge size). 
+- The easiest way to configure the C++ compile environment on the Windows platform is to download and install the latest version of Visual Studio Community Edition. 
 
 - There are no official binary releases of ``jaxlib`` which is necessary for ``jax`` on Windows platform. However, there are some initial community-driven native Windows supports. More details about the installation of ``jax`` can be found `here <https://github.com/google/jax#installation>`__ and a community supported Windows build for jax can be found `here <https://github.com/cloudhan/jax-windows-builder>`__ .

@@ -5,23 +5,27 @@
 User Guide
 ================================
 
-.. danger::
-  The project is still in development now, take notice of the environment requirements and carefully install it.
+.. .. danger::
+..   The project is still in development now, take notice of the environment requirements and carefully install it.
 
 .. toctree::
-  :caption: What is skscope ?
+  .. :caption: What is ``skscope``?
 
   whatscope
 
 
 .. toctree::
-  :caption: Quick Start
+  .. :caption: Quick Start
 
   install
+
+.. toctree::
+  .. :caption: Quick Start
+
   quickstart
 
 
 .. toctree::
-  :caption: Examples Gallery
+  .. :caption: Examples Gallery
 
   examples/index

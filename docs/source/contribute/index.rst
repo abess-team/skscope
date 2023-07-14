@@ -10,9 +10,8 @@ to make valuable contribution to the ``skscope``.
     :numbered:
     :maxdepth: 3
 
-    Bug-NewFeatures
+    BugReport&FeatureRequest
     ContributeDocs
-    ContributePyR
-    DevelopNewFeatures
-    AfterCodeDeveloping
-    AppendixArchitecture
+    ContributeCode
+    .. AfterCodeDeveloping
+    .. AppendixArchitecture

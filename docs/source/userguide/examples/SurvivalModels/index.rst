@@ -11,4 +11,4 @@ Survival Models
     proportional-hazard-model
     multivariate-failure-time-model
     competing-risk-model
-    interval-censoring
+    .. interval-censoring

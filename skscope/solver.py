@@ -915,6 +915,7 @@ class IHTSolver(HTPSolver):
             params[support_new] = params_bias[support_new]
 
         # final optimization for IHT
+        params = np.zeros(self.dimensionality)
         _, params = self._numeric_solver(
             loss_fn, value_and_grad, params, support_new, data
         )

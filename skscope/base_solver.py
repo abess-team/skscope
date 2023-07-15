@@ -293,7 +293,6 @@ class BaseSolver(BaseEstimator):
         def value_and_grad(params, data):
             value, grad = grad_(params, data)
             if not np.isfinite(value):
-                grad_(params, data)
                 raise ValueError("The objective function returned {}.".format(value))
             if not np.all(np.isfinite(grad)):
                 raise ValueError("The gradient returned contains NaN or Inf.")

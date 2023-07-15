@@ -15,6 +15,5 @@ Classes
     skscope.solver.OMPSolver
 
 .. autoapimodule:: skscope.solver
-    :members: 
-    :undoc-members:
+    :members: ScopeSolver, HTPSolver,IHTSolver,GraspSolver, FobaSolver, ForwardSolver, OMPSolver
 

@@ -66,7 +66,7 @@ In most of case, the workflow is based on git. But if you are not familiar with 
 Next, we will give more details about `step 3`_ to facilitate your contribution on examples.
 
 Example Contribution Procedure
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Before contributing example, we presume that you have already complete the steps 1-2 described in `general development procedure`_, and you have installed necessary packages by conducting the following command.
 

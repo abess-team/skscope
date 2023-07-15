@@ -5,4 +5,4 @@ Classes
 ---------
 
 .. autoapimodule:: skscope.base_solver
-   :members:
+   :members: BaseSolver

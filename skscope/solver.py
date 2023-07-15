@@ -278,19 +278,19 @@ class ScopeSolver(BaseEstimator):
         Parameters
         ----------
         + objective : callable
-            The objective function to be minimized: ``objective(params, *data) -> loss``
+            The objective function to be minimized: ``objective(params, data) -> loss``
             where ``params`` is a 1-D array with shape (dimensionality,) and
-            ``data`` is a tuple of the fixed parameters needed to completely specify the function.
+            ``data`` is the fixed parameters needed to completely specify the function.
             ``objective`` must be written in JAX if ``gradient`` is not provided.
-        + data : tuple, optional
+        + data : optional
             Extra arguments passed to the objective function and its derivatives (if existed).
         + init_support_set : array of int, default=[]
             The index of the variables in initial active set.
         + init_params : array of shape (dimensionality,), optional
             The initial value of parameters, default is an all-zero vector.
         + gradient : callable, optional
-            A function that returns the gradient vector of parameters: ``gradient(params, *data) -> array of shape (dimensionality,)``,
-            where ``params`` is a 1-D array with shape (dimensionality,) and ``data`` is a tuple of the fixed parameters needed to completely specify the function.
+            A function that returns the gradient vector of parameters: ``gradient(params, data) -> array of shape (dimensionality,)``,
+            where ``params`` is a 1-D array with shape (dimensionality,) and ``data`` is the fixed parameters needed to completely specify the function.
             If ``gradient`` is not provided, ``objective`` must be written in JAX.
         + jit : bool, default=False
             If ``objective`` and ``gradient`` are written in JAX, ``jit`` can be set to True to speed up the optimization.
@@ -304,9 +304,6 @@ class ScopeSolver(BaseEstimator):
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
-
-        if not isinstance(data, tuple):
-            data = (data,)
 
         p = self.dimensionality
         BaseSolver._check_positive_integer(p, "dimensionality")
@@ -507,8 +504,6 @@ class ScopeSolver(BaseEstimator):
 
         # set optimization objective
         if cpp:
-            if len(data) == 1:
-                data = data[0]
             loss_fn = self.__set_objective_cpp(objective, gradient, hessian)
         else:
             loss_fn = self.__set_objective_py(objective, gradient, hessian, jit)
@@ -611,7 +606,7 @@ class ScopeSolver(BaseEstimator):
         elif hessian.__code__.co_argcount == 1:
             hess_ = lambda params, data: hessian(params)
         else:
-            hess_ = lambda params, data: hessian(params, *data)
+            hess_ = lambda params, data: hessian(params, data)
         if jit:
             hess_ = jax.jit(hess_)
 

@@ -114,7 +114,7 @@ For cross validation, there are some requirements:
 .. code-block:: python
 
     def split_method(data, index):
-        return CustomData(data[0][index, :], data[1][index])
+        return (data[0][index, :], data[1][index])
     
 3. When initializing ``ScopeSolver``, ``sample_size`` and ``cv`` must be offered. If ``cv`` is not None, the solver will use cross validation to evaluate the sparsity level. ``cv`` is the number of folds.
    
@@ -122,7 +122,7 @@ For cross validation, there are some requirements:
 
     solver = ScopeSolver(
         dimensionality=p, ## there are p parameters
-        sparsity=[1, 2, 3, 4, 5] ## we want to select 1-5 variables
+        sparsity=[1, 2, 3, 4, 5], ## we want to select 1-5 variables
         sample_size=n, ## the number of samples
         split_method=split_method, ## use split_method to split data
         cv=10 ## use cross validation

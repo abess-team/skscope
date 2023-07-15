@@ -12,7 +12,7 @@ Before Contribution
 
 Before contributing, we strongly recommend you conduct self-check for the points listed below.
 
-- You has always open an `issue <https://github.com/abess-team/scope/issues>`__ and make sure someone from the `abess-team <https://github.com/abess-team>`__ agrees that it is really contributive. We don't want you to spend a bunch of time on something that we are working on or we don't think is a good idea.
+- You has always open an `issue <https://github.com/abess-team/skscope/issues>`__ and make sure someone from the `abess-team <https://github.com/abess-team>`__ agrees that it is really contributive. We don't want you to spend a bunch of time on something that we are working on or we don't think is a good idea.
 
 - Fork the `master repository <https://github.com/abess-team/skscope>`__ by clicking on the “Fork” button on the top right of the page, which would create a copy to your own GitHub account.
 
@@ -61,9 +61,9 @@ Develop A New Solver
 In this part, we are particularly concerned the new features about developing a fast sparsity-constrained optimization (SCO) solver.
 We will illustrate a recommended procedure for developing a SCO solver such that your implementation works fluently under the ``skscope``' framework. The potential solvers may include:
 
-- Newton hard threshold thresholding :ref:`[1] <_ref_1>`,
+- Newton hard threshold thresholding `[1]`_,
 
-- fast iterative shrinkage-thresholding algorithm (FISTA) :ref:`[2] <_ref_2>`, 
+- fast iterative shrinkage-thresholding algorithm (FISTA) `[2]`_, 
 
 and so on. In the following, we will use FISTA as an example to exhibit the procedure for developing a new solver. 
 
@@ -146,10 +146,6 @@ Helpful Links
 Reference
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. _ref_1:
+- _`[1]` Zhou, S., Xiu, N., & Qi, H. D. (2021). Global and quadratic convergence of Newton hard-thresholding pursuit. The Journal of Machine Learning Research, 22(1), 599-643.
 
-- [1] Zhou, S., Xiu, N., & Qi, H. D. (2021). Global and quadratic convergence of Newton hard-thresholding pursuit. The Journal of Machine Learning Research, 22(1), 599-643.
-
-.. _ref_2:
-
-- [2] Beck, A., & Teboulle, M. (2009). A fast iterative shrinkage-thresholding algorithm for linear inverse problems. SIAM journal on imaging sciences, 2(1), 183-202.
+- _`[2]` Beck, A., & Teboulle, M. (2009). A fast iterative shrinkage-thresholding algorithm for linear inverse problems. SIAM journal on imaging sciences, 2(1), 183-202.

@@ -6,7 +6,6 @@ Classes
 
 .. autoapisummary::
 
-    skscope.solver.BaseSolver
     skscope.solver.ScopeSolver
     skscope.solver.HTPSolver
     skscope.solver.IHTSolver

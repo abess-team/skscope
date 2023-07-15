@@ -9,7 +9,7 @@ This page contains auto-generated API reference documentation [#f1]_.
    base_solver
    solver
    numeric_solver
-   model
+   .. model
 
 .. autoapisummary::
 

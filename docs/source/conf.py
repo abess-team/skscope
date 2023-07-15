@@ -104,7 +104,7 @@ autosummary_generate = True
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "pydata_sphinx_theme"
-html_logo = "_static/scope-bright.svg"
+html_logo = "_static/skscope-bright.svg"
 html_favicon = "_static/logo-short.svg"
 html_sourcelink_suffix = ""
 
@@ -135,7 +135,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/abess-team/scope",
+            "url": "https://github.com/abess-team/skscope",
             "icon": "fa-brands fa-github",
         },
         {
@@ -154,7 +154,7 @@ html_theme_options = {
     # "twitter_url": "https://twitter.com/PyData",
     "logo": {
         #"text": "SCOPE",
-        "image_dark": "_static/scope-dark.svg",
+        "image_dark": "_static/skscope-dark.svg",
         "alt_text": "SCOPE",
     },
     "use_edit_page_button": True,
@@ -164,7 +164,7 @@ html_theme_options = {
     "announcement": """<div class="sidebar-message">
   SCOPE is a optimization tool for Python.
   If you'd like to contribute,
-  <a href="https://github.com/abess-team/scope">check out our GitHub repository</a>
+  <a href="https://github.com/abess-team/skscope">check out our GitHub repository</a>
   Your contributions are welcome!
 </div>""",
     # "show_nav_level": 2,
@@ -185,7 +185,7 @@ html_theme_options = {
 
 html_context = {
     "github_user": "abess-team",
-    "github_repo": "scope",
+    "github_repo": "skscope",
     "github_version": "master",
     "doc_path": "docs",
 }

@@ -7,7 +7,7 @@ print("Y shape:", y.shape)
 import jax.numpy as jnp
 def objective_function(coefs):
     return jnp.linalg.norm(y - X @ coefs)
-from scope import ScopeSolver
+from skscope import ScopeSolver
 scope_solver = ScopeSolver(
     dimensionality=p,  ## there are p parameters
     sparsity=s,        ## we want to select s variables

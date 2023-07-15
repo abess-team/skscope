@@ -8,7 +8,7 @@ Software Features
    :maxdepth: 3
 
    Variants
-   BeyondScope
+   SupportSolvers
    ComputationalTips
-   PredefindModel
+   .. PredefindModel
 

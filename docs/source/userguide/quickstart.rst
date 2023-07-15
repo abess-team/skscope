@@ -1,7 +1,7 @@
 :parenttoc: True
 
 Quick Example for Beginner
-======================
+============================
 
 Introduction
 -----------------
@@ -83,6 +83,7 @@ Then, we will input ``objective_function`` into one solver in ``skscope`` to get
 Here, we import the ``ScopeSolver`` [*]_ and properly configure it. 
 
 .. code-block:: python
+
     from skscope import ScopeSolver
     scope_solver = ScopeSolver(
         dimensionality=p,  ## there are p parameters

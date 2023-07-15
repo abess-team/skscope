@@ -100,7 +100,7 @@ def test_scope_cpp():
     solver.hessian = lambda x, d: np.array(_scope.quadratic_hess(x, d))
     solver.solve(
         lambda x, d: np.array(_scope.quadratic_loss(x, d)),
-        _scope.QuadraticData(np.matmul(X.T, X), -np.matmul(X.T, Y)),
+        data=_scope.QuadraticData(np.matmul(X.T, X), -np.matmul(X.T, Y)),
         gradient=lambda x, d: np.array(_scope.quadratic_grad(x, d)),
     )
     

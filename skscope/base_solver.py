@@ -143,19 +143,19 @@ class BaseSolver(BaseEstimator):
         Parameters
         ----------
         + objective : callable
-            The objective function to be minimized: ``objective(params, *data) -> loss``
+            The objective function to be minimized: ``objective(params, data) -> loss``
             where ``params`` is a 1-D array with shape (dimensionality,) and
-            ``data`` is a tuple of the fixed parameters needed to completely specify the function.
+            ``data`` is the fixed parameters needed to completely specify the function.
             ``objective`` must be written in JAX if ``gradient`` is not provided.
-        + data : tuple, optional
+        + data : optional
             Extra arguments passed to the objective function and its derivatives (if existed).
         + init_support_set : array of int, default=[]
             The index of the variables in initial active set.
         + init_params : array of shape (dimensionality,), optional
             The initial value of parameters, default is an all-zero vector.
         + gradient : callable, optional
-            A function that returns the gradient vector of parameters: ``gradient(params, *data) -> array of shape (dimensionality,)``,
-            where ``params`` is a 1-D array with shape (dimensionality,) and ``data`` is a tuple of the fixed parameters needed to completely specify the function.
+            A function that returns the gradient vector of parameters: ``gradient(params, data) -> array of shape (dimensionality,)``,
+            where ``params`` is a 1-D array with shape (dimensionality,) and ``data`` is the fixed parameters needed to completely specify the function.
             If ``gradient`` is not provided, ``objective`` must be written in JAX.
         + jit : bool, default=False
             If ``objective`` and ``gradient`` are written in JAX, ``jit`` can be set to True to speed up the optimization.
@@ -164,8 +164,6 @@ class BaseSolver(BaseEstimator):
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
 
-        if not isinstance(data, tuple):
-            data = (data,)
 
         BaseSolver._check_positive_integer(self.dimensionality, "dimensionality")
         BaseSolver._check_positive_integer(self.sample_size, "sample_size")
@@ -362,7 +360,7 @@ class BaseSolver(BaseEstimator):
         if objective.__code__.co_argcount == 1:
             loss_ = lambda params, data: objective(params)
         else:
-            loss_ = lambda params, data: objective(params, *data)
+            loss_ = lambda params, data: objective(params, data)
         if jit:
             loss_ = jax.jit(loss_)
 
@@ -371,7 +369,7 @@ class BaseSolver(BaseEstimator):
         elif gradient.__code__.co_argcount == 1:
             grad_ = lambda params, data: (loss_(params, data), gradient(params))
         else:
-            grad_ = lambda params, data: (loss_(params, data), gradient(params, *data))
+            grad_ = lambda params, data: (loss_(params, data), gradient(params, data))
         if jit:
             grad_ = jax.jit(grad_)
 

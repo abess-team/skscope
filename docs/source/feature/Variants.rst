@@ -39,6 +39,116 @@ Note that ``params`` (parameters) must be a vector not matrix and ``sparsity`` r
             group=[0,0,1,1,2,2]
         )
 
+
+search support size
+-------------------------
+
+In the previous section, we have introduced how to set the sparsity level. However, sometimes we do not know the sparsity level and need to search it. In this case, we can set ``sparsity`` as a list of int, and the solver will search the best sparsity level from the given list.
+
+Note that ``sample_size`` must be offered to ``ScopeSolver`` when ``sparsity`` is a list.
+
+
+.. code-block:: python
+
+    solver = ScopeSolver(
+        dimensionality=p, ## there are p parameters
+        sparsity=[1, 2, 3, 4, 5] ## we want to select 1-5 variables
+        sample_size=n ## the number of samples
+    )
+
+
+There are two ways to evaluate sparsity levels:
+
+cross validation
+^^^^^^^^^^^^^^^^^^^^
+
+For cross validation, there are some requirements:
+    
+1. The objective function must take data as input.
+    
+.. code-block:: python
+
+    import numpy as np
+    import jax.numpy as jnp
+    from sklearn.datasets import make_regression
+    ## generate data
+    n, p, k= 10, 5, 3
+    X, y, true_params = make_regression(n_samples=n, n_features=p, n_informative=k, coef=True)
+    ## define objective function
+    def custom_objective(params, data):
+        return jnp.sum(
+            jnp.square(data[1] - data[0] @ params)
+        )
+    
+    
+2. The data needs to be split into training and validation set. We can use ``set_split_method`` to set the split method. The split method must be a function that takes two arguments: ``data`` and ``index``, and returns a new data object. The ``index`` is the index of training set.
+    
+.. code-block:: python
+
+    def split_method(data, index):
+        return (data[0][index, :], data[1][index])
+    
+3. When initializing ``ScopeSolver``, ``sample_size`` and ``cv`` must be offered. If ``cv`` is not None, the solver will use cross validation to evaluate the sparsity level. ``cv`` is the number of folds.
+   
+.. code-block:: python
+
+    solver = ScopeSolver(
+        dimensionality=p, ## there are p parameters
+        sparsity=[1, 2, 3, 4, 5], ## we want to select 1-5 variables
+        sample_size=n, ## the number of samples
+        split_method=split_method, ## use split_method to split data
+        cv=10 ## use cross validation
+    )
+
+    params = solver.solve(custom_objective, data = (X, y))
+
+There is a simplier way to use cross validation: let custom data be indeies of training set. In this case, we do not need to set ``split_method``.
+
+.. code-block:: python
+    
+    import numpy as np
+    import jax.numpy as jnp
+    from sklearn.datasets import make_regression
+    ## generate data
+    n, p, k= 10, 5, 3
+    X, y, true_params = make_regression(n_samples=n, n_features=p, n_informative=k, coef=True)
+
+    def custom_objective(params, index):
+        return jnp.sum(
+            jnp.square(y[index] - X[index,:] @ params)
+        )
+    
+    solver = ScopeSolver(
+        dimensionality=p, ## there are p parameters
+        sparsity=[1, 2, 3, 4, 5] ## we want to select 1-5 variables
+        sample_size=n, ## the number of samples
+        cv=10 ## use cross validation
+    )
+
+    params = solver.solve(custom_objective)
+
+
+
+information criterion
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+There is another way to evaluate sparsity levels, which is information criterion. The larger the information criterion, the better the model. There are four types of information criterion can be used in SCOPE: 'aic', 'bic', 'gic', 'ebic'. If sparsity is list and ``cv`` is ``None``, the solver will use cross validation to evaluate the sparsity level. We can use ``ic`` to choose information criterions, default is 'gic'.
+
+Here is an example:
+
+.. code-block:: python
+
+    solver = ScopeSolver(
+        dimensionality=p, ## there are p parameters
+        sparsity=[1, 2, 3, 4, 5] ## we want to select 1-5 variables
+        sample_size=n, ## the number of samples
+        ic='gic' ## use default way gic to evaluate sparsity levels
+    )
+
+
+The way of defining objective function is the same as common way.
+
+
 always select some variables
 --------------------------------
 

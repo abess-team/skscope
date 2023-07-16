@@ -39,24 +39,6 @@ Note that ``params`` (parameters) must be a vector not matrix and ``sparsity`` r
             group=[0,0,1,1,2,2]
         )
 
-
-search support size
--------------------------
-
-In the previous section, we have introduced how to set the sparsity level. However, sometimes we do not know the sparsity level and need to search it. In this case, we can set ``sparsity`` as a list of int, and the solver will search the best sparsity level from the given list.
-
-Note that ``sample_size`` must be offered to ``ScopeSolver`` when ``sparsity`` is a list.
-
-
-.. code-block:: python
-
-    solver = ScopeSolver(
-        dimensionality=p, ## there are p parameters
-        sparsity=[1, 2, 3, 4, 5] ## we want to select 1-5 variables
-        sample_size=n ## the number of samples
-    )
-
-
 Preselected Non-sparse Parameters
 --------------------------------
 

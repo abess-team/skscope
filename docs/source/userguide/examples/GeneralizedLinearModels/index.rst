@@ -10,6 +10,6 @@ Generalized Linear Models
     logistic-regression
     poisson-regression
     gamma-regression
-    Inverse-gaussian-regression
     multiple-response-linear-regression
     multinomial-logistic-regression
+    .. Inverse-gaussian-regression

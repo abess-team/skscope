@@ -26,6 +26,6 @@ User Guide
 
 
 .. toctree::
-  .. :caption: Examples Gallery
+  :maxdepth: 2
 
   examples/index

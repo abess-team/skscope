@@ -42,7 +42,7 @@ Build the package from source using pip in the editable mode:
 
     pip install -e .
 
-Thanks to the editable mode with the flag ``-e``, we needn't re-build the package :ref:`skscope <scope_package>` when the source python code changes. 
+Thanks to the editable mode with the flag ``-e``, we needn't re-build the package :ref:`skscope <skscope_package>` when the source python code changes. 
 
 .. However, if the C++ code changes, we have re-build it by ``pip install -e .`` again.
 

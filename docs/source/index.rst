@@ -1,16 +1,14 @@
-.. _scope_package:
+.. _skscope_package:
 
-SCOPE
-=================================
+``skscope``: Fast Sparse-Constraint Optimization
+==============================================================
 
-The Python package **SCOPE** is for getting solution of sparsity-constrained optimization, which also can be used for variables selection. Its characteristic is that the optimization objective can be a user-defined function so that the algorithm can be applied to various problems.
+``skscope`` aims to make sparsity-constrained optimization (SCO) is accessible to everyone because SCO holds immense potential across various domains, including machine learning, statistics, and signal processing. By providing a user-friendly interface, ``skscope`` empowers individuals from diverse backgrounds to harness the power of SCO and unlock its broad range of applications (see examples exhibited below).
 
-Specifically, **SCOPE** aims to tackle this problem: 
+.. figure:: first_page.png
+  :width: 800
+  :align: center
 
-.. math:: 
-   \min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leq s,
-
-where :math:`f(x)` is a differential objective function and :math:`s` is the sparsity level. Each element of :math:`x` can be seen as a variable, and the nonzero elements of :math:`x` are the selected variables.
 
 .. grid:: 1 2 2 3
    :gutter: 1
@@ -18,44 +16,46 @@ where :math:`f(x)` is a differential objective function and :math:`s` is the spa
    .. grid-item-card::
       :link: userguide/install.html
 
-      :fas:`download;pst-color-primary` **What is skscope**
+      :fas:`download;pst-color-primary` **Installation**
       ^^^
-      What is skscope ?
+
+      The simplest way to install ``skscope`` is running ``pip install skscope``. Alternatively, you can install ``skscope`` from source following this instruction in the `installation guide <./userguide/install.html>`_.
 
    .. grid-item-card::
-      :link: userguide/install.html
+      :link: userguide/quickstart.html
 
       :fas:`bolt;pst-color-primary` **Quick Start**
       ^^^
-      Quick Start
+      
+      The quick example demonstrates the basic usage of ``skscope``, which is remarkably straightforward. All you need is programming an objective function.
 
    .. grid-item-card::
       :link: userguide/examples/index.html
 
       :fas:`list;pst-color-primary` **Examples Gallery**
       ^^^
-      Examples Gallery
+      Comprehensive and hands-on examples that covers various machine learnings problems including regression analysis, survival analysis, graphical model, trend filtering, finance data analysis, and more. 
 
    .. grid-item-card::
       :link: feature/index.html
 
       :fas:`palette;pst-color-primary` **Software Features**
       ^^^
-      Software Features
+      Introduce the advanced features provided by ``skscope``, including the implemented iterative algorithms, practical helpful variants, toolkits for data science, and tips for improving computational efficiency.
 
    .. grid-item-card::
       :link: autoapi/index.html
 
       :fas:`file;pst-color-primary` **API Reference**
       ^^^
-      API Reference
+      The reference guide of ``skscope`` provides a detailed description of the API. It offers information about the available classes and functions, along with their respective parameters.
 
    .. grid-item-card::
       :link: contribute/index.html
 
       :fas:`terminal;pst-color-primary` **Contributor's Guide**
       ^^^
-      Contributor's Guide
+      Spot a typo in the documentation? Want to add new functionalities? Meet a bug? The contributing guide is here to assist you in addressing these issues.
 
 User Guide
 --------------------

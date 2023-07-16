@@ -60,7 +60,7 @@ Note that ``sample_size`` must be offered to ``ScopeSolver`` when ``sparsity`` i
 Preselected Non-sparse Parameters
 --------------------------------
 
-:ref:`skscope <scope_package>` allows users to specify some parameter which must has a non-zero value. This widely occurs scenario in modelling. For example, 
+:ref:`skscope <skscope_package>` allows users to specify some parameter which must has a non-zero value. This widely occurs scenario in modelling. For example, 
 
 - in linear model with intercept, people often assume the intercept is a non-sparse parameter
 
@@ -92,7 +92,7 @@ where
 
 - :math:`f(\theta)` is the objective function; 
 
-All solvers in :ref:`skscope <scope_package>` use `nlopt <https://nlopt.readthedocs.io/en/latest/>`_ as the default numeric optimization solver for this problem. 
+All solvers in :ref:`skscope <skscope_package>` use `nlopt <https://nlopt.readthedocs.io/en/latest/>`_ as the default numeric optimization solver for this problem. 
 
 In some cases, there are additional constraint for the intrinsic structure for :math:`\theta`, which is formulated as a set :math:`\mathcal{C}`:
 

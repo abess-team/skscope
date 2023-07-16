@@ -4,7 +4,7 @@
 What is ``skscope``?
 =====================================
 
-``skscope`` is an open-source Python package designed for efficiently solving sparsity-constrained optimization (SCO) problems. Since SCO can handle many problems in machine learning, statistics, signal processing, and related application domains, ``skscope`` has many applications in these fields. For examples, variable selection (a.k.a., feature selection or compress sensing) is one of the most classical SCO problem. Below we highlight some interesting problems that ``skscope`` can handle.
+``skscope`` is a powerful open-source Python package specifically developed to tackle sparsity-constrained optimization (SCO) problems with utmost efficiency. With SCO's broad applicability in machine learning, statistics, signal processing, and other related domains, ``skscope`` can find extensive usage in these fields. For example, it excels in solving classic SCO problems like variable selection (also known as feature selection or compress sensing). Even more impressively, it goes beyond that and handles a diverse range of intriguing real-world problems:
 
 1. `Robust variable selection <examples/LinearModelAndVariants/robust-regression.html>`__
 
@@ -38,9 +38,15 @@ What is ``skscope``?
   :align: center
 
 
-Beyond that, we currently provide more than 20 examples in our `example gallery <examples/index.html>`__.
+These above examples represent just a glimpse of the practical problems that ``skscope`` can effectively address. With its efficient optimization algorithms and versatility, ``skscope`` proves to be an invaluable tool for a wide range of disciplines. Currently, we offer over 20 examples in our comprehensive `example gallery <examples/index.html>`__.
 
 
 How does ``skscope`` work? 
 --------------------------
 
+Specifically, ``skscope`` aims to tackle this problem: 
+
+.. math:: 
+   \min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leq s,
+
+where :math:`f(x)` is a differential objective function and :math:`s` is the sparsity level. Each element of :math:`x` can be seen as a variable, and the nonzero elements of :math:`x` are the selected variables.

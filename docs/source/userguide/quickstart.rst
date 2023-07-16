@@ -6,7 +6,7 @@ Quick Example for Beginner
 Introduction
 -----------------
 
-.. Here, we will take linear regression as an start-up example to introduce the basic usage of :ref:`scope <scope_package>`.
+.. Here, we will take linear regression as an start-up example to introduce the basic usage of :ref:`scope <skscope_package>`.
 
 Presume we collect a dataset with :math:`n=100` independent observations on a interesting response variable and :math:`p=10` predictive variables: 
 

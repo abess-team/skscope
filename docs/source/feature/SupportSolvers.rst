@@ -6,7 +6,7 @@ Various Iterative-Algorithms Support
 Implemented Solvers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are many solvers in ``skscope``. These solvers has similar interface and can be used for solving the same problem. Here we list them.
+``skscope`` provides several solvers, each with a similar interface, to solve sparsity-constrained optimization problems. Here is a list of the currently available solvers:
 
 - ``GraspSolver``: implements the Gradient Support Pursuit (GraSP) algorithm that generalizes the Compressive Sampling Matching Pursuit (CoSaMP) algorithm `[1]`_.
 

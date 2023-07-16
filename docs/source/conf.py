@@ -284,8 +284,8 @@ def setup_to_main(
             the link to the tip of the main branch for the same file
         """
         links = link.split("/")
-        idx = links.index("edit")
-        return "/".join(links[: idx + 1]) + "/main/" + "/".join(links[idx + 2 :])
+        idx = links.index("docs")
+        return "/".join(links[: idx + 1]) + "/source/" + "/".join(links[idx + 1 :])
 
     context["to_main"] = to_main
 

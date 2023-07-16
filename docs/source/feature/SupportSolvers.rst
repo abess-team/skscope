@@ -1,12 +1,16 @@
 :parenttoc: True
 
-Support Solvers
-==================
+Various Iterative-Algorithms Support
+=======================================
 
+Implemented Solvers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-There are many solvers ``skscope``. These solvers has similar interface and can be used for solving the same problem. Here we list them.
+There are many solvers in ``skscope``. These solvers has similar interface and can be used for solving the same problem. Here we list them.
 
 - ``GraspSolver``: implements the Gradient Support Pursuit (GraSP) algorithm that generalizes the Compressive Sampling Matching Pursuit (CoSaMP) algorithm `[1]`_.
+
+- ``ScopeSolver``: implements the Sparse-Constrained Optimization sPlicing itEration (SCOPE) algorithm that generalizes the Adaptive BEst Subset Selection (ABESS) algorithm `[10]`_.
 
 - ``HTPSolver``: implements the hard thresholding pursuit (HTP) algorithm `[2]`_ `[3]`_. 
 
@@ -24,7 +28,6 @@ Reference
 
 - _`[1]`: Bahmani, S., Raj, B., & Boufounos, P. T. (2013). Greedy sparsity-constrained optimization. The Journal of Machine Learning Research, 14(1), 807-841.
 
-
 - _`[2]` Foucart, S. (2011). Hard thresholding pursuit: an algorithm for compressive sensing. SIAM Journal on numerical analysis, 49(6), 2543-2563.
 
 - _`[3]` Yuan, X. T., Li, P., & Zhang, T. (2017). Gradient Hard Thresholding Pursuit. J. Mach. Learn. Res., 18(1), 6027-6069.
@@ -40,3 +43,5 @@ Reference
 - _`[8]` Tropp, J. A., & Gilbert, A. C. (2007). Signal recovery from random measurements via orthogonal matching pursuit. IEEE Transactions on information theory, 53(12), 4655-4666.
 
 - _`[9]` Hastie, T., Tibshirani, R., Friedman, J. H., & Friedman, J. H. (2009). The elements of statistical learning: data mining, inference, and prediction (Vol. 2, pp. 1-758). New York: springer.
+
+- _`[10]` Zhu, J., Wen, C., Zhu, J., Zhang, H., & Wang, X. (2020). A polynomial algorithm for best-subset selection problem. Proceedings of the National Academy of Sciences, 117(52), 33117-33123.

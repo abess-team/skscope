@@ -7,8 +7,9 @@ Software Features
    :numbered:
    :maxdepth: 3
 
-   Variants
    SupportSolvers
+   Variants
+   DataScienceTool
    ComputationalTips
    .. PredefindModel
 

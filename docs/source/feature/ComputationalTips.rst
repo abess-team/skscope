@@ -7,35 +7,16 @@ Computational Tips
 Just In Time Compilation
 --------------------------------------------------
 
-`Just In Time Compilation (JIT) <https://jax.readthedocs.io/en/latest/jax-101/02-jitting.html#>`_ is a technology which can make Python function be executed more efficiently.
-
-We can easily use jit to speed up the execution of ``solve`` by setting the ``jit`` parameter to ``True``.
+`Just In Time Compilation (JIT) <https://jax.readthedocs.io/en/latest/jax-101/02-jitting.html#>`_ is a technology which can make solvers in ``skscope`` be executed more efficiently. We can easily use JIT to speed up the execution of solvers by setting the ``jit=True`` in the ``solve`` method: 
 
 .. code-block:: python
 
     solver.solve(objective_fn, jit=True)
 
+The runtime comparison on the JIT mode is on or off shows that, JIT generally speedup 10 times. 
 
-Note that JIT need additional requirements for the objective function and makes it difficult to debug. 
-Details can be found in `JAX documentation <https://jax.readthedocs.io/en/latest/jax-101/02-jitting.html#>`_.
-
-Build with C++
--------------------
+    > Note that JIT need additional requirements on the programming of objective function. More details can be found in `JAX documentation <https://jax.readthedocs.io/en/latest/jax-101/02-jitting.html#>`_.
 
 
-change numeric solver platform
----------------------------------------------------------
-
-All solvers in :ref:`skscope <scope_package>` use `nlopt <https://nlopt.readthedocs.io/en/latest/>`_ as the default numeric solver platform, but users can change it 
-by setting the ``numeric_solver`` parameter to a function which has the same interface as ``skscope.numeric_solver.convex_solver_nlopt``.
-
-.. code-block:: python
-
-    from skscope import ScopeSolver
-    from skscope.numeric_solver import convex_solver_nlopt
-    def custom_numeric_solver(*args, **kwargs):
-        # do something
-        return convex_solver_nlopt(*args, **kwargs)
-
-    p, k = 10, 3
-    solver = ScopeSolver(p, k, numeric_solver=custom_numeric_solver)
+.. Build with C++
+.. -------------------

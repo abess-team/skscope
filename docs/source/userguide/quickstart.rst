@@ -3,134 +3,134 @@
 Quick Example for Beginner
 ============================
 
+Here, we provide a beginner-friendly example that introduces the basic usage of :ref:`skscope <skscope_package>` for feature/variable selection in linear regression.
+
 Introduction
 -----------------
 
-.. Here, we will take linear regression as an start-up example to introduce the basic usage of :ref:`scope <skscope_package>`.
-
-Presume we collect a dataset with :math:`n=100` independent observations on a interesting response variable and :math:`p=10` predictive variables: 
+Let's consider a dataset with :math:`n=100` independent observations of an interesting response variable and :math:`p=10` predictive variables:
 
 .. code-block:: python
 
     from sklearn.datasets import make_regression
+
     ## generate data
     n, p, s = 100, 10, 3
     X, y, true_coefs = make_regression(n_samples=n, n_features=p, n_informative=s, coef=True, random_state=0) 
+    
     print("X shape:", X.shape)
     >>> X shape: (100, 10)
+    
     print("Y shape:", y.shape)
     >>> Y shape: (100,)
 
-We are interested in explaining the variation of the response variable with :math:`p` predictive variable, but in practice, the underlying true parameters ``true_coefs`` is unknown. Our only knowledge is that only :math:`s=3` predictive variables would influence the response variable, and the relationship between the predictive variables and the response variable has a form of linear model: 
+In this scenario, our goal is to explain the variation in the response variable using the available predictive variables. However, we do not have knowledge of the true parameters represented by ``true_coefs``. We only know that out of the :math:`p=10` predictive variables, only :math:`s=3` variables actually influence the response variable. Furthermore, we assume a linear relationship between the predictive variables and the response variable:
 
 .. math::
     y=X \theta^{*} +\epsilon.
 
 where 
 
-- :math:`y \in R^n` and :math:`X \in R^{n\times p}` records the observations on the response variable and the predictive variables, respectively;
+- :math:`y \in R^n` and :math:`X \in R^{n\times p}` represent the observations on the response variable and the predictive variables, respectively;
 
-- :math:`\epsilon = (\epsilon_1, \ldots, \epsilon_n)` is a vector that contact :math:`n` i.i.d zero-mean random noises;
+- :math:`\epsilon = (\epsilon_1, \ldots, \epsilon_n)` is a vector consisting of :math:`n` i.i.d zero-mean random noises;
 
-- :math:`\theta^{*}` is an unknown coefficient vector to be estimated.  
+- :math:`\theta^{*}` is an unknown coefficient vector that needs to be estimated.
 
-With ``skscope``, users can well estimate the :math:`\theta^{*}` and find out the predictive variables that is influential of the response variable, so called variables selection in literature. 
-To see this, a present a step-by-step procedure below. 
+With ``skscope``, users can effectively estimate :math:`\theta^{*}` and identify the influential predictive variables through variable selection. Below presents a step-by-step procedure to achieve this.
 
-A Step-by-step procedure
+A Step-by-Step Procedure
 -------------------------------
 
-Sparsity-constrained optimization perspective
+Sparsity-Constrained Optimization Perspective
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We first formulate the variables selection problem as an optimization problem:
+
+Let's begin by formulating the variable selection problem as an optimization problem:
 
 .. math::
     \arg\min_{\theta \in R^p} ||y-X \theta||^{2} s.t. ||\theta||_0 \leq s,
 
-where
+where:
 
-- :math:`\theta` is a coefficient vector that needs to be optimized
+- :math:`\theta` is a coefficient vector to be optimized.
 
-- :math:`||y-X \theta||^{2}` is the objective function that quantitatively measures the quality of the coefficient vector :math:`\theta`; 
+- :math:`||y-X \theta||^{2}` is the objective function that quantifies the quality of the coefficient vector :math:`\theta`.
 
-- :math:`||\theta||_0` counts the number of non-zero element in :math:`\theta`. And thus, the sparsity constraint :math:`||\theta||_0 \leq s` reflects the prior knowledge that the number of effective predictive variable is less than :math:`s`.
+- :math:`||\theta||_0` counts the number of non-zero elements in :math:`\theta`. The sparsity constraint :math:`||\theta||_0 \leq s` reflects our prior knowledge that the number of influential predictive variables is less than or equal to :math:`s`.
 
-The intuitive explanation for the optimization problem is: finding a small subset of predictors, so that the resulting linear model is expected to have the most desirable prediction accuracy. Therefore, it fully leverages information the observed data and our prior knowledge. 
+The intuitive explanation for this optimization problem is to find a small subset of predictors that result in a linear model with the most desirable prediction accuracy. By doing so, we leverage the information in the observed data and our prior knowledge effectively.
 
 
 Solve SCO via ``skscope``
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The above optimization problem is a sparsity-constrained optimization (SCO) problem. Since ``skscope`` is designed for general sparsity-constrained optimization, it can definitively solve the SCO problem. More importantly, ``skscope`` is extremely easy to use --- it can solve the SCO problem so long as the objective function :math:`||y-X \theta||^{2}` is properly implemented. Next, for the above example, the objective function is programmed into a python function ``objective_function(coefs)``:
+The optimization problem described above is a sparsity-constrained optimization (SCO) problem. Since ``skscope`` is designed for general SCO, it can solve this problem with ease. The beauty of using skscope is its simplicity --- it can solve SCO problems as long as the objective function :math:`||y-X \theta||^{2}` is properly implemented. For the present example, we will program the objective function as a Python function named  ``objective_function(coefs)``:
 
 .. code-block:: python
 
     import jax.numpy as jnp
+
     def objective_function(coefs):
         return jnp.linalg.norm(y - X @ coefs)
 
-Notice that, the first line imports the only required ``jax`` library [*]_, which is a Python library that provides a NumPy-compatible multidimensional array API and automatic differentiation. As the usage of ``jax`` is very similar to ``numpy``, we can simply understand ``jax.numpy`` is equivalent to ``numpy`` [*]_. 
+Note that we import the required jax library [*]_ on the first line. This library provides a ``numpy``-compatible multidimensional array API and supports automatic differentiation. As the usage of ``jax.numpy`` is very similar to ``numpy``, here, we can understand ``jax.numpy`` as being equivalent to ``numpy`` [*]_. Through the code snippet above, the objective_function is implemented exactly as the mathematical function :math:`||y-X \theta||^{2}`.
 
-Moreover, we can see that the programmed ``objective_function`` is exactly match to the mathematics function :math:`||y-X \theta||^{2}`. 
-
-Then, we will input ``objective_function`` into one solver in ``skscope`` to get the practice solution of the SCO problem. 
+Next, we input the ``objective_function`` into one solver in ``skscope`` to get the practice solution of the SCO problem. Below, we import the ``ScopeSolver`` [*]_ and properly configure it:  
 
 .. The length of ``coefs`` is actually the dimension of the optimization problem so denoted as ``dimensionality``. The number of nonzero parameters is the sparsity level and denote as ``sparsity``.
 
 .. From the perspective of variable selection, each parameter corresponds to a variable, and the nonzero parameters correspond to the selected variables.
 
-Here, we import the ``ScopeSolver`` [*]_ and properly configure it. 
-
 .. code-block:: python
 
     from skscope import ScopeSolver
+
     scope_solver = ScopeSolver(
         dimensionality=p,  ## there are p parameters
         sparsity=s,        ## we want to select s variables
     )
 
-In our configuration, we set:
+In the above configuration, we set:
 
-- ``dimensionality``, i.e., is the number of parameters and must be offered.
+- ``dimensionality``: the number of parameters, which must be specified;
 
 and 
 
-- ``sparsity``, i.e., the desired sparsity level. 
+- ``sparsity``: the desired sparsity level. 
 
-In the above example, :math:`\beta` is the parameters, so ``dimensionality`` is :math:`p` and ``sparsity`` is :math:`s`.
+In the above example, :math:`\theta` is the parameters, so ``dimensionality`` is :math:`p` and ``sparsity`` is :math:`s`.
 
-Those concepts are introduced in the previous section. 
-
-With ``scope_solver`` and ``objective_function``, we use one-line command to solve the SCO:
+With ``scope_solver`` and ``objective_function`` defined, we can solve the SCO problem using a single command:
 
 .. code-block:: python
 
     scope_solver.solve(objective_function)
 
 
-``solve`` is the main method of solver in ``skscope``, it takes the objective function as optimization objective and commands the algorithm to conduct the optimization process. 
+The ``solve`` method is the main method for the solvers in ``skscope``. It takes the objective function as the optimization objective and instructs the algorithm to conduct the optimization process.
 
-Get solutions
+Retrieving the Solutions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Since the solvers in ``skscope`` are all coupled with necessary functions to extract, we can also use one line to get the result. For example, we may interested in obtaining the effective variables, which can be extract by using 
-the ``get_support`` method. The code is below. 
+Since the solvers in ``skscope`` come with necessary functions to extract results, we can obtain the desired outcomes with just one line of code. For instance, if we are interested in retrieving the effective variables, we can use the ``get_support`` method:
+
 
 .. code-block:: python
 
     import numpy as np
-    est_support_set = scope_solver.get_support()
-    print("Estimated effective predictors:", est_support_set)
+
+    estimated_support_set = scope_solver.get_support()
+    print("Estimated effective predictors:", estimated_support_set)
     >>> Estimated effective predictors: [3 5 6]
     print("True effective predictors:", np.nonzero(true_coefs)[0])
     >>> True effective predictors: [3 5 6]
 
-We can see that the estimated effective predictive variables are exactly the true one, which reflects the accuracy of the solver in ``skscope``.
+We can observe that the estimated effective predictive variables match the true ones, indicating the accuracy of the solver in ``skscope``.
 
-Else, we may interested in the regression coefficient:
+Additionally, we may be interested in the regression coefficients:
 
-- ``get_estimated_params`` returns the optimized coefficient.
+- the ``get_estimated_params`` method returns the optimized coefficients.
 
 .. code-block:: python
 
@@ -140,7 +140,7 @@ Else, we may interested in the regression coefficient:
     print("True coefficient:", np.around(true_coefs, 2))
     >>> True coefficient: [ 0.    0.    0.   82.19  0.   88.31 70.05  0.    0.    0.  ]
 
-For the output, we see that the estimated coefficient approaches to the underlying true coefficient. 
+In the output, we can observe that the estimated coefficients closely resemble the true coefficients.
 
 Further reading
 ---------------------------

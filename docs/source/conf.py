@@ -153,20 +153,18 @@ html_theme_options = {
     # "github_url": "https://github.com/pydata/pydata-sphinx-theme",
     # "twitter_url": "https://twitter.com/PyData",
     "logo": {
-        #"text": "SCOPE",
+        #"text": "skscope",
         "image_dark": "_static/skscope-dark.svg",
-        "alt_text": "SCOPE",
+        "alt_text": "skscope",
     },
     "use_edit_page_button": True,
     "show_toc_level": 2,
     "navbar_align": "left",  # [left, content, right] For testing that the navbar items align properly
     "navbar_center": ["version-switcher", "navbar-nav"],
-    "announcement": """<div class="sidebar-message">
-  SCOPE is a optimization tool for Python.
-  If you'd like to contribute,
-  <a href="https://github.com/abess-team/skscope">check out our GitHub repository</a>
-  Your contributions are welcome!
-</div>""",
+    # "announcement": """<div class="sidebar-message">
+    # skscope is a optimization tool for Python. If you'd like to contribute, <a href="https://github.com/abess-team/skscope">check out our GitHub repository</a>
+    # Your contributions are welcome!
+    # </div>""",
     # "show_nav_level": 2,
     # "navbar_start": ["navbar-logo"],
     # "navbar_end": ["theme-switcher", "navbar-icon-links"],

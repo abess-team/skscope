@@ -15,26 +15,26 @@ What is ``skscope``?
 2. `Nonlinear variable selection <examples/Miscellaneous/hsic-splicing.html>`__
 
 .. image:: figure/nonlinear_variable_selection.png
-  :width: 600
+  :width: 666
   :align: center
 
 
 3. `Spatial trend filtering <examples/FusionModels/spatial-trend-filtering.html>`__
 
 .. image:: figure/trend_filter.png
-  :width: 600
+  :width: 666
   :align: center
 
 4. `Network reconstruction <examples/GraphicalModels/sparse-gaussian-precision.html>`__
 
 .. image:: figure/precision_matrix.png
-  :width: 600
+  :width: 666
   :align: center
 
 5. `Portfolio selection <examples/Miscellaneous/portfolio-selection.html>`__
 
-.. image:: figure/precision_matrix.png
-  :width: 600
+.. image:: figure/portfolio_selection.png
+  :width: 300
   :align: center
 
 

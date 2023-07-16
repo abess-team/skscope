@@ -57,42 +57,31 @@
       ^^^
       Spot a typo in the documentation? Want to add new functionalities? Meet a bug? The contributing guide is here to assist you in addressing these issues.
 
-User Guide
---------------------
 
-Information about how to use the software.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
+   :hidden:
 
    userguide/index
 
 
-Software Features
--------------------------------
-
-Some special features to notice.
-
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
+   :hidden:
 
    feature/index
 
-API Reference
---------------------------
-
-Refer to API.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
+   :hidden:
 
    autoapi/index
 
 
-Contributor's Guide
-----------------------------
-
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 1
+   :hidden:
 
    contribute/index

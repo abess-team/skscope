@@ -10,6 +10,7 @@ Just In Time Compilation
 `Just In Time Compilation (JIT) <https://jax.readthedocs.io/en/latest/jax-101/02-jitting.html#>`_ is a technique used in the ``JAX`` library to optimize and accelerate the execution of numerical computations. And thus, it can make solvers in ``skscope`` be executed more efficiently. We can easily use JIT to speed up the execution of solvers by setting the ``jit=True`` in the ``solve`` method: 
 
 .. code-block:: python
+    
     from skscope import ScopeSolver
 
     def objective_fn(params):

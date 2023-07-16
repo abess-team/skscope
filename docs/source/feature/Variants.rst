@@ -1,7 +1,7 @@
 :parenttoc: True
 
 Variants of Sparsity-Constraint Optimization
-====================
+=====================================================
 
 In addition to standard sparsity-constrained optimization (SCO) problems, ``skscope`` also provides support for several helpful variants of SCO.
 
@@ -57,7 +57,7 @@ When solving GSCO with ``skscope``, please note that
 
 
 Preselected Non-sparse Parameters
---------------------------------
+--------------------------------------
 
 When using various model, it is common to have certain parameters that must have a non-zero value. For example:
 

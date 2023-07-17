@@ -4,7 +4,7 @@
 
 ## What is `skscope`?
 
-``skscope`` aims to make sparsity-constrained optimization (SCO) is accessible to everyone because SCO holds immense potential across various domains, including machine learning, statistics, and signal processing. By providing a user-friendly interface, ``skscope`` empowers individuals from diverse backgrounds to harness the power of SCO and unlock its broad range of applications (see examples exhibited below).
+``skscope`` aims to make sparsity-constrained optimization (SCO) is accessible to **everyone** because SCO holds immense potential across various domains, including machine learning, statistics, and signal processing. By providing a user-friendly interface, ``skscope`` empowers individuals from diverse backgrounds to harness the power of SCO and unlock its broad range of applications (see examples exhibited below).
 
 ![](docs/source/first_page.png)
 

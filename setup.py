@@ -141,7 +141,7 @@ setup(
     maintainer="Zezhi Wang",
     maintainer_email="homura@mail.ustc.edu.cn",
     packages=find_packages(),
-    description="Sparsity-Constraint OPtimization via itErative-algorithm", # Sparsity-Constraint Optimization with given sParsity lEvel
+    description="Sparsity-Constraint OPtimization via itErative-algorithm", 
     long_description=long_description,
     long_description_content_type="text/x-rst",
     install_requires=[
@@ -151,12 +151,12 @@ setup(
         "nlopt",
     ],
     license="GPL-3",
-    #url="https://abess.readthedocs.io",
-    #download_url="https://pypi.python.org/pypi/abess",
+    #url="https://skscope.readthedocs.io",
+    #download_url="https://pypi.python.org/pypi/skscope",
     #project_urls={
-    #    "Bug Tracker": "https://github.com/abess-team/abess/issues",
-    #    "Documentation": "https://abess.readthedocs.io",
-    #    "Source Code": "https://github.com/abess-team/abess",
+    #    "Bug Tracker": "https://github.com/abess-team/skscope/issues",
+    #    "Documentation": "https://skscope.readthedocs.io",
+    #    "Source Code": "https://github.com/abess-team/skscope",
     #},
     classifiers=[
         "Intended Audience :: Science/Research",

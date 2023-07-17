@@ -34,7 +34,7 @@ def test_init_params(model, solver_creator):
 
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
-@pytest.mark.parametrize("ic_type", ["aic", "bic", "gic", "ebic"])
+@pytest.mark.parametrize("ic_type", ["aic", "bic", "sic", "ebic"])
 def test_ic(model, solver_creator, ic_type):
     solver = solver_creator(
         model["n_features"],

@@ -33,7 +33,7 @@ class BaseSolver(BaseEstimator):
         Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
         and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'gic', 'ebic'}, default='aic'
+    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
         Used only when ``sparsity`` is not int and ``cv`` is 1.
     cv : int, default=1
@@ -221,9 +221,9 @@ class BaseSolver(BaseEstimator):
 
         BaseSolver._check_positive_integer(self.cv, "cv")
         if self.cv == 1:
-            if self.ic_type not in ["aic", "bic", "gic", "ebic"]:
+            if self.ic_type not in ["aic", "bic", "sic", "ebic"]:
                 raise ValueError(
-                    "ic_type should be one of ['aic', 'bic', 'gic','ebic']."
+                    "ic_type should be one of ['aic', 'bic', 'sic','ebic']."
                 )
             if self.ic_coef <= 0:
                 raise ValueError("ic_coef should be positive.")
@@ -385,7 +385,7 @@ class BaseSolver(BaseEstimator):
         """
         aic: 2L + 2s
         bic: 2L + s * log(n)
-        gic: 2L + s * log(log(n)) * log(p)
+        sic: 2L + s * log(log(n)) * log(p)
         ebic: 2L + s * (log(n) + 2 * log(p))
         """
         if self.metric_method is not None:
@@ -405,7 +405,7 @@ class BaseSolver(BaseEstimator):
                 else 2 * value_of_objective
                 + self.ic_coef * effective_params_num * np.log(train_size)
             )
-        elif method == "gic":
+        elif method == "sic":
             return (
                 value_of_objective
                 if train_size <= 1.0

@@ -43,7 +43,7 @@ using namespace std;
  * @param is_warm_start                 When tuning the optimal parameter combination, whether to use the last solution
  * as a warm start to accelerate the iterative convergence of the splicing algorithm.
  * @param ic_type                       The type of criterion for choosing the support size. Available options are
- * "gic", "ebic", "bic", "aic".
+ * "sic", "ebic", "bic", "aic".
  * @param Kfold                         The folds number to use the Cross-validation method. If Kfold=1,
  * Cross-validation will not be used.
  * @param sequence                      An integer vector representing the alternative support sizes. Only used for

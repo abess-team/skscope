@@ -31,7 +31,7 @@ class ScopeSolver(BaseEstimator):
         It should have the same interface as ``skscope.convex_solver_nlopt``.
     max_iter : int, default=20
         Maximum number of iterations taken for converging.
-    ic_type : {'aic', 'bic', 'gic', 'ebic'}, default='gic'
+    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='sic'
         The type of information criterion for choosing the sparsity level.
         Used only when ``sparsity`` is not int and ``cv`` is 1.
     cv : int, default=1
@@ -320,11 +320,11 @@ class ScopeSolver(BaseEstimator):
         information_criterion_dict = {
             "aic": 1,
             "bic": 2,
-            "gic": 3,
+            "sic": 3,
             "ebic": 4,
         }
         if self.ic_type not in information_criterion_dict.keys():
-            raise ValueError('ic_type should be "aic", "bic", "ebic" or "gic"')
+            raise ValueError('ic_type should be "aic", "bic", "ebic" or "sic"')
         ic_type = information_criterion_dict[self.ic_type]
 
         # group
@@ -670,7 +670,7 @@ class HTPSolver(BaseSolver):
         Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
         and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'gic', 'ebic'}, default='aic'
+    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
         Used only when ``sparsity`` is not int and ``cv`` is 1.
     cv : int, default=1
@@ -829,7 +829,7 @@ class IHTSolver(HTPSolver):
         Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
         and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'gic', 'ebic'}, default='aic'
+    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
         Used only when ``sparsity`` is not int and ``cv`` is 1.
     cv : int, default=1
@@ -946,7 +946,7 @@ class GraspSolver(BaseSolver):
         Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
         and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'gic', 'ebic'}, default='aic'
+    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
         Used only when ``sparsity`` is not int and ``cv`` is 1.
     cv : int, default=1
@@ -1104,7 +1104,7 @@ class FobaSolver(BaseSolver):
         Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
         and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'gic', 'ebic'}, default='aic'
+    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
         Used only when ``sparsity`` is not int and ``cv`` is 1.
     cv : int, default=1
@@ -1377,7 +1377,7 @@ class ForwardSolver(FobaSolver):
         Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
         and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'gic', 'ebic'}, default='aic'
+    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
         Used only when ``sparsity`` is not int and ``cv`` is 1.
     cv : int, default=1
@@ -1524,7 +1524,7 @@ class OMPSolver(ForwardSolver):
         Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
         and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'gic', 'ebic'}, default='aic'
+    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
         Used only when ``sparsity`` is not int and ``cv`` is 1.
     cv : int, default=1

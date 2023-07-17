@@ -57,7 +57,7 @@ class BaseSolver(BaseEstimator):
     ----------
     params : array of shape(dimensionality,)
         The sparse optimal solution.
-    value_of_objective: float
+    objective_value: float
         The value of objective function on the solution.
     support_set : array of int
         The indices of selected variables, sorted in ascending order.
@@ -304,9 +304,9 @@ class BaseSolver(BaseEstimator):
                 init_params, init_support_set = self._solve(
                     s, loss_fn, value_and_grad, init_support_set, init_params, data
                 )  ## warm start: use results of previous sparsity as initial value
-                value_of_objective = loss_fn(init_params, data)
+                objective_value = loss_fn(init_params, data)
                 eval = self._metric(
-                    value_of_objective,
+                    objective_value,
                     self.ic_type,
                     s,
                     self.sample_size,
@@ -315,7 +315,7 @@ class BaseSolver(BaseEstimator):
                     is_first_loop = False
                     self.params = init_params
                     self.support_set = init_support_set
-                    self.value_of_objective = value_of_objective
+                    self.objective_value = objective_value
                     self.eval_objective = eval
 
         else:  # self.cv > 1
@@ -348,7 +348,7 @@ class BaseSolver(BaseEstimator):
                 cache_init_params[best_sparsity],
                 data,
             )
-            self.value_of_objective = loss_fn(self.params, data)
+            self.objective_value = loss_fn(self.params, data)
             self.eval_objective = cv_eval[best_sparsity]
 
         self.support_set = np.sort(self.support_set)
@@ -377,7 +377,7 @@ class BaseSolver(BaseEstimator):
 
     def _metric(
         self,
-        value_of_objective: float,
+        objective_value: float,
         method: str,
         effective_params_num: int,
         train_size: int,
@@ -390,37 +390,37 @@ class BaseSolver(BaseEstimator):
         """
         if self.metric_method is not None:
             return self.metric_method(
-                value_of_objective,
+                objective_value,
                 self.dimensionality,
                 effective_params_num,
                 train_size,
             )
 
         if method == "aic":
-            return 2 * value_of_objective + 2 * effective_params_num
+            return 2 * objective_value + 2 * effective_params_num
         elif method == "bic":
             return (
-                value_of_objective
+                objective_value
                 if train_size <= 1.0
-                else 2 * value_of_objective
+                else 2 * objective_value
                 + self.ic_coef * effective_params_num * np.log(train_size)
             )
         elif method == "sic":
             return (
-                value_of_objective
+                objective_value
                 if train_size <= 1.0
-                else 2 * value_of_objective
+                else 2 * objective_value
                 + self.ic_coef
                 * effective_params_num
                 * np.log(np.log(train_size))
                 * np.log(self.dimensionality)
             )
         elif method == "ebic":
-            return 2 * value_of_objective + self.ic_coef * effective_params_num * (
+            return 2 * objective_value + self.ic_coef * effective_params_num * (
                 np.log(train_size) + 2 * np.log(self.dimensionality)
             )
         else:
-            return value_of_objective
+            return objective_value
 
     def _solve(
         self,
@@ -467,7 +467,7 @@ class BaseSolver(BaseEstimator):
 
             yield from helper(0, s, always_select)
 
-        result = {"params": None, "support_set": None, "value_of_objective": math.inf}
+        result = {"params": None, "support_set": None, "objective_value": math.inf}
         params = init_params.copy()
         for support_set_group in all_subsets(group_num, sparsity, self.always_select):
             support_set = np.concatenate([group_indices[i] for i in support_set_group])
@@ -478,10 +478,10 @@ class BaseSolver(BaseEstimator):
             loss, params = self._numeric_solver(
                 loss_fn, value_and_grad, params, support_set, data
             )
-            if loss < result["value_of_objective"]:
+            if loss < result["objective_value"]:
                 result["params"] = params.copy()
                 result["support_set"] = support_set
-                result["value_of_objective"] = loss
+                result["objective_value"] = loss
 
         return result["params"], result["support_set"]
 
@@ -543,13 +543,13 @@ class BaseSolver(BaseEstimator):
                 The optimal parameters.
             + ``support_set`` : array of int
                 The support set of the optimal parameters.
-            + ``value_of_objective`` : float
+            + ``objective_value`` : float
                 The value of objective function at the optimal parameters.
         """
         return {
             "params": self.params,
             "support_set": self.support_set,
-            "value_of_objective": self.value_of_objective,
+            "objective_value": self.objective_value,
         }
 
     def get_estimated_params(self):

@@ -100,7 +100,7 @@ class ScopeSolver(BaseEstimator):
     ----------
     params :array of shape(dimensionality,)
         The sparse optimal solution.
-    value_of_objective:float
+    objective_value:float
         The value of objective function on the solution.
     support_set :array of int
         The indices of selected variables, sorted in ascending order.
@@ -546,7 +546,7 @@ class ScopeSolver(BaseEstimator):
         self.cv_train_loss = result[1] if self.cv == 1 else 0.0
         self.cv_test_loss = result[2] if self.cv == 1 else 0.0
         self.information_criterion = result[3]
-        self.value_of_objective = loss_fn(self.params, data)
+        self.objective_value = loss_fn(self.params, data)
 
         return self.params
 
@@ -562,7 +562,7 @@ class ScopeSolver(BaseEstimator):
                 The optimal parameters.
             + ``support_set`` : array of int
                 The support set of the optimal parameters.
-            + ``value_of_objective`` : float
+            + ``objective_value`` : float
                 The value of objective function at the optimal parameters.
             + ``cv_train_loss`` : float
                 The average value of objective function on training sets.
@@ -574,7 +574,7 @@ class ScopeSolver(BaseEstimator):
         return {
             "params": self.params,
             "support_set": self.support_set,
-            "value_of_objective": self.value_of_objective,
+            "objective_value": self.objective_value,
             "cv_train_loss": self.cv_train_loss,
             "cv_test_loss": self.cv_test_loss,
             "information_criterion": self.information_criterion,
@@ -694,7 +694,7 @@ class HTPSolver(BaseSolver):
     ----------
     params : array of shape(dimensionality,)
         The sparse optimal solution.
-    value_of_objective: float
+    objective_value: float
         The value of objective function on the solution.
     support_set : array of int
         The indices of selected variables, sorted in ascending order.
@@ -853,7 +853,7 @@ class IHTSolver(HTPSolver):
     ----------
     params : array of shape(dimensionality,)
         The sparse optimal solution.
-    value_of_objective: float
+    objective_value: float
         The value of objective function on the solution.
     support_set : array of int
         The indices of selected variables, sorted in ascending order.
@@ -970,7 +970,7 @@ class GraspSolver(BaseSolver):
     ----------
     params : array of shape(dimensionality,)
         The sparse optimal solution.
-    value_of_objective: float
+    objective_value: float
         The value of objective function on the solution.
     support_set : array of int
         The indices of selected variables, sorted in ascending order.
@@ -1128,7 +1128,7 @@ class FobaSolver(BaseSolver):
     ----------
     params : array of shape(dimensionality,)
         The sparse optimal solution.
-    value_of_objective: float
+    objective_value: float
         The value of objective function on the solution.
     support_set : array of int
         The indices of selected variables, sorted in ascending order.
@@ -1401,7 +1401,7 @@ class ForwardSolver(FobaSolver):
     ----------
     params : array of shape(dimensionality,)
         The sparse optimal solution.
-    value_of_objective: float
+    objective_value: float
         The value of objective function on the solution.
     support_set : array of int
         The indices of selected variables, sorted in ascending order.
@@ -1548,7 +1548,7 @@ class OMPSolver(ForwardSolver):
     ----------
     params : array of shape(dimensionality,)
         The sparse optimal solution.
-    value_of_objective: float
+    objective_value: float
         The value of objective function on the solution.
     support_set : array of int
         The indices of selected variables, sorted in ascending order.

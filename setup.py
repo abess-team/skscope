@@ -128,7 +128,7 @@ class CMakeBuild(build_ext):
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=build_temp)
         subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=build_temp)
 
-with open(os.path.join(CURRENT_DIR, 'README.rst'), encoding='utf-8') as f:
+with open(os.path.join(CURRENT_DIR, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 package_info = get_info()
@@ -143,7 +143,7 @@ setup(
     packages=find_packages(),
     description="Sparsity-Constraint OPtimization via itErative-algorithm", # Sparsity-Constraint Optimization with given sParsity lEvel
     long_description=long_description,
-    long_description_content_type="text/x-rst",
+    long_description_content_type='text/markdown',
     install_requires=[
         "numpy",
         "scikit-learn>=0.24",

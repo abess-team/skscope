@@ -23,19 +23,19 @@ class BaseSolver(BaseEstimator):
     always_select : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
-        A solver for the convex optimization problem. ``HTPSolver`` will call this function to solve the convex optimization problem in each iteration.
+        A solver for the convex optimization problem. ``BaseSolver`` will call this function to solve the convex optimization problem in each iteration.
         It should have the same interface as ``skscope.convex_solver_nlopt``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
         The group index for each variable, and it must be an incremental integer array starting from 0 without gap.
         The variables in the same group must be adjacent, and they will be selected together or not.
-        Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
-        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
-        and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
+        Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
+        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
+        and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
     ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
-        Used only when ``sparsity`` is not int and ``cv`` is 1.
+        Used only when ``sparsity`` is array and ``cv`` is 1.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -49,7 +49,7 @@ class BaseSolver(BaseEstimator):
         Used only when `cv` > 1.
     metric_method : callable, optional
         A function to calculate the information criterion.
-        `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
+        ``metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
         The random seed used for cross-validation.  
 
@@ -59,7 +59,7 @@ class BaseSolver(BaseEstimator):
         The sparse optimal solution.
     objective_value: float
         The value of objective function on the solution.
-    support_set : array of int
+    support_set :array of int
         The indices of selected variables, sorted in ascending order.
 
     """
@@ -123,7 +123,7 @@ class BaseSolver(BaseEstimator):
 
         Returns
         -------
-        self : estimator instance
+        self : 
             Solver instance.
         """
         return super().set_params(**params)
@@ -142,23 +142,28 @@ class BaseSolver(BaseEstimator):
 
         Parameters
         ----------
-        + objective : callable
+        objective : callable
             The objective function to be minimized: ``objective(params, data) -> loss``
             where ``params`` is a 1-D array with shape (dimensionality,) and
             ``data`` is the fixed parameters needed to completely specify the function.
-            ``objective`` must be written in JAX if ``gradient`` is not provided.
-        + data : optional
+            ``objective`` must be written in ``JAX`` library if ``gradient`` is not provided.
+        data : optional
             Extra arguments passed to the objective function and its derivatives (if existed).
-        + init_support_set : array of int, default=[]
+        init_support_set : array of int, default=[]
             The index of the variables in initial active set.
-        + init_params : array of shape (dimensionality,), optional
+        init_params : array of shape (dimensionality,), optional
             The initial value of parameters, default is an all-zero vector.
-        + gradient : callable, optional
+        gradient : callable, optional
             A function that returns the gradient vector of parameters: ``gradient(params, data) -> array of shape (dimensionality,)``,
             where ``params`` is a 1-D array with shape (dimensionality,) and ``data`` is the fixed parameters needed to completely specify the function.
-            If ``gradient`` is not provided, ``objective`` must be written in JAX.
-        + jit : bool, default=False
-            If ``objective`` and ``gradient`` are written in JAX, ``jit`` can be set to True to speed up the optimization.
+            If ``gradient`` is not provided, ``objective`` must be written in ``JAX`` library.
+        jit : bool, default=False
+            If ``objective`` or ``gradient`` are written in JAX, ``jit`` can be set to True to speed up the optimization.
+
+        Returns
+        -------
+        parameters : array of shape (dimensionality,)
+            The optimal solution of optimization.
         """
         if self.jax_platform not in ["cpu", "gpu", "tpu"]:
             raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
@@ -539,6 +544,7 @@ class BaseSolver(BaseEstimator):
         -------
         results : dict 
             The result of optimization, including the following keys:
+
             + ``params`` : array of shape (dimensionality,) 
                 The optimal parameters.
             + ``support_set`` : array of int

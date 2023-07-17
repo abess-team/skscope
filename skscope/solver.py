@@ -20,7 +20,7 @@ class ScopeSolver(BaseEstimator):
         Dimension of the optimization problem, which is also the total number of variables that will be considered to select or not, denoted as :math:`p`.
     sparsity : int or array of int, optional
         The sparsity level, which is the number of nonzero elements of the optimal solution, denoted as :math:`s`.
-        default is ``range(int(p/log(log(p))/log(p)))`` if :math:`p>5`, else ``range(p)``.
+        default is ``range(int(p/log(log(p))/log(p)))``.
         Used only when ``path_type`` is "seq".
     sample_size : int, default=1
         Sample size, denoted as :math:`n`.
@@ -33,11 +33,9 @@ class ScopeSolver(BaseEstimator):
         Maximum number of iterations taken for converging.
     ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='sic'
         The type of information criterion for choosing the sparsity level.
-        Used only when ``sparsity`` is not int and ``cv`` is 1.
+        Used only when ``sparsity`` is array and ``cv`` is 1.
     cv : int, default=1
-        The folds number when use the cross-validation method.
-        - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
-        - If ``cv`` > 1, the sparsity level will be chosen by the cross-validation method.
+        The folds number when use the cross-validation method. If ``cv`` = 1, the sparsity level will be chosen by the information criterion. If ``cv`` > 1, the sparsity level will be chosen by the cross-validation method.
     split_method: callable, optional
         A function to get the part of data used in each fold of cross-validation.
         Its interface should be ``(data, index) -> part_data`` where ``index`` is an array of int.
@@ -48,51 +46,44 @@ class ScopeSolver(BaseEstimator):
     group : array of shape (dimensionality,), default=range(dimensionality)
         The group index for each variable, and it must be an incremental integer array starting from 0 without gap.
         The variables in the same group must be adjacent, and they will be selected together or not.
-        Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
-        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
-        and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
-    warm_start : bool, default=True
-        When tuning the optimal parameter combination, whether to use the last solution as a warm start to accelerate the iterative convergence of the splicing algorithm.
+        Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
+        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
+        and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
     important_search : int, default=128
         The number of important variables which need be splicing.
         This is used to reduce the computational cost. If it's too large, it would greatly increase runtime.
     screening_size : int, default=-1
         The number of variables remaining after the screening before variables select. Screening is used to reduce the computational cost.
-        ``screening_size`` should be a non-negative number smaller than p, but larger than any value in sparsity.
-        - If screening_size=-1, screening will not be used.
-        - If screening_size=0, screening_size will be set as ``min(p, int(n / (log(log(n))log(p))))``.
+        ``screening_size`` should be a non-negative number smaller than p, but larger than any value in sparsity. If ``screening_size`` is -1, screening will not be used. If ``screening_size`` is 0, ``screening_size`` will be set as ``int(p/log(log(p))/log(p))``.
     max_exchange_num : int, optional, default=5
         Maximum exchange number when splicing.
     is_dynamic_max_exchange_num : bool, default=True
         If ``is_dynamic_max_exchange_num`` is True, ``max_exchange_num`` will be decreased dynamically according to the number of variables exchanged in the last iteration.
     greedy : bool, default=True,
-        If ``greedy`` is True, the first exchange_num which can reduce the objective function value will be selected.
-        Otherwise, the exchange_num which can reduce the objective function value most will be selected.
+        If ``greedy`` is True, the first exchange-number which can reduce the objective function value will be selected.
+        Otherwise, the exchange-number which can reduce the objective function value most will be selected.
     splicing_type : {"halve", "taper"}, default="halve"
-        The type of reduce the exchange number in each iteration from max_exchange_num.
+        The type of reduce the exchange number in each iteration from ``max_exchange_num``.
         "halve" for decreasing by half, "taper" for decresing by one.
     path_type : {"seq", "gs"}, default="seq"
-        The method to be used to select the optimal sparsity level.
-        - For path_type = "seq", we solve the problem for all sizes in `sparsity` successively.
-        - For path_type = "gs", we solve the problem with sparsity level ranged between `gs_lower_bound` and `gs_upper_bound`, where the specific sparsity level to be considered is determined by golden section.
+        The method to be used to select the optimal sparsity level. For path_type = "seq", we solve the problem for all sizes in `sparsity` successively. For path_type = "gs", we solve the problem with sparsity level ranged between `gs_lower_bound` and `gs_upper_bound`, where the specific sparsity level to be considered is determined by golden section.
     gs_lower_bound : int, default=0
         The lower bound of golden-section-search for sparsity searching.
         Used only when path_type = "gs".
     gs_upper_bound : int, optional
         The higher bound of golden-section-search for sparsity searching.
-        Default is ``min(n, int(n/(log(log(n))log(p))))``.
+        Default is ``int(p/log(log(p))/log(p))``.
         Used only when path_type = "gs".
     thread : int, default=1
-        Max number of multithreads used for cross-validation.
-        - If thread = 0, the maximum number of threads supported by the device will be used.
+        Max number of multithreads used for cross-validation. If thread = 0, the maximum number of threads supported by the device will be used.
     random_state : int, optional
         The random seed used for cross-validation.
     console_log_level : str, default="off"
         The level of output log to console, which can be "off", "error", "warning", "debug".
-        For example, if it's "warning", only error and warning log will be output to console.
+        For example, if ``console_log_level`` is "warning", only error and warning log will be output to console.
     file_log_level : str, default="off"
         The level of output log to file, which can be "off", "error", "warning", "debug".
-        For example, if it's "off", no log will be output to file.
+        For example, if ``file_log_level`` is "off", no log will be output to file.
     log_file_name : str, default="logs/skscope.log"
         The name (relative path) of log file, which is used to store the log information.
 
@@ -105,8 +96,7 @@ class ScopeSolver(BaseEstimator):
     support_set :array of int
         The indices of selected variables, sorted in ascending order.
     cv_test_loss :float
-        If cv=1, it stores the score under chosen information criterion.
-        If cv>1, it stores the test objective under cross-validation.
+        If cv=1, it stores the score under chosen information criterion. If cv>1, it stores the test objective under cross-validation.
     cv_train_loss :float
         The objective on training data.
 
@@ -132,7 +122,6 @@ class ScopeSolver(BaseEstimator):
         split_method=None,
         cv_fold_id=None,
         group=None,
-        warm_start=True,
         important_search=128,
         screening_size=-1,
         max_exchange_num=5,
@@ -163,7 +152,7 @@ class ScopeSolver(BaseEstimator):
         self.deleter = None
         self.cv_fold_id = cv_fold_id
         self.group = group
-        self.warm_start = warm_start
+        self.warm_start = True
         self.important_search = important_search
         self.screening_size = screening_size
         self.max_exchange_num = max_exchange_num
@@ -210,7 +199,7 @@ class ScopeSolver(BaseEstimator):
 
         Returns
         -------
-        self : estimator instance
+        self : 
             Solver instance.
         """
         return super().set_params(**params)
@@ -277,23 +266,28 @@ class ScopeSolver(BaseEstimator):
 
         Parameters
         ----------
-        + objective : callable
+        objective : callable
             The objective function to be minimized: ``objective(params, data) -> loss``
             where ``params`` is a 1-D array with shape (dimensionality,) and
             ``data`` is the fixed parameters needed to completely specify the function.
-            ``objective`` must be written in JAX if ``gradient`` is not provided.
-        + data : optional
+            ``objective`` must be written in ``JAX`` library if ``gradient`` is not provided.
+        data : optional
             Extra arguments passed to the objective function and its derivatives (if existed).
-        + init_support_set : array of int, default=[]
+        init_support_set : array of int, default=[]
             The index of the variables in initial active set.
-        + init_params : array of shape (dimensionality,), optional
+        init_params : array of shape (dimensionality,), optional
             The initial value of parameters, default is an all-zero vector.
-        + gradient : callable, optional
+        gradient : callable, optional
             A function that returns the gradient vector of parameters: ``gradient(params, data) -> array of shape (dimensionality,)``,
             where ``params`` is a 1-D array with shape (dimensionality,) and ``data`` is the fixed parameters needed to completely specify the function.
-            If ``gradient`` is not provided, ``objective`` must be written in JAX.
-        + jit : bool, default=False
-            If ``objective`` and ``gradient`` are written in JAX, ``jit`` can be set to True to speed up the optimization.
+            If ``gradient`` is not provided, ``objective`` must be written in ``JAX`` library.
+        jit : bool, default=False
+            If ``objective`` or ``gradient`` are written in JAX, ``jit`` can be set to True to speed up the optimization.
+        
+        Returns
+        -------
+        parameters : array of shape (dimensionality,)
+            The optimal solution of optimization.
         """
         hessian = self.hessian
         cpp = self.cpp
@@ -558,6 +552,7 @@ class ScopeSolver(BaseEstimator):
         -------
         results : dict 
             The result of optimization, including the following keys:
+            
             + ``params`` : array of shape (dimensionality,) 
                 The optimal parameters.
             + ``support_set`` : array of int
@@ -658,7 +653,7 @@ class HTPSolver(BaseSolver):
     always_select : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     step_size : float, default=0.005
-        Step size of GraHTP algorithm.
+        Step size of gradient descent.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``HTPSolver`` will call this function to solve the convex optimization problem in each iteration.
         It should have the same interface as ``skscope.convex_solver_nlopt``.
@@ -667,12 +662,12 @@ class HTPSolver(BaseSolver):
     group : array of shape (dimensionality,), default=range(dimensionality)
         The group index for each variable, and it must be an incremental integer array starting from 0 without gap.
         The variables in the same group must be adjacent, and they will be selected together or not.
-        Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
-        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
-        and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
+        Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
+        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
+        and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
     ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
-        Used only when ``sparsity`` is not int and ``cv`` is 1.
+        Used only when ``sparsity`` is array and ``cv`` is 1.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -817,21 +812,21 @@ class IHTSolver(HTPSolver):
     always_select : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     step_size : float, default=0.005
-        Step size of GraHTP algorithm.
+        Step size of gradient descent.
     numeric_solver : callable, optional
-        A solver for the convex optimization problem. ``HTPSolver`` will call this function to solve the convex optimization problem in each iteration.
+        A solver for the convex optimization problem. ``IHTSolver`` will call this function to solve the convex optimization problem in each iteration.
         It should have the same interface as ``skscope.convex_solver_nlopt``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
         The group index for each variable, and it must be an incremental integer array starting from 0 without gap.
         The variables in the same group must be adjacent, and they will be selected together or not.
-        Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
-        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
-        and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
+        Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
+        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
+        and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
     ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
-        Used only when ``sparsity`` is not int and ``cv`` is 1.
+        Used only when ``sparsity`` is array and ``cv`` is 1.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -936,19 +931,19 @@ class GraspSolver(BaseSolver):
     always_select : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
-        A solver for the convex optimization problem. ``HTPSolver`` will call this function to solve the convex optimization problem in each iteration.
+        A solver for the convex optimization problem. ``GraspSolver`` will call this function to solve the convex optimization problem in each iteration.
         It should have the same interface as ``skscope.convex_solver_nlopt``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
         The group index for each variable, and it must be an incremental integer array starting from 0 without gap.
         The variables in the same group must be adjacent, and they will be selected together or not.
-        Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
-        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
-        and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
+        Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
+        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
+        and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
     ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
-        Used only when ``sparsity`` is not int and ``cv`` is 1.
+        Used only when ``sparsity`` is array and ``cv`` is 1.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -1088,25 +1083,25 @@ class FobaSolver(BaseSolver):
     threshold : float, default=0.0
         The threshold to determine whether a variable is selected or not.
     foba_threshold_ratio : float, default=0.5
-        The ``threshold``*``foba_threshold_ratio`` will determine whether a variable is deleted or not.
+        The threshold for determining whether a variable is deleted or not will be set to ``threshold`` * ``foba_threshold_ratio``.
     strict_sparsity : bool, default=True
         Whether to strictly control the sparsity level to be ``sparsity`` or not.
     always_select : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
-        A solver for the convex optimization problem. ``HTPSolver`` will call this function to solve the convex optimization problem in each iteration.
+        A solver for the convex optimization problem. ``FobaSolver`` will call this function to solve the convex optimization problem in each iteration.
         It should have the same interface as ``skscope.convex_solver_nlopt``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
         The group index for each variable, and it must be an incremental integer array starting from 0 without gap.
         The variables in the same group must be adjacent, and they will be selected together or not.
-        Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
-        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
-        and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
+        Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
+        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
+        and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
     ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
-        Used only when ``sparsity`` is not int and ``cv`` is 1.
+        Used only when ``sparsity`` is array and ``cv`` is 1.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -1367,19 +1362,19 @@ class ForwardSolver(FobaSolver):
     always_select : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
-        A solver for the convex optimization problem. ``HTPSolver`` will call this function to solve the convex optimization problem in each iteration.
+        A solver for the convex optimization problem. ``ForwardSolver`` will call this function to solve the convex optimization problem in each iteration.
         It should have the same interface as ``skscope.convex_solver_nlopt``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
         The group index for each variable, and it must be an incremental integer array starting from 0 without gap.
         The variables in the same group must be adjacent, and they will be selected together or not.
-        Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
-        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
-        and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
+        Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
+        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
+        and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
     ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
-        Used only when ``sparsity`` is not int and ``cv`` is 1.
+        Used only when ``sparsity`` is array and ``cv`` is 1.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -1494,7 +1489,7 @@ class ForwardSolver(FobaSolver):
 
 class OMPSolver(ForwardSolver):
     r"""
-    Get sparse optimal solution of convex objective function by Orthogonal Matching Pursuit algorithm.
+    Get sparse optimal solution of convex objective function by Orthogonal Matching Pursuit (OMP) algorithm.
     Specifically, ``OMPSolver`` aims to tackle this problem: :math:`\min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leq s`, where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity level. Each element of :math:`x` can be seen as a variable, and the nonzero elements of :math:`x` are the selected variables.
 
 
@@ -1514,19 +1509,19 @@ class OMPSolver(ForwardSolver):
     always_select : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
-        A solver for the convex optimization problem. ``HTPSolver`` will call this function to solve the convex optimization problem in each iteration.
+        A solver for the convex optimization problem. ``OMPSolver`` will call this function to solve the convex optimization problem in each iteration.
         It should have the same interface as ``skscope.convex_solver_nlopt``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
         The group index for each variable, and it must be an incremental integer array starting from 0 without gap.
         The variables in the same group must be adjacent, and they will be selected together or not.
-        Here are wrong examples: [0,2,1,2] (not incremental), [1,2,3,3] (not start from 0), [0,2,2,3] (there is a gap).
-        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example, "sparsity=[3]" means there will be 3 groups of variables selected rather than 3 variables,
-        and "always_include=[0,3]" means the 0-th and 3-th groups must be selected.
+        Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
+        It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
+        and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
     ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
         The type of information criterion for choosing the sparsity level.
-        Used only when ``sparsity`` is not int and ``cv`` is 1.
+        Used only when ``sparsity`` is array and ``cv`` is 1.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.

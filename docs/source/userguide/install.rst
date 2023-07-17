@@ -62,10 +62,9 @@ Install on Windows
 
 If you have troubles on Windows platform, here are some helpful tips.
 
-- The easiest way to configure the C++ compile environment on the Windows platform is to download and install the latest version of Visual Studio Community Edition. 
+- Builting from source needs a C++ compiler, and the easiest way to configure the C++ compile environment on the Windows platform is to download and install the latest version of Visual Studio Community Edition and choose the "Desktop development with C++" workload. `Here <https://learn.microsoft.com/en-us/cpp/build/vscpp-step-0-installation>`_ is a detailed tutorial. 
 
-- There are no official binary releases of ``jaxlib`` which is necessary for ``jax`` on Windows platform. However, there are some initial community-driven native Windows supports. More details about the installation of ``jax`` can be found `here <https://github.com/google/jax#installation>`__ and a community supported Windows build for jax can be found `here <https://github.com/cloudhan/jax-windows-builder>`__ .
-
+- There are no official binary releases of ``jaxlib`` which is necessary for ``jax`` on Windows platform. However, currently ``jax`` provides experimental windows builds. To install them you can type: ``pip install --upgrade "jax[cpu]"``.
 
 Dependencies
 ----------------------------------------

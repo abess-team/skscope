@@ -111,4 +111,39 @@ With ``skscope``, the creation of new machine learning methods becomes effortles
 
 - Just-in-time-compilation compatibility
 
+## Benchmark
 
+- Support recovery accuracy
+
+| Methods      | Linear regression | Logistic regression | Trend filtering | Multi-task learning | Ising model | Nonlinear feature selection |
+| ------------ | ----------------- | ------------------- | --------------- | ------------------- | ----------- | --------------------------- |
+| `OMPSolver`   | 1.00(0.01)        | 0.91(0.05)          | 0.70(0.18)      | 1.00(0.00)          | 0.98(0.03)  | 0.77(0.09)                  |
+| `IHTSolver`   | 0.79(0.04)        | 0.97(0.03)          | 0.08(0.10)      | 0.97(0.02)          | 0.96(0.05)  | 0.78(0.09)                  |
+| `HTPSolver`   | 1.00(0.00)        | 0.84(0.05)          | 0.41(0.22)      | 1.00(0.00)          | 0.97(0.03)  | 0.78(0.09)                  |
+| `GraspSolver` | 1.00(0.00)        | 0.90(0.08)          | 0.58(0.23)      | 1.00(0.00)          | 0.99(0.01)  | 0.78(0.08)                  |
+| `FoBaSolver`  | 1.00(0.00)        | 0.92(0.06)          | 0.87(0.13)      | 1.00(0.00)          | 1.00(0.01)  | 0.77(0.09)                  |
+| `ScopeSolver` | 1.00(0.00)        | 0.94(0.04)          | 0.79(0.19)      | 1.00(0.00)          | 1.00(0.01)  | 0.77(0.09)                  |
+| `cvxpy`       | 0.83(0.17)        | 0.83(0.05)          | 0.19(0.22)      | 1.00(0.00)          | 0.94(0.04)  | 0.74(0.09)                  |
+
+All solvers (except `IHTSolver`) in `skscope` consistently outperformed `cvxpy` in terms of accuracy for the selection of the support set. 
+
+- Runtime (measured in second):
+
+| Methods      | Linear regression | Logistic regression | Trend filtering | Multi-task learning | Ising model  | Nonlinear feature selection |
+| ------------ | ----------------- | ------------------- | --------------- | ------------------- | ------------ | --------------------------- |
+| `OMPSolver`   | 0.62(0.11)        | 0.80(0.11)          | 0.03(0.00)      | 2.70(0.26)          | 1.39(0.13)   | 13.24(3.91)                 |
+| `IHTSolver`   | 0.23(0.05)        | 0.18(0.12)          | 0.30(0.06)      | 0.80(0.11)          | 0.98(0.08)   | 1.67(0.50)                  |
+| `HTPSolver`   | 0.50(0.14)        | 0.94(0.44)          | 0.03(0.01)      | 14.18(5.13)         | 3.41(1.22)   | 12.97(6.23)                 |
+| `GraspSolver` | 0.18(0.06)        | 2.55(0.86)          | 0.08(0.03)      | 0.54(0.28)          | 0.53(0.22)   | 3.06(0.75)                  |
+| `FoBaSolver`  | 3.71(0.50)        | 3.28(0.39)          | 0.13(0.02)      | 6.22(0.61)          | 11.10(1.04)  | 57.42(12.95)                |
+| `ScopeSolver` | 0.30(0.08)        | 1.20(2.14)          | 0.09(0.01)      | 1.14(0.89)          | 1.17(0.25)   | 7.78(2.23)                  |
+| `cvxpy`       | 14.59(5.60)       | 69.45(53.47)        | 0.47(0.16)      | 39.36(155.70)       | 32.26(17.88) | 534.49(337.72)              |
+
+`skscope` demonstrated significant computational advantages over `cvxpy`, exhibiting speedups ranging from approximately 3-500 times.
+
+
+## Contributions
+
+Any kind of contribution to `skscope` would be highly appreciated! Please check the [contributor's guide](skscope.readthedocs.io/contribute/index.html).
+
+- Bug report via [github issues](https://github.com/abess-team/skscope/issues)

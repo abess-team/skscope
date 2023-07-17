@@ -71,7 +71,7 @@ plt.legend(); plt.show()
 ```
 
 <p align="center">
-<img src="docs/source/userguide/figure/tf.png" width="240"/>
+<img src="docs/source/userguide/figure/tf.png" width="300"/>
 </p>
 
 The above Figure shows that the solution of ``ScopeSolver`` now capture the main trend of the observed random work. Again, 4 lines of code help us attain the solution. 
@@ -88,14 +88,7 @@ With ``skscope``, the creation of new machine learning methods becomes effortles
 
 ### Software features
 
-- Support multiple SCO solvers. Now, ``skscope`` has supported these algorithm: 
-  - `SCOPE`
-
-  - `HTP`
-  - `Grasp`
-  - `IHT`
-  - `OMP`
-  - `FoBa`
+- Support multiple state-of-the-art SCO solvers. Now, ``skscope`` has supported these algorithm: SCOPE, HTP, Grasp, IHT, OMP, FoBa.
 
 - User-friendly API
   
@@ -107,7 +100,7 @@ With ``skscope``, the creation of new machine learning methods becomes effortles
   
   - SCO: $\arg\min\limits_{\theta \in R^p} f(\theta) \text{ s.t. } ||\theta||_0 \leq s$; 
   
-  - SCO for group-structure parameters: $\arg\min\limits_{\theta \in R^p} f(\theta) \text{ s.t. } I(||\theta_{\mathcal{G}_i}||_2 \neq 0) \leq s$ where $\{\mathcal{G}_i\}_{i=1}^q$ is a non-overlapping partition for $\{1, \ldots, p\}$;
+  - SCO for group-structure parameters: $\arg\min\limits_{\theta \in R^p} f(\theta) \text{ s.t. } I(||\theta_{{G}_i}||_2 \neq 0) \leq s$ where $\{{G}_i\}_{i=1}^q$ is a non-overlapping partition for $\{1, \ldots, p\}$;
   
   - SCO when pre-selecting parameters in set $\mathcal{P}$: $\arg\min\limits_{\theta \in R^p} f(\theta) \text{ s.t. } ||\theta_{\mathcal{P}^c}||_0 \leq s$. 
 

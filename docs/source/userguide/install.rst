@@ -65,3 +65,14 @@ If you have troubles on Windows platform, here are some helpful tips.
 - The easiest way to configure the C++ compile environment on the Windows platform is to download and install the latest version of Visual Studio Community Edition. 
 
 - There are no official binary releases of ``jaxlib`` which is necessary for ``jax`` on Windows platform. However, there are some initial community-driven native Windows supports. More details about the installation of ``jax`` can be found `here <https://github.com/google/jax#installation>`__ and a community supported Windows build for jax can be found `here <https://github.com/cloudhan/jax-windows-builder>`__ .
+
+
+Dependencies
+----------------------------------------
+
+The current minimum dependencies to run ``skscope`` are:
+
+- ``numpy``
+- ``nlopt``
+- ``scikit-learn>=0.24``
+- ``"jax[cpu]"``

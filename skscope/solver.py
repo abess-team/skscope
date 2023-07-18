@@ -255,7 +255,7 @@ class ScopeSolver(BaseEstimator):
     def solve(
         self,
         objective,
-        data=(),
+        data=None,
         init_support_set=None,
         init_params=None,
         gradient=None,
@@ -441,12 +441,9 @@ class ScopeSolver(BaseEstimator):
         if self.cv > n:
             raise ValueError("cv should not be greater than sample_size")
         if self.cv > 1:
-            if len(data) == 0 and self.split_method is None:
-                data = (np.arange(n),)
-                if cpp:
-                    self.split_method = lambda data, index: index
-                else:
-                    self.split_method = lambda data, index: (index,)
+            if data is None and self.split_method is None:
+                data = np.arange(n)
+                self.split_method = lambda data, index: index
             if self.split_method is None:
                 raise ValueError("split_method should be provided when cv > 1")
             self.model.set_slice_by_sample(self.split_method)

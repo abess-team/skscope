@@ -131,7 +131,7 @@ class BaseSolver(BaseEstimator):
     def solve(
         self,
         objective,
-        data=(),
+        data=None,
         gradient=None,
         init_support_set=None,
         init_params=None,
@@ -235,9 +235,9 @@ class BaseSolver(BaseEstimator):
         else:
             if self.cv > self.sample_size:
                 raise ValueError("cv should not be greater than sample_size")
-            if len(data) == 0 and self.split_method is None:
-                data = (np.arange(self.sample_size),)
-                self.split_method = lambda data, index: (index,)
+            if data is None and self.split_method is None:
+                data = np.arange(self.sample_size)
+                self.split_method = lambda data, index: index
             if self.split_method is None:
                 raise ValueError("split_method should be provided when cv > 1")
             if self.cv_fold_id is None:

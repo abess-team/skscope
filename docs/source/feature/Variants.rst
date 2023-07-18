@@ -65,6 +65,12 @@ When using various model, it is common to have certain parameters that must have
 
 - in Ising models, the diagonal entries of the corresponding matrix represent the strength of external magnetic fields and are typically considered non-zero.
 
+Let :math:`\mathcal{P}` be a set that represents pre-selecting parameters, the generalized SCO is formulated as:
+
+.. math::
+
+    \arg\min\limits_{\theta \in R^p} f(\theta) \text{ s.t. } ||\theta_{\mathcal{P}^c}||_0 \leq s. 
+
 :ref:`skscope <skscope_package>` allows users to specify such preselected non-sparse parameters using the ``always_select`` parameter. This parameter is a list of integers, and the solver will always select these parameters.
 
 Here is an illustrative example for the usage of ``always_select``:

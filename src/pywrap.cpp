@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "Algorithm.h"
-//#include "NloptConfig.h"
 #include "UniversalData.h"
 #include "Data.h"
 #include "Metric.h"

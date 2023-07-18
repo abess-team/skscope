@@ -9,7 +9,6 @@
 #include <functional>
 #include <autodiff/forward/dual.hpp>
 
-//#include "NloptConfig.h"
 
 using Eigen::VectorXd;
 using Eigen::VectorXi;

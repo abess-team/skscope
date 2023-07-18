@@ -1,5 +1,4 @@
 #include "Algorithm.h"
-#include <nlopt.h>
 
 using namespace std;
 using namespace Eigen;

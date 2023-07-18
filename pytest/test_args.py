@@ -147,7 +147,7 @@ def test_scope_args():
         splicing_type="taper",
         path_type="gs",
         important_search=1,
-        always_select=[linear["support_set"][0]],
+        preselect=[linear["support_set"][0]],
         console_log_level="error",
     )
     solver.solve(linear["loss"], jit=True)

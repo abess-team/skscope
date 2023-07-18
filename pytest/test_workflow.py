@@ -29,7 +29,7 @@ def test_config(model, solver_creator):
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_always_select(model, solver_creator):
     solver = solver_creator(
-        model["n_features"], model["n_informative"], always_select=[0, 1]
+        model["n_features"], model["n_informative"], preselect=[0, 1]
     )
     solver.solve(model["loss"], jit=True)
 

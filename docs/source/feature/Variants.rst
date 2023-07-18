@@ -71,9 +71,9 @@ Let :math:`\mathcal{P}` be a set that represents pre-selecting parameters, the g
 
     \arg\min\limits_{\theta \in R^p} f(\theta) \text{ s.t. } ||\theta_{\mathcal{P}^c}||_0 \leq s. 
 
-:ref:`skscope <skscope_package>` allows users to specify such preselected non-sparse parameters using the ``always_select`` parameter. This parameter is a list of integers, and the solver will always select these parameters.
+:ref:`skscope <skscope_package>` allows users to specify such preselected non-sparse parameters using the ``preselect`` parameter. This parameter is a list of integers, and the solver will always select these parameters.
 
-Here is an illustrative example for the usage of ``always_select``:
+Here is an illustrative example for the usage of ``preselect``:
 
 .. code-block:: python
     
@@ -82,7 +82,7 @@ Here is an illustrative example for the usage of ``always_select``:
     solver = ScopeSolver(
         dimensionality=10,      ## 10 parameters in total
         sparsity=3,             ## 3 non-sparse parameters to be selected
-        always_select=[0, 1],   ## always select the first two parameters as non-sparse values
+        preselect=[0, 1],   ## always select the first two parameters as non-sparse values
     )
 
 

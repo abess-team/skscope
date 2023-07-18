@@ -24,7 +24,7 @@ class ScopeSolver(BaseEstimator):
         Used only when ``path_type`` is "seq".
     sample_size : int, default=1
         Sample size, denoted as :math:`n`.
-    always_select : array of int, default=[]
+    preselect : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``ScopeSolver`` will call this function to solve the convex optimization problem in each iteration.
@@ -114,7 +114,7 @@ class ScopeSolver(BaseEstimator):
         sparsity=None,
         sample_size=1,
         *,
-        always_select=[],
+        preselect=[],
         numeric_solver=convex_solver_nlopt,
         max_iter=20,
         ic_type="aic",
@@ -142,7 +142,7 @@ class ScopeSolver(BaseEstimator):
         self.sparsity = sparsity
         self.sample_size = sample_size
 
-        self.always_select = always_select
+        self.preselect = preselect
         self.numeric_solver = numeric_solver
         self.max_iter = max_iter
         self.ic_type = ic_type
@@ -344,15 +344,15 @@ class ScopeSolver(BaseEstimator):
                 [np.where(group == i)[0][0] for i in range(group_num)], dtype="int32"
             )
 
-        # always_select
-        always_select = np.unique(np.array(self.always_select, dtype="int32"))
-        if always_select.size > 0 and (
-            always_select[0] < 0 or always_select[-1] >= group_num
+        # preselect
+        preselect = np.unique(np.array(self.preselect, dtype="int32"))
+        if preselect.size > 0 and (
+            preselect[0] < 0 or preselect[-1] >= group_num
         ):
-            raise ValueError("always_select should be between 0 and dimensionality.")
+            raise ValueError("preselect should be between 0 and dimensionality.")
 
         # default sparsity level
-        force_min_sparsity = always_select.size
+        force_min_sparsity = preselect.size
         default_max_sparsity = max(
             force_min_sparsity,
             group_num
@@ -376,7 +376,7 @@ class ScopeSolver(BaseEstimator):
                     raise ValueError("sparsity should not be empty.")
                 if sparsity[0] < force_min_sparsity or sparsity[-1] > group_num:
                     raise ValueError(
-                        "All sparsity should be between 0 (when `always_select` is default) and dimensionality (when `group` is default)."
+                        "All sparsity should be between 0 (when `preselect` is default) and dimensionality (when `group` is default)."
                     )
         elif self.path_type == "gs":
             path_type = 2
@@ -399,7 +399,7 @@ class ScopeSolver(BaseEstimator):
 
             if gs_lower_bound < force_min_sparsity or gs_upper_bound > group_num:
                 raise ValueError(
-                    "gs_lower_bound and gs_upper_bound should be between 0 (when `always_select` is default) and dimensionality (when `group` is default)."
+                    "gs_lower_bound and gs_upper_bound should be between 0 (when `preselect` is default) and dimensionality (when `group` is default)."
                 )
             if gs_lower_bound > gs_upper_bound:
                 raise ValueError("gs_upper_bound should be larger than gs_lower_bound.")
@@ -525,7 +525,7 @@ class ScopeSolver(BaseEstimator):
             gs_upper_bound,
             screening_size,
             group,
-            always_select,
+            preselect,
             self.thread,
             splicing_type,
             self.important_search,
@@ -650,7 +650,7 @@ class HTPSolver(BaseSolver):
         Default is ``range(int(p/log(log(p))/log(p)))``.
     sample_size : int, default=1
         Sample size, denoted as :math:`n`.
-    always_select : array of int, default=[]
+    preselect : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     step_size : float, default=0.005
         Step size of gradient descent.
@@ -705,7 +705,7 @@ class HTPSolver(BaseSolver):
         sparsity=None,
         sample_size=1,
         *,
-        always_select=[],
+        preselect=[],
         step_size=0.005,
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
@@ -721,7 +721,7 @@ class HTPSolver(BaseSolver):
             dimensionality=dimensionality,
             sparsity=sparsity,
             sample_size=sample_size,
-            always_select=always_select,
+            preselect=preselect,
             numeric_solver=numeric_solver,
             max_iter=max_iter,
             group=group,
@@ -743,7 +743,7 @@ class HTPSolver(BaseSolver):
         init_params,
         data,
     ):
-        if sparsity <= self.always_select.size:
+        if sparsity <= self.preselect.size:
             return super()._solve(
                 sparsity,
                 loss_fn,
@@ -770,7 +770,7 @@ class HTPSolver(BaseSolver):
                     for i in range(group_num)
                 ]
             )
-            score[self.always_select] = np.inf
+            score[self.preselect] = np.inf
             support_new_group = np.argpartition(score, -sparsity)[-sparsity:]
             support_new_group_tuple = tuple(np.sort(support_new_group))
             # terminating condition
@@ -809,7 +809,7 @@ class IHTSolver(HTPSolver):
         Default is ``range(int(p/log(log(p))/log(p)))``.
     sample_size : int, default=1
         Sample size, denoted as :math:`n`.
-    always_select : array of int, default=[]
+    preselect : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     step_size : float, default=0.005
         Step size of gradient descent.
@@ -867,7 +867,7 @@ class IHTSolver(HTPSolver):
         init_params,
         data,
     ):
-        if sparsity <= self.always_select.size:
+        if sparsity <= self.preselect.size:
             return super()._solve(
                 sparsity,
                 loss_fn,
@@ -892,7 +892,7 @@ class IHTSolver(HTPSolver):
                     for i in range(group_num)
                 ]
             )
-            score[self.always_select] = np.inf
+            score[self.preselect] = np.inf
             support_new_group = np.argpartition(score, -sparsity)[-sparsity:]
             # terminating condition
             if np.all(set(support_old_group) == set(support_new_group)):
@@ -928,7 +928,7 @@ class GraspSolver(BaseSolver):
         Default is ``range(int(p/log(log(p))/log(p)))``.
     sample_size : int, default=1
         Sample size, denoted as :math:`n`.
-    always_select : array of int, default=[]
+    preselect : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``GraspSolver`` will call this function to solve the convex optimization problem in each iteration.
@@ -984,7 +984,7 @@ class GraspSolver(BaseSolver):
         init_params,
         data,
     ):
-        if sparsity <= self.always_select.size:
+        if sparsity <= self.preselect.size:
             return super()._solve(
                 sparsity,
                 loss_fn,
@@ -1010,7 +1010,7 @@ class GraspSolver(BaseSolver):
                     for i in range(group_num)
                 ]
             )
-            score[self.always_select] = np.inf
+            score[self.preselect] = np.inf
 
             # identify directions
             if 2 * sparsity < group_num:
@@ -1045,7 +1045,7 @@ class GraspSolver(BaseSolver):
                     for i in range(group_num)
                 ]
             )
-            score[self.always_select] = np.inf
+            score[self.preselect] = np.inf
             support_set_group = np.argpartition(score, -sparsity)[-sparsity:]
             support_set = np.concatenate([group_indices[i] for i in support_set_group])
             params = np.zeros(self.dimensionality)
@@ -1086,7 +1086,7 @@ class FobaSolver(BaseSolver):
         The threshold for determining whether a variable is deleted or not will be set to ``threshold`` * ``foba_threshold_ratio``.
     strict_sparsity : bool, default=True
         Whether to strictly control the sparsity level to be ``sparsity`` or not.
-    always_select : array of int, default=[]
+    preselect : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``FobaSolver`` will call this function to solve the convex optimization problem in each iteration.
@@ -1142,7 +1142,7 @@ class FobaSolver(BaseSolver):
         threshold=0.0,
         foba_threshold_ratio=0.5,
         strict_sparsity=True,
-        always_select=[],
+        preselect=[],
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
         group=None,
@@ -1157,7 +1157,7 @@ class FobaSolver(BaseSolver):
             dimensionality=dimensionality,
             sparsity=sparsity,
             sample_size=sample_size,
-            always_select=always_select,
+            preselect=preselect,
             numeric_solver=numeric_solver,
             max_iter=max_iter,
             group=group,
@@ -1238,7 +1238,7 @@ class FobaSolver(BaseSolver):
     ):
         score = np.empty(len(group_indices), dtype=float)
         for idx in range(len(group_indices)):
-            if idx not in support_set_group or idx in self.always_select:
+            if idx not in support_set_group or idx in self.preselect:
                 score[idx] = np.inf
                 continue
             cache_param = params[group_indices[idx]]
@@ -1276,7 +1276,7 @@ class FobaSolver(BaseSolver):
         init_params,
         data,
     ):
-        if sparsity <= self.always_select.size:
+        if sparsity <= self.preselect.size:
             return super()._solve(
                 sparsity,
                 loss_fn,
@@ -1287,7 +1287,7 @@ class FobaSolver(BaseSolver):
             )
         # init
         params = np.zeros(self.dimensionality, dtype=float)
-        support_set_group = self.always_select
+        support_set_group = self.preselect
         threshold = {}
         group_num = len(np.unique(self.group))
         group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
@@ -1302,7 +1302,7 @@ class FobaSolver(BaseSolver):
                 break
             threshold[support_set_group.size] = backward_threshold
 
-            while support_set_group.size > self.always_select.size:
+            while support_set_group.size > self.preselect.size:
                 params, support_set_group, success = self._backward_step(
                     loss_fn,
                     value_and_grad,
@@ -1359,7 +1359,7 @@ class ForwardSolver(FobaSolver):
         The threshold to determine whether a variable is selected or not.
     strict_sparsity : bool, default=True
         Whether to strictly control the sparsity level to be ``sparsity`` or not.
-    always_select : array of int, default=[]
+    preselect : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``ForwardSolver`` will call this function to solve the convex optimization problem in each iteration.
@@ -1411,7 +1411,7 @@ class ForwardSolver(FobaSolver):
         *,
         threshold=0.0,
         strict_sparsity=True,
-        always_select=[],
+        preselect=[],
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
         group=None,
@@ -1426,7 +1426,7 @@ class ForwardSolver(FobaSolver):
             dimensionality=dimensionality,
             sparsity=sparsity,
             sample_size=sample_size,
-            always_select=always_select,
+            preselect=preselect,
             use_gradient=False,
             strict_sparsity=strict_sparsity,
             threshold=threshold,
@@ -1451,7 +1451,7 @@ class ForwardSolver(FobaSolver):
         init_params,
         data,
     ):
-        if sparsity <= self.always_select.size:
+        if sparsity <= self.preselect.size:
             return super()._solve(
                 sparsity,
                 loss_fn,
@@ -1462,7 +1462,7 @@ class ForwardSolver(FobaSolver):
             )
         # init
         params = np.zeros(self.dimensionality, dtype=float)
-        support_set_group = self.always_select
+        support_set_group = self.preselect
         group_num = len(np.unique(self.group))
         group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
 
@@ -1506,7 +1506,7 @@ class OMPSolver(ForwardSolver):
         The threshold to determine whether a variable is selected or not.
     strict_sparsity : bool, default=True
         Whether to strictly control the sparsity level to be ``sparsity`` or not.
-    always_select : array of int, default=[]
+    preselect : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``OMPSolver`` will call this function to solve the convex optimization problem in each iteration.
@@ -1560,7 +1560,7 @@ class OMPSolver(ForwardSolver):
         *,
         threshold=0.0,
         strict_sparsity=True,
-        always_select=[],
+        preselect=[],
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
         group=None,
@@ -1577,7 +1577,7 @@ class OMPSolver(ForwardSolver):
             sample_size=sample_size,
             threshold=threshold,
             strict_sparsity=strict_sparsity,
-            always_select=always_select,
+            preselect=preselect,
             numeric_solver=numeric_solver,
             max_iter=max_iter,
             group=group,

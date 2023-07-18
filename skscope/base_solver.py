@@ -20,7 +20,7 @@ class BaseSolver(BaseEstimator):
         Default is ``range(int(p/log(log(p))/log(p)))``.
     sample_size : int, default=1
         sample size, denoted as :math:`n`.
-    always_select : array of int, default=[]
+    preselect : array of int, default=[]
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``BaseSolver`` will call this function to solve the convex optimization problem in each iteration.
@@ -69,7 +69,7 @@ class BaseSolver(BaseEstimator):
         sparsity=None,
         sample_size=1,
         *,
-        always_select=[],
+        preselect=[],
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
         group=None,
@@ -83,7 +83,7 @@ class BaseSolver(BaseEstimator):
         self.dimensionality = dimensionality
         self.sample_size = sample_size
         self.sparsity = sparsity
-        self.always_select = always_select
+        self.preselect = preselect
         self.max_iter = max_iter
         self.group = group
         self.ic_type = ic_type
@@ -194,15 +194,15 @@ class BaseSolver(BaseEstimator):
             if not group_num == max(self.group) + 1:
                 raise ValueError("There is a gap in group.")
 
-        # always_select
-        self.always_select = np.unique(np.array(self.always_select, dtype="int32"))
-        if self.always_select.size > 0 and (
-            self.always_select[0] < 0 or self.always_select[-1] >= group_num
+        # preselect
+        self.preselect = np.unique(np.array(self.preselect, dtype="int32"))
+        if self.preselect.size > 0 and (
+            self.preselect[0] < 0 or self.preselect[-1] >= group_num
         ):
-            raise ValueError("always_select should be between 0 and dimensionality.")
+            raise ValueError("preselect should be between 0 and dimensionality.")
 
         # default sparsity level
-        force_min_sparsity = self.always_select.size
+        force_min_sparsity = self.preselect.size
         default_max_sparsity = max(
             force_min_sparsity,
             group_num
@@ -221,7 +221,7 @@ class BaseSolver(BaseEstimator):
             self.sparsity = np.unique(np.array(self.sparsity, dtype="int32"))
             if self.sparsity[0] < force_min_sparsity or self.sparsity[-1] > group_num:
                 raise ValueError(
-                    "All sparsity should be between 0 (when `always_select` is default) and dimensionality."
+                    "All sparsity should be between 0 (when `preselect` is default) and dimensionality."
                 )
 
         BaseSolver._check_positive_integer(self.cv, "cv")
@@ -438,7 +438,7 @@ class BaseSolver(BaseEstimator):
     ):
         if sparsity == 0:
             return np.zeros(self.dimensionality), np.array([], dtype=int)
-        if sparsity < self.always_select.size:
+        if sparsity < self.preselect.size:
             raise ValueError(
                 "The number of always selected variables is larger than the sparsity."
             )
@@ -447,8 +447,8 @@ class BaseSolver(BaseEstimator):
 
         if (
             math.comb(
-                group_num - self.always_select.size,
-                sparsity - self.always_select.size,
+                group_num - self.preselect.size,
+                sparsity - self.preselect.size,
             )
             > self.max_iter
         ):
@@ -456,10 +456,10 @@ class BaseSolver(BaseEstimator):
                 "The number of subsets is too large, please reduce the sparsity, dimensionality or increase max_iter."
             )
 
-        def all_subsets(p: int, s: int, always_select: np.ndarray = np.zeros(0)):
-            universal_set = np.setdiff1d(np.arange(group_num), always_select)
-            p = p - always_select.size
-            s = s - always_select.size
+        def all_subsets(p: int, s: int, preselect: np.ndarray = np.zeros(0)):
+            universal_set = np.setdiff1d(np.arange(group_num), preselect)
+            p = p - preselect.size
+            s = s - preselect.size
 
             def helper(start: int, s: str, curr_selection: np.ndarray):
                 if s == 0:
@@ -470,11 +470,11 @@ class BaseSolver(BaseEstimator):
                             i + 1, s - 1, np.append(curr_selection, universal_set[i])
                         )
 
-            yield from helper(0, s, always_select)
+            yield from helper(0, s, preselect)
 
         result = {"params": None, "support_set": None, "objective_value": math.inf}
         params = init_params.copy()
-        for support_set_group in all_subsets(group_num, sparsity, self.always_select):
+        for support_set_group in all_subsets(group_num, sparsity, self.preselect):
             support_set = np.concatenate([group_indices[i] for i in support_set_group])
             inactive_set = np.ones_like(init_params, dtype=bool)
             inactive_set[support_set] = False

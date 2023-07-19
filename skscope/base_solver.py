@@ -165,8 +165,6 @@ class BaseSolver(BaseEstimator):
         parameters : array of shape (dimensionality,)
             The optimal solution of optimization.
         """
-        if self.jax_platform not in ["cpu", "gpu", "tpu"]:
-            raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
 
 
@@ -219,10 +217,10 @@ class BaseSolver(BaseEstimator):
             )
         else:
             self.sparsity = np.unique(np.array(self.sparsity, dtype="int32"))
+            if self.sparsity.size == 0:
+                raise ValueError("Sparsity should not be empty.")
             if self.sparsity[0] < force_min_sparsity or self.sparsity[-1] > group_num:
-                raise ValueError(
-                    "All sparsity should be between 0 (when `preselect` is default) and dimensionality."
-                )
+                raise ValueError("There is an invalid sparsity.")
 
         BaseSolver._check_positive_integer(self.cv, "cv")
         if self.cv == 1:
@@ -230,16 +228,14 @@ class BaseSolver(BaseEstimator):
                 raise ValueError(
                     "ic_type should be one of ['aic', 'bic', 'sic','ebic']."
                 )
-            if self.ic_coef <= 0:
-                raise ValueError("ic_coef should be positive.")
         else:
             if self.cv > self.sample_size:
-                raise ValueError("cv should not be greater than sample_size")
+                raise ValueError("cv should not be greater than sample_size.")
             if data is None and self.split_method is None:
                 data = np.arange(self.sample_size)
                 self.split_method = lambda data, index: index
             if self.split_method is None:
-                raise ValueError("split_method should be provided when cv > 1")
+                raise ValueError("split_method should be provided when cv > 1.")
             if self.cv_fold_id is None:
                 kf = KFold(
                     n_splits=self.cv, shuffle=True, random_state=self.random_state
@@ -251,14 +247,14 @@ class BaseSolver(BaseEstimator):
             else:
                 self.cv_fold_id = np.array(self.cv_fold_id, dtype="int32")
                 if self.cv_fold_id.ndim > 1:
-                    raise ValueError("group should be an 1D array of integers.")
+                    raise ValueError("cv_fold_id should be an 1D array of integers.")
                 if self.cv_fold_id.size != self.sample_size:
                     raise ValueError(
-                        "The length of group should be equal to X.shape[0]."
+                        "The length of cv_fold_id should be equal to sample_size."
                     )
                 if len(set(self.cv_fold_id)) != self.cv:
                     raise ValueError(
-                        "The number of different masks should be equal to `cv`."
+                        "The number of different elements in cv_fold_id should be equal to cv."
                     )
 
         if init_support_set is None:
@@ -267,7 +263,7 @@ class BaseSolver(BaseEstimator):
             init_support_set = np.array(init_support_set, dtype="int32")
             if init_support_set.ndim > 1:
                 raise ValueError(
-                    "The initial active set should be " "an 1D array of integers."
+                    "The initial active set should be an 1D array of integers."
                 )
             if (
                 init_support_set.min() < 0
@@ -281,7 +277,7 @@ class BaseSolver(BaseEstimator):
             init_params = np.array(init_params, dtype=float)
             if init_params.shape != (self.dimensionality,):
                 raise ValueError(
-                    "The length of init_params must match `dimensionality`!"
+                    "The length of init_params should be equal to dimensionality."
                 )
 
         loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
@@ -424,8 +420,6 @@ class BaseSolver(BaseEstimator):
             return 2 * objective_value + self.ic_coef * effective_params_num * (
                 np.log(train_size) + 2 * np.log(self.dimensionality)
             )
-        else:
-            return objective_value
 
     def _solve(
         self,

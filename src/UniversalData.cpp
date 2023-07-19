@@ -114,17 +114,6 @@ void UniversalData::gradient_and_hessian(const VectorXd &effective_para, VectorX
     }
 }
 
-void UniversalData::init_para(VectorXd &effective_para)
-{
-    if (model->init_para)
-    {
-        VectorXd complete_para = VectorXd::Zero(this->model_size);
-        complete_para(this->effective_para_index) = effective_para;
-        complete_para = model->init_para(complete_para, *this->data, this->effective_para_index);
-        effective_para = complete_para(this->effective_para_index);
-    }
-}
-
 double UniversalData::optimize(VectorXd &effective_para)
 {
     if (effective_para.size() == 0){
@@ -204,9 +193,4 @@ void UniversalModel::set_deleter(function<void(pybind11::object const &)> const 
         deleter = [](pybind11::object const *p)
         { delete p; };
     }
-}
-
-void UniversalModel::set_init_params_of_sub_optim(function<VectorXd(VectorXd const &, pybind11::object const &, VectorXi const &)> const &f)
-{
-    init_para = f;
 }

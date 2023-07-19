@@ -431,8 +431,6 @@ bool Algorithm::primary_model_fit(UniversalData &active_data, MatrixXd &y, Vecto
     SPDLOG_DEBUG("optimization end\nfinal loss: {}\npara:{}", value, active_para.transpose());
     return true;
     /*
-    active_data.init_para(active_para);
-
     nlopt_opt opt = active_data.nlopt_create(active_para.size());
     nlopt_set_min_objective(opt, nlopt_function, &active_data);
     nlopt_result result = nlopt_optimize(opt, active_para.data(), &value);

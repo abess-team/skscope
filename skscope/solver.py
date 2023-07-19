@@ -295,8 +295,6 @@ class ScopeSolver(BaseEstimator):
             self.console_log_level, self.file_log_level, self.log_file_name
         )
 
-        if self.jax_platform not in ["cpu", "gpu", "tpu"]:
-            raise ValueError("jax_platform must be in 'cpu', 'gpu', 'tpu'")
         jax.config.update("jax_platform_name", self.jax_platform)
 
         p = self.dimensionality
@@ -318,7 +316,7 @@ class ScopeSolver(BaseEstimator):
             "ebic": 4,
         }
         if self.ic_type not in information_criterion_dict.keys():
-            raise ValueError('ic_type should be "aic", "bic", "ebic" or "sic"')
+            raise ValueError("ic_type should be one of ['aic', 'bic', 'sic','ebic'].")
         ic_type = information_criterion_dict[self.ic_type]
 
         # group
@@ -373,11 +371,9 @@ class ScopeSolver(BaseEstimator):
             else:
                 sparsity = np.unique(np.array(self.sparsity, dtype="int32"))
                 if sparsity.size == 0:
-                    raise ValueError("sparsity should not be empty.")
+                    raise ValueError("Sparsity should not be empty.")
                 if sparsity[0] < force_min_sparsity or sparsity[-1] > group_num:
-                    raise ValueError(
-                        "All sparsity should be between 0 (when `preselect` is default) and dimensionality (when `group` is default)."
-                    )
+                    raise ValueError("There is an invalid sparsity.")
         elif self.path_type == "gs":
             path_type = 2
             sparsity = np.array([0], dtype="int32")
@@ -399,7 +395,7 @@ class ScopeSolver(BaseEstimator):
 
             if gs_lower_bound < force_min_sparsity or gs_upper_bound > group_num:
                 raise ValueError(
-                    "gs_lower_bound and gs_upper_bound should be between 0 (when `preselect` is default) and dimensionality (when `group` is default)."
+                    "gs_lower_bound and gs_upper_bound should be between 0 and dimensionality."
                 )
             if gs_lower_bound > gs_upper_bound:
                 raise ValueError("gs_upper_bound should be larger than gs_lower_bound.")
@@ -417,7 +413,7 @@ class ScopeSolver(BaseEstimator):
                 sparsity[-1], gs_upper_bound
             ):
                 raise ValueError(
-                    "screening_size should be between max(sparsity) and dimensionality."
+                    "screening_size should be between sparsity and dimensionality."
                 )
 
         # thread
@@ -429,7 +425,7 @@ class ScopeSolver(BaseEstimator):
         elif self.splicing_type == "taper":
             splicing_type = 1
         else:
-            raise ValueError('splicing_type should be "halve" or "taper".')
+            raise ValueError("splicing_type should be 'halve' or 'taper'.")
 
         # important_search
         BaseSolver._check_non_negative_integer(
@@ -439,13 +435,13 @@ class ScopeSolver(BaseEstimator):
         # cv
         BaseSolver._check_positive_integer(self.cv, "cv")
         if self.cv > n:
-            raise ValueError("cv should not be greater than sample_size")
+            raise ValueError("cv should not be greater than sample_size.")
         if self.cv > 1:
             if data is None and self.split_method is None:
                 data = np.arange(n)
                 self.split_method = lambda data, index: index
             if self.split_method is None:
-                raise ValueError("split_method should be provided when cv > 1")
+                raise ValueError("split_method should be provided when cv > 1.")
             self.model.set_slice_by_sample(self.split_method)
             self.model.set_deleter(self.deleter)
             if self.cv_fold_id is None:
@@ -459,14 +455,14 @@ class ScopeSolver(BaseEstimator):
             else:
                 self.cv_fold_id = np.array(self.cv_fold_id, dtype="int32")
                 if self.cv_fold_id.ndim > 1:
-                    raise ValueError("group should be an 1D array of integers.")
+                    raise ValueError("cv_fold_id should be an 1D array of integers.")
                 if self.cv_fold_id.size != n:
                     raise ValueError(
-                        "The length of group should be equal to X.shape[0]."
+                        "The length of cv_fold_id should be equal to sample_size."
                     )
                 if len(set(self.cv_fold_id)) != self.cv:
                     raise ValueError(
-                        "The number of different masks should be equal to `cv`."
+                        "The number of different elements in cv_fold_id should be equal to cv."
                     )
         else:
             self.cv_fold_id = np.array([], dtype="int32")
@@ -478,7 +474,7 @@ class ScopeSolver(BaseEstimator):
             init_support_set = np.array(init_support_set, dtype="int32")
             if init_support_set.ndim > 1:
                 raise ValueError(
-                    "The initial active set should be " "an 1D array of integers."
+                    "The initial active set should be an 1D array of integers."
                 )
             if init_support_set.min() < 0 or init_support_set.max() >= p:
                 raise ValueError("init_support_set contains wrong index.")
@@ -490,7 +486,7 @@ class ScopeSolver(BaseEstimator):
             init_params = np.array(init_params, dtype=float)
             if init_params.shape != (p,):
                 raise ValueError(
-                    "The length of init_params must match `dimensionality`!"
+                    "The length of init_params should be equal to dimensionality."
                 )
 
         # set optimization objective

@@ -19,7 +19,9 @@ solvers_ids = ("scope", "Base")  # , "GraHTP", "GraSP", "IHT")
 def test_init_support_set(model, solver_creator):
     solver = solver_creator(model["n_features"], model["n_informative"])
     solver.solve(model["loss"], init_support_set=[0, 1, 2], jit=True)
-
+    solver.get_result()
+    solver.get_estimated_params()
+    solver.get_support()
     assert set(model["support_set"]) == set(solver.support_set)
 
 
@@ -38,8 +40,7 @@ def test_init_params(model, solver_creator):
 def test_ic(model, solver_creator, ic_type):
     solver = solver_creator(
         model["n_features"],
-        [0, model["n_informative"]],
-        model["n_samples"],
+        sample_size=model["n_samples"],
         ic_type=ic_type,
     )
     solver.solve(model["loss"], jit=True)
@@ -112,6 +113,12 @@ def test_scope_autodiff():
     X, Y = linear["data"]
     solver.use_hessian = True
     solver.cpp = True
+    solver.solve(
+        _scope.quadratic_loss,
+        _scope.QuadraticData(np.matmul(X.T, X), -np.matmul(X.T, Y)),
+    )
+    assert set(solver.support_set) == set(linear["support_set"])
+    solver.use_hessian = False
     solver.solve(
         _scope.quadratic_loss,
         _scope.QuadraticData(np.matmul(X.T, X), -np.matmul(X.T, Y)),

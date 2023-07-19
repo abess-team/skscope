@@ -60,7 +60,6 @@ public:
     double loss(const VectorXd& effective_para); // compute the loss with effective_para
     double loss_and_gradient(const VectorXd& effective_para, Eigen::VectorXd& gradient);
     void gradient_and_hessian(const VectorXd& effective_para, VectorXd& gradient,MatrixXd& hessian);             
-    void init_para(VectorXd & effective_para);  // initialize para for primary_model_fit, default is not change.                                                                                        
     double optimize(VectorXd& effective_para);                
 };
 
@@ -75,8 +74,6 @@ private:
     function <MatrixXd(VectorXd const& para, pybind11::object const& data)> hessian_user_defined;
     function <pybind11::object(pybind11::object const& old_data, VectorXi const& target_sample_index)> slice_by_sample;
     function <void(pybind11::object const* p)> deleter = [](pybind11::object const* p) { delete p; };
-    function <VectorXd(VectorXd & para, pybind11::object const& data, VectorXi const& active_para_index)> init_para = nullptr;
-
 public:
     // register callback function
     void set_loss_of_model(function <double(VectorXd const&, pybind11::object const&)> const&);
@@ -86,5 +83,4 @@ public:
     void set_hessian_user_defined(function <MatrixXd(VectorXd const&, pybind11::object const&)> const&);
     void set_slice_by_sample(function <pybind11::object(pybind11::object const&, VectorXi const&)> const&);
     void set_deleter(function <void(pybind11::object const&)> const&);
-    void set_init_params_of_sub_optim(function <VectorXd(VectorXd const&, pybind11::object const&, VectorXi const&)> const&);
 };

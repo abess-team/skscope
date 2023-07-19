@@ -192,13 +192,6 @@ UniversalData X_seg(UniversalData& X, int n, Eigen::VectorXi& ind, int model_typ
 
 // void max_k(Eigen::VectorXd &vec, int k, Eigen::VectorXi &result);
 void slice_assignment(Eigen::VectorXd &nums, Eigen::VectorXi &ind, double value);
-// Eigen::VectorXi get_value_index(Eigen::VectorXd &nums, double value);
-// Eigen::VectorXd vector_slice(Eigen::VectorXd &nums, Eigen::VectorXi &ind);
-Eigen::VectorXi vector_slice(Eigen::VectorXi &nums, Eigen::VectorXi &ind);
-// Eigen::MatrixXd row_slice(Eigen::MatrixXd &nums, Eigen::VectorXi &ind);
-// Eigen::MatrixXd matrix_slice(Eigen::MatrixXd &nums, Eigen::VectorXi &ind, int axis);
-
-// Eigen::MatrixXd X_seg(Eigen::MatrixXd &X, int n, Eigen::VectorXi &ind);
 /**
  * @brief complement of A, the whole set is {0..N-1}
  */

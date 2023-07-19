@@ -21,7 +21,7 @@ def test_config(model, solver_creator):
     solver = solver_creator(model["n_features"], model["n_informative"])
     solver.set_config(**solver.get_config())
     solver.solve(model["loss"], jit=True)
-
+    
     assert set(model["support_set"]) == set(solver.support_set)
 
 

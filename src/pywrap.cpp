@@ -284,7 +284,7 @@ pywrap_Universal(pybind11::object universal_data, UniversalModel universal_model
 PYBIND11_MODULE(_scope, m)
 {
     m.def("pywrap_Universal", &pywrap_Universal);
-    pybind11::class_<UniversalModel>(m, "UniversalModel").def(pybind11::init<>()).def("set_loss_of_model", &UniversalModel::set_loss_of_model).def("set_gradient_autodiff", &UniversalModel::set_gradient_autodiff).def("set_hessian_autodiff", &UniversalModel::set_hessian_autodiff).def("set_gradient_user_defined", &UniversalModel::set_gradient_user_defined).def("set_hessian_user_defined", &UniversalModel::set_hessian_user_defined).def("set_slice_by_sample", &UniversalModel::set_slice_by_sample).def("set_deleter", &UniversalModel::set_deleter).def("set_init_params_of_sub_optim", &UniversalModel::set_init_params_of_sub_optim);
+    pybind11::class_<UniversalModel>(m, "UniversalModel").def(pybind11::init<>()).def("set_loss_of_model", &UniversalModel::set_loss_of_model).def("set_gradient_autodiff", &UniversalModel::set_gradient_autodiff).def("set_hessian_autodiff", &UniversalModel::set_hessian_autodiff).def("set_gradient_user_defined", &UniversalModel::set_gradient_user_defined).def("set_hessian_user_defined", &UniversalModel::set_hessian_user_defined).def("set_slice_by_sample", &UniversalModel::set_slice_by_sample).def("set_deleter", &UniversalModel::set_deleter);
     m.def("init_spdlog", &init_spdlog);
     //pybind11::class_<NloptConfig>(m, "NloptConfig").def(pybind11::init<int, const char *, double, double, double, double, double, unsigned, unsigned>());
     pybind11::class_<QuadraticData>(m, "QuadraticData")

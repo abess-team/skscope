@@ -41,6 +41,7 @@ jobs:
           pip install pytest
           pip install pytest-cov
           pip install gcovr
+          pip install pandas
           cd ./pytest
           pytest --cov=skscope -v --cov-report=xml
           ls * -al

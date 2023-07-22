@@ -4,7 +4,7 @@ import nlopt
 
 
 def convex_solver_nlopt(
-    loss_fn,
+    objective_func,
     value_and_grad,
     init_params,
     optim_variable_set,
@@ -15,9 +15,9 @@ def convex_solver_nlopt(
 
     Parameters
     ----------
-    loss_fn: callable
+    objective_func: callable
         The objective function.
-        ``loss_fn(params, data) -> loss``, where ``params`` is a 1-D array with shape (dimensionality,).
+        ``objective_func(params, data) -> loss``, where ``params`` is a 1-D array with shape (dimensionality,).
     value_and_grad: callable
         The function to compute the loss and gradient.
         ``value_and_grad(params, data) -> (loss, grad)``, where ``params`` is a 1-D array with shape (dimensionality,).
@@ -26,12 +26,12 @@ def convex_solver_nlopt(
     optim_variable_set: array of int
         The index of variables to be optimized, others are fixed to the initial value.
     data: 
-        The data passed to loss_fn and value_and_grad.
+        The data passed to objective_func and value_and_grad.
 
     Returns
     -------
     loss: float
-        The loss of the optimized parameters, i.e., `loss_fn(params, data)`.
+        The loss of the optimized parameters, i.e., `objective_func(params, data)`.
     optimized_params: array of shape (dimensionality,)
         The optimized parameters.
     """
@@ -45,7 +45,7 @@ def convex_solver_nlopt(
             loss, full_grad = value_and_grad(init_params, data)
             grad[:] = full_grad[optim_variable_set]
         else:
-            loss = loss_fn(init_params, data)
+            loss = objective_func(init_params, data)
         if loss < best_loss:
             best_loss = loss
             best_params = np.copy(x)

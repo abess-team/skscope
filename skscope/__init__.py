@@ -7,7 +7,7 @@
 
 __version__ = "0.0.1"
 __author__ = ("Zezhi Wang, Jin Zhu,"
-              "Kangkang Jiang, Junhao Huang,"
+              "Peng Chen,"
               "Junxian Zhu, Xueqin Wang")
               
 

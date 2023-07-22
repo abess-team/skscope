@@ -1,4 +1,4 @@
-`Base solver class`
+Base solver class
 ===========================
 
 Classes

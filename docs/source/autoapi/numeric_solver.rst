@@ -1,4 +1,4 @@
-`Optimization functions`
+Optimization functions
 =============================
 
 Functions

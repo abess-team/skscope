@@ -1,4 +1,4 @@
-`Concrete solver classes`
+Concrete solver classes
 ===========================
 
 Classes

@@ -141,6 +141,9 @@ All solvers (except `IHTSolver`) in `skscope` consistently outperformed `cvxpy` 
 
 `skscope` demonstrated significant computational advantages over `cvxpy`, exhibiting speedups ranging from approximately 3-500 times.
 
+## Software architecture
+
+![](docs/source/contribute/figure/architecture-scope.png)
 
 ## Contributions
 

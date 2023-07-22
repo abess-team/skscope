@@ -1,5 +1,7 @@
-``scikit-learn`` compatible machine learning methods
+``scikit-learn``-compatible Machine Learning Methods
 ====================================================
+
+
 
 Classes
 -------------

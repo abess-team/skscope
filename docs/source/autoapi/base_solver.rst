@@ -1,4 +1,4 @@
-Base solver class
+Base Solver Class
 ===========================
 
 Classes

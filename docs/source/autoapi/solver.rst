@@ -1,5 +1,7 @@
-Concrete solver classes
+Sparsity-Constraint Optimization Solvers
 ===========================
+
+Current supported solvers for sparsity-constraint optimization. These solvers inherit a `BaseSolver <base_solver.rst>`__. 
 
 Classes
 ---------------

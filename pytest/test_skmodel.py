@@ -1,11 +1,11 @@
 import numpy as np
 import pandas as pd
 
-from skscope.skmodel import Portfolio 
+from skscope.skmodel import PortfolioSelection 
 
 
 def test_portfolio():
-    port = Portfolio(k=50, seed=0)
+    port = PortfolioSelection(k=50, seed=0)
     dir = "../docs/source/userguide/examples/Miscellaneous/data/csi500-2020-2021.csv"
     X = pd.read_csv(dir, encoding='gbk')
     keep_cols = X.columns[(X.isnull().sum() <= 20)]

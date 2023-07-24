@@ -6,9 +6,8 @@
 Classes
 -------------
 
-.. autoapisummary::
-
-    skscope.skmodel.Portfolio
+.. autoapisummary:: skscope.skmodel
+    :members: PortfolioSelection
 
 .. autoapimodule:: skscope.skmodel
-    :members: Portfolio
+    :members: PortfolioSelection

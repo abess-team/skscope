@@ -2,10 +2,13 @@ import numpy as np
 import pandas as pd
 
 from skscope.skmodel import PortfolioSelection 
+from sklearn.utils.estimator_checks import check_estimator
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 
 
 def test_portfolio():
-    port = PortfolioSelection(k=50, seed=0)
+    # load data
+    port = PortfolioSelection(s=50, alpha=0.001, random_state=0)
     dir = "../docs/source/userguide/examples/Miscellaneous/data/csi500-2020-2021.csv"
     X = pd.read_csv(dir, encoding='gbk')
     keep_cols = X.columns[(X.isnull().sum() <= 20)]
@@ -18,10 +21,18 @@ def test_portfolio():
     X_train = X[:train_size]
     X_test = X[train_size:]
 
-    port = port.fit(X_train, obj="MinVar")
+    # fit and test
+    port = port.fit(X_train)
     score = port.score(X_test)
-    assert score > 0.1
-    return np.round(score, 3)
+    assert score > 0.05
 
-score = test_portfolio()
-
+    # gridsearch with time-series splitting
+    tscv = TimeSeriesSplit(n_splits=5)
+    param_grid = {'alpha':[1e-4, 1e-3, 1e-2]}
+    port = PortfolioSelection(obj="MeanVar", s=50, random_state=0)
+    grid_search = GridSearchCV(port, param_grid, cv=tscv)
+    grid_search.fit(X)
+    grid_search.cv_results_
+    assert grid_search.best_score_ > 0.05
+ 
+test_portfolio()

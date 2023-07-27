@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pandas as pd
 
@@ -5,12 +6,13 @@ from skscope.skmodel import PortfolioSelection
 from sklearn.utils.estimator_checks import check_estimator
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 
+CURRENT = os.path.dirname(os.path.abspath(__file__))
 
 def test_portfolio():
     # load data
     port = PortfolioSelection(s=50, alpha=0.001, random_state=0)
-    dir = "../docs/source/userguide/examples/Miscellaneous/data/csi500-2020-2021.csv"
-    X = pd.read_csv(dir, encoding='gbk')
+    dir = "/../docs/source/userguide/examples/Miscellaneous/data/csi500-2020-2021.csv"
+    X = pd.read_csv(CURRENT+dir, encoding='gbk')
     keep_cols = X.columns[(X.isnull().sum() <= 20)]
     X = X[keep_cols]
     X = X.fillna(0)

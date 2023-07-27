@@ -1556,7 +1556,7 @@ class OMPSolver(ForwardSolver):
     Shalev-Shwartz S, Srebro N, Zhang T. Trading accuracy for sparsity in optimization problems with sparsity constraints[J]. SIAM Journal on Optimization, 2010, 20(6): 2807-2832.Shalev-Shwartz S, Srebro N, Zhang T. Trading accuracy for sparsity in optimization problems with sparsity constraints[J]. SIAM Journal on Optimization, 2010, 20(6): 2807-2832.
     """
 
-    def __init__ (
+    def __init__(
         self,
         dimensionality,
         sparsity=None,

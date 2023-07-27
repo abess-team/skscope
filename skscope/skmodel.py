@@ -95,7 +95,7 @@ class PortfolioSelection(BaseEstimator):
             raise ValueError("{} objective is not supported.".format(self.obj))
 
         solver = ScopeSolver(N, self.s)
-        params = solver.solve(custom_objective, init_params=init_params)
+        params = solver.solve(custom_objective, init_params=init_params, jit=True)
         self.weight = params / params.sum()
         self.coef_ = self.weight
 
@@ -136,12 +136,23 @@ class PortfolioSelection(BaseEstimator):
 class NonlinearSelection(BaseEstimator):
     r"""
     Select relevant features which may have nonlinear dependence on the target.
+
+    Parameters
+    ----------
+    sparsity : int, default=None
+        The number of features to be selected, i.e., the sparsity level
+    gamma_x : float, default=None
+        The width parameter of Gaussian kernel for X. If None, defaults to 1.0 / n_features.
+    gamma_y : float, default=None
+        The width parameter of Gaussian kernel for y.
     """
 
-    def __init__(self):
-        pass
+    def __init__(self, sparsity=None, gamma_x=0.7, gamma_y=0.7):
+        self.sparsity = sparsity
+        self.gamma_x = gamma_x
+        self.gamma_y = gamma_y
 
-    def fit(self, X, y, sample_weight=None, sparsity=None, gamma_x=0.7, gamma_y=0.7):
+    def fit(self, X, y, sample_weight=None):
         r"""
         The fit function is used to comupte the weight of the desired sparse portfolio with a certain objective.
 
@@ -155,23 +166,16 @@ class NonlinearSelection(BaseEstimator):
 
         sample_weight : ignored
             Not used, present here for API consistency by convention.
-
-        sparsity : int, default=None
-            The number of features to be selected, i.e., the sparsity level
-        gamma_x : float, default=None
-            The width parameter of Gaussian kernel for X. If None, defaults to 1.0 / n_features.
-        gamma_y : float, default=None
-            The width parameter of Gaussian kernel for y.
         """
         n, p = X.shape
         Gamma = np.eye(n) - np.ones((n, 1)) @ np.ones((1, n)) / n
-        L = rbf_kernel(y.reshape(-1, 1), gamma=gamma_y)
+        L = rbf_kernel(y.reshape(-1, 1), gamma=self.gamma_y)
         L_bar = Gamma @ L @ Gamma
         response = L_bar.reshape(-1)
         K_bar = np.zeros((n**2, p))
         for k in range(p):
             x = X[:, k]
-            tmp = rbf_kernel(x.reshape(-1, 1), gamma=gamma_x)
+            tmp = rbf_kernel(x.reshape(-1, 1), gamma=self.gamma_x)
             K_bar[:, k] = (Gamma @ tmp @ Gamma).reshape(-1)
         covariate = K_bar
 
@@ -179,7 +183,10 @@ class NonlinearSelection(BaseEstimator):
             loss = jnp.mean((response - covariate @ jnp.abs(alpha)) ** 2)
             return loss
 
-        solver = ScopeSolver(p, sparsity=sparsity)
-        alpha = solver.solve(custom_objective)
+        solver = ScopeSolver(p, sparsity=self.sparsity)
+        alpha = solver.solve(custom_objective, jit=True)
         self.coef_ = alpha
         return self
+
+    def score(self, X, y=None, sample_weight=None):
+        pass

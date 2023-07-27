@@ -26,11 +26,14 @@ class CreateTestModel:
 
         def hess_linear_model(params):
             return np.matmul(X.T, X)
-        
+
         X_jnp = jnp.array(X)
         Y_jnp = jnp.array(Y)
+
         def linear_model_data(params, data_indices):
-            return jnp.sum(jnp.square(Y_jnp[data_indices] - X_jnp[data_indices,] @ params))
+            return jnp.sum(
+                jnp.square(Y_jnp[data_indices] - X_jnp[data_indices,] @ params)
+            )
 
         return {
             "n_samples": self.N,
@@ -45,4 +48,3 @@ class CreateTestModel:
             "hess": hess_linear_model,
             "data": (X, Y),
         }
-

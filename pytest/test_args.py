@@ -91,8 +91,9 @@ def test_no_autodiff(model, solver_creator):
     solver.use_hessian = True
     solver.hessian = model["hess"]
     solver.solve(model["loss_numpy"], gradient=model["grad"])
-    
+
     assert set(model["support_set"]) == set(solver.support_set)
+
 
 def test_scope_cpp():
     solver = ScopeSolver(linear["n_features"], linear["n_informative"])
@@ -104,9 +105,9 @@ def test_scope_cpp():
         data=_scope.QuadraticData(np.matmul(X.T, X), -np.matmul(X.T, Y)),
         gradient=lambda x, d: np.array(_scope.quadratic_grad(x, d)),
     )
-    
 
     assert set(solver.support_set) == set(linear["support_set"])
+
 
 def test_scope_autodiff():
     solver = ScopeSolver(linear["n_features"], linear["n_informative"])
@@ -125,11 +126,13 @@ def test_scope_autodiff():
     )
     assert set(solver.support_set) == set(linear["support_set"])
 
+
 def test_scope_greed():
     solver = ScopeSolver(linear["n_features"], linear["n_informative"], greedy=False)
     solver.solve(linear["loss"], jit=True)
 
     assert set(linear["support_set"]) == set(solver.support_set)
+
 
 def test_scope_hessian():
     solver = ScopeSolver(linear["n_features"], linear["n_informative"])
@@ -138,11 +141,15 @@ def test_scope_hessian():
 
     assert set(linear["support_set"]) == set(solver.support_set)
 
+
 def test_scope_dynamic_max_exchange_num():
-    solver = ScopeSolver(linear["n_features"], linear["n_informative"], is_dynamic_max_exchange_num=False)
+    solver = ScopeSolver(
+        linear["n_features"], linear["n_informative"], is_dynamic_max_exchange_num=False
+    )
     solver.solve(linear["loss"], jit=True)
 
     assert set(linear["support_set"]) == set(solver.support_set)
+
 
 def test_scope_args():
     solver = ScopeSolver(
@@ -169,5 +176,3 @@ def test_scope_args():
         file_log_level="error",
     )
     solver.solve(linear["loss_data"])
-
-

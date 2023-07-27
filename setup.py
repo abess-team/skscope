@@ -177,7 +177,7 @@ setup(
         "Programming Language :: Python :: 3.10",
     ],
     ## there is no wheel version available for nlopt with python 3.11 now
-    python_requires='>=3.7,<3.11', 
+    python_requires='>=3.8,<3.11', 
     ext_modules=[CMakeExtension("skscope._scope")],
     cmdclass={"build_ext": CMakeBuild}
 )

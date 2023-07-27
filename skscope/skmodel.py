@@ -14,10 +14,10 @@ class PortfolioSelection(BaseEstimator):
     ------------
     s : int, default=10
         The number of stocks to be chosen, i.e., the sparsity level
-    
+
     obj : {"MinVar", "MeanVar"}, default="MinVar"
             The objective of the portfolio optimization
-        
+
     alpha: float, default=0
         The penalty coefficient of the return
 
@@ -28,9 +28,10 @@ class PortfolioSelection(BaseEstimator):
     random_state : {None, int, array_like[ints], SeedSequence, BitGenerator, Generator}, default=None
         The seed to initialize the parameter ``init_params`` in ``ScopeSolver``
     """
+
     def __init__(
-        self, 
-        s=10, 
+        self,
+        s=10,
         obj="MinVar",
         alpha=0,
         cov_matrix="lw",
@@ -53,10 +54,10 @@ class PortfolioSelection(BaseEstimator):
 
         y : ignored
             Not used, present here for API consistency by convention.
-        
+
         sample_weight : ignored
             Not used, present here for API consistency by convention.
-        
+
         Returns
         --------
         self : object
@@ -64,7 +65,7 @@ class PortfolioSelection(BaseEstimator):
         """
         X = np.array(X)
         T, N = X.shape
-        
+
         rng = np.random.default_rng(self.random_state)
         init_params = rng.standard_normal(N)
 
@@ -77,25 +78,28 @@ class PortfolioSelection(BaseEstimator):
             raise ValueError("{} estimator is not supported.".format(self.cov_matrix))
 
         if self.obj == "MinVar":
+
             def custom_objective(params):
                 params = params / jnp.sum(params)
                 var = params @ Sigma @ params
                 return var
+
         elif self.obj == "MeanVar":
+
             def custom_objective(params):
                 params = params / jnp.sum(params)
                 var = params @ Sigma @ params - self.alpha * mu @ params
                 return var
+
         else:
             raise ValueError("{} objective is not supported.".format(self.obj))
 
         solver = ScopeSolver(N, self.s)
         params = solver.solve(custom_objective, init_params=init_params)
-        self.weight =  params / params.sum()
+        self.weight = params / params.sum()
         self.coef_ = self.weight
 
         return self
-
 
     def score(self, X, y=None, sample_weight=None, measure="Sharpe"):
         r"""
@@ -108,13 +112,13 @@ class PortfolioSelection(BaseEstimator):
 
         y : ignored
             Not used, present here for API consistency by convention.
-        
+
         sample_weight : ignored
             Not used, present here for API consistency by convention.
 
         measure : {"Sharpe"}, default="Sharpe"
             The measure of the performance of a portfolio.
-        
+
         Returns
         --------
         score : float
@@ -129,24 +133,15 @@ class PortfolioSelection(BaseEstimator):
         return score
 
 
-
-
 class NonlinearSelection(BaseEstimator):
     r"""
     Select relevant features which may have nonlinear dependence on the target.
     """
+
     def __init__(self):
         pass
 
-    def fit(
-        self, 
-        X, 
-        y, 
-        sample_weight=None, 
-        sparsity=None, 
-        gamma_x=0.7, 
-        gamma_y=0.7
-    ):
+    def fit(self, X, y, sample_weight=None, sparsity=None, gamma_x=0.7, gamma_y=0.7):
         r"""
         The fit function is used to comupte the weight of the desired sparse portfolio with a certain objective.
 
@@ -157,7 +152,7 @@ class NonlinearSelection(BaseEstimator):
 
         y : array-like of shape (n_samples,)
             Target values.
-        
+
         sample_weight : ignored
             Not used, present here for API consistency by convention.
 

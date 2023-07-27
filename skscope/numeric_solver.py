@@ -25,7 +25,7 @@ def convex_solver_nlopt(
         The initial value of the parameters to be optimized.
     optim_variable_set: array of int
         The index of variables to be optimized, others are fixed to the initial value.
-    data: 
+    data:
         The data passed to objective_func and value_and_grad.
 
     Returns
@@ -40,7 +40,8 @@ def convex_solver_nlopt(
 
     def cache_opt_fn(x, grad):
         nonlocal best_loss, best_params
-        init_params[optim_variable_set] = x  # update the nonlocal variable: params
+        # update the nonlocal variable: params
+        init_params[optim_variable_set] = x
         if grad.size > 0:
             loss, full_grad = value_and_grad(init_params, data)
             grad[:] = full_grad[optim_variable_set]
@@ -55,7 +56,9 @@ def convex_solver_nlopt(
     nlopt_solver.set_min_objective(cache_opt_fn)
 
     try:
-        init_params[optim_variable_set] = nlopt_solver.optimize(init_params[optim_variable_set])
+        init_params[optim_variable_set] = nlopt_solver.optimize(
+            init_params[optim_variable_set]
+        )
         return nlopt_solver.last_optimum_value(), init_params
     except RuntimeError:
         init_params[optim_variable_set] = best_params

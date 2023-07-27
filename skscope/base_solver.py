@@ -5,6 +5,7 @@ import jax
 from .numeric_solver import convex_solver_nlopt
 import math
 
+
 class BaseSolver(BaseEstimator):
     r"""
     Get sparse optimal solution of convex objective function by searching all possible combinations of variables.
@@ -51,7 +52,7 @@ class BaseSolver(BaseEstimator):
         A function to calculate the information criterion.
         ``metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
-        The random seed used for cross-validation.  
+        The random seed used for cross-validation.
 
     Attributes
     ----------
@@ -63,6 +64,7 @@ class BaseSolver(BaseEstimator):
         The indices of selected variables, sorted in ascending order.
 
     """
+
     def __init__(
         self,
         dimensionality,
@@ -123,7 +125,7 @@ class BaseSolver(BaseEstimator):
 
         Returns
         -------
-        self : 
+        self :
             Solver instance.
         """
         return super().set_params(**params)
@@ -166,7 +168,6 @@ class BaseSolver(BaseEstimator):
             The optimal solution of optimization.
         """
         jax.config.update("jax_platform_name", self.jax_platform)
-
 
         BaseSolver._check_positive_integer(self.dimensionality, "dimensionality")
         BaseSolver._check_positive_integer(self.sample_size, "sample_size")
@@ -281,6 +282,7 @@ class BaseSolver(BaseEstimator):
                 )
 
         loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
+
         def loss_fn(params, data):
             value = loss_(params, data)
             if not np.isfinite(value):
@@ -288,7 +290,7 @@ class BaseSolver(BaseEstimator):
             if isinstance(value, float):
                 return value
             return value.item()
-        
+
         def value_and_grad(params, data):
             value, grad = grad_(params, data)
             if not np.isfinite(value):
@@ -304,7 +306,7 @@ class BaseSolver(BaseEstimator):
             for s in self.sparsity:
                 init_params, init_support_set = self._solve(
                     s, loss_fn, value_and_grad, init_support_set, init_params, data
-                )  ## warm start: use results of previous sparsity as initial value
+                )  # warm start: use results of previous sparsity as initial value
                 objective_value = loss_fn(init_params, data)
                 eval = self._metric(
                     objective_value,
@@ -334,7 +336,7 @@ class BaseSolver(BaseEstimator):
                         init_support_set,
                         init_params,
                         self.split_method(data, train_index),
-                    )  ## warm start: use results of previous sparsity as initial value
+                    )  # warm start: use results of previous sparsity as initial value
                     cv_eval[s] += loss_fn(
                         init_params, self.split_method(data, test_index)
                     )
@@ -359,18 +361,33 @@ class BaseSolver(BaseEstimator):
     def _set_objective(objective, gradient, jit):
         # objective function
         if objective.__code__.co_argcount == 1:
-            loss_ = lambda params, data: objective(params)
+
+            def loss_(params, data):
+                return objective(params)
+
         else:
-            loss_ = lambda params, data: objective(params, data)
+
+            def loss_(params, data):
+                return objective(params, data)
+
         if jit:
             loss_ = jax.jit(loss_)
 
         if gradient is None:
-            grad_ = lambda params, data: jax.value_and_grad(loss_)(params, data)
+
+            def grad_(params, data):
+                return jax.value_and_grad(loss_)(params, data)
+
         elif gradient.__code__.co_argcount == 1:
-            grad_ = lambda params, data: (loss_(params, data), gradient(params))
+
+            def grad_(params, data):
+                return (loss_(params, data), gradient(params))
+
         else:
-            grad_ = lambda params, data: (loss_(params, data), gradient(params, data))
+
+            def grad_(params, data):
+                return (loss_(params, data), gradient(params, data))
+
         if jit:
             grad_ = jax.jit(grad_)
 
@@ -536,10 +553,10 @@ class BaseSolver(BaseEstimator):
 
         Returns
         -------
-        results : dict 
+        results : dict
             The result of optimization, including the following keys:
 
-            + ``params`` : array of shape (dimensionality,) 
+            + ``params`` : array of shape (dimensionality,)
                 The optimal parameters.
             + ``support_set`` : array of int
                 The support set of the optimal parameters.

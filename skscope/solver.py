@@ -2,7 +2,6 @@ from sklearn.model_selection import KFold
 from .base_solver import BaseSolver
 from sklearn.base import BaseEstimator
 import numpy as np
-import nlopt
 import jax
 from jax import numpy as jnp
 from . import _scope
@@ -169,8 +168,8 @@ class ScopeSolver(BaseEstimator):
         self.console_log_level = console_log_level
         self.file_log_level = file_log_level
         self.log_file_name = log_file_name
-        self.hessian=None
-        self.cpp=False
+        self.hessian = None
+        self.cpp = False
 
     def get_config(self, deep=True):
         """
@@ -199,7 +198,7 @@ class ScopeSolver(BaseEstimator):
 
         Returns
         -------
-        self : 
+        self :
             Solver instance.
         """
         return super().set_params(**params)
@@ -283,7 +282,7 @@ class ScopeSolver(BaseEstimator):
             If ``gradient`` is not provided, ``objective`` must be written in ``JAX`` library.
         jit : bool, default=False
             If ``objective`` or ``gradient`` are written in JAX, ``jit`` can be set to True to speed up the optimization.
-        
+
         Returns
         -------
         parameters : array of shape (dimensionality,)
@@ -344,9 +343,7 @@ class ScopeSolver(BaseEstimator):
 
         # preselect
         preselect = np.unique(np.array(self.preselect, dtype="int32"))
-        if preselect.size > 0 and (
-            preselect[0] < 0 or preselect[-1] >= group_num
-        ):
+        if preselect.size > 0 and (preselect[0] < 0 or preselect[-1] >= group_num):
             raise ValueError("preselect should be between 0 and dimensionality.")
 
         # default sparsity level
@@ -543,10 +540,10 @@ class ScopeSolver(BaseEstimator):
 
         Returns
         -------
-        results : dict 
+        results : dict
             The result of optimization, including the following keys:
-            
-            + ``params`` : array of shape (dimensionality,) 
+
+            + ``params`` : array of shape (dimensionality,)
                 The optimal parameters.
             + ``support_set`` : array of int
                 The support set of the optimal parameters.
@@ -579,7 +576,8 @@ class ScopeSolver(BaseEstimator):
         if hessian is None:
             self.model.set_hessian_autodiff(objective)
         else:
-            # NOTE: Perfect Forwarding of grad and hess is neccessary for func written in Pybind11_Cpp code
+            # NOTE: Perfect Forwarding of grad and hess is neccessary for func
+            # written in Pybind11_Cpp code
             self.model.set_hessian_user_defined(
                 lambda params, data: hessian(params, data)
             )
@@ -590,11 +588,20 @@ class ScopeSolver(BaseEstimator):
 
         # hess
         if hessian is None:
-            hess_ = lambda params, data: jax.hessian(loss_)(params, data)
+
+            def hess_(params, data):
+                return jax.hessian(loss_)(params, data)
+
         elif hessian.__code__.co_argcount == 1:
-            hess_ = lambda params, data: hessian(params)
+
+            def hess_(params, data):
+                return hessian(params)
+
         else:
-            hess_ = lambda params, data: hessian(params, data)
+
+            def hess_(params, data):
+                return hessian(params, data)
+
         if jit:
             hess_ = jax.jit(hess_)
 
@@ -633,7 +640,7 @@ class HTPSolver(BaseSolver):
     r"""
     Get sparse optimal solution of convex objective function by Gradient Hard Thresholding Pursuit (GraHTP) algorithm.
     Specifically, ``HTPSolver`` aims to tackle this problem: :math:`\min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leq s`, where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity level. Each element of :math:`x` can be seen as a variable, and the nonzero elements of :math:`x` are the selected variables.
-    
+
     Parameters
     ----------
     dimensionality : int
@@ -676,8 +683,8 @@ class HTPSolver(BaseSolver):
         A function to calculate the information criterion.
         `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
-        The random seed used for cross-validation.  
-    
+        The random seed used for cross-validation.
+
     Attributes
     ----------
     params : array of shape(dimensionality,)
@@ -692,6 +699,7 @@ class HTPSolver(BaseSolver):
     Yuan X T, Li P, Zhang T. Gradient Hard Thresholding Pursuit[J]. J. Mach. Learn. Res., 2017, 18(1): 6027-6069.
 
     """
+
     def __init__(
         self,
         dimensionality,
@@ -792,7 +800,7 @@ class IHTSolver(HTPSolver):
     r"""
     Get sparse optimal solution of convex objective function by Iterative Hard Thresholding (IHT) algorithm.
     Specifically, ``IHTSolver`` aims to tackle this problem: :math:`\min_{x \in R^p} f(x) \text{ s.t. } ||x||_0 \leq s`, where :math:`f(x)` is a convex objective function and :math:`s` is the sparsity level. Each element of :math:`x` can be seen as a variable, and the nonzero elements of :math:`x` are the selected variables.
-    
+
     Parameters
     ----------
     dimensionality : int
@@ -835,8 +843,8 @@ class IHTSolver(HTPSolver):
         A function to calculate the information criterion.
         `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
-        The random seed used for cross-validation.  
-    
+        The random seed used for cross-validation.
+
     Attributes
     ----------
     params : array of shape(dimensionality,)
@@ -851,6 +859,7 @@ class IHTSolver(HTPSolver):
     Yuan X T, Li P, Zhang T. Gradient Hard Thresholding Pursuit[J]. J. Mach. Learn. Res., 2017, 18(1): 6027-6069.
 
     """
+
     def _solve(
         self,
         sparsity,
@@ -952,7 +961,7 @@ class GraspSolver(BaseSolver):
         A function to calculate the information criterion.
         `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
-        The random seed used for cross-validation.  
+        The random seed used for cross-validation.
 
     Attributes
     ----------
@@ -1110,7 +1119,7 @@ class FobaSolver(BaseSolver):
         A function to calculate the information criterion.
         `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
-        The random seed used for cross-validation.  
+        The random seed used for cross-validation.
 
     Attributes
     ----------
@@ -1123,7 +1132,8 @@ class FobaSolver(BaseSolver):
 
     References
     ----------
-    Liu J, Ye J, Fujimaki R. Forward-backward greedy algorithms for general convex smooth functions over a cardinality constraint[C]//International Conference on Machine Learning. PMLR, 2014: 503-511.    """
+    Liu J, Ye J, Fujimaki R. Forward-backward greedy algorithms for general convex smooth functions over a cardinality constraint[C]//International Conference on Machine Learning. PMLR, 2014: 503-511.
+    """
 
     def __init__(
         self,
@@ -1383,7 +1393,7 @@ class ForwardSolver(FobaSolver):
         A function to calculate the information criterion.
         `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
-        The random seed used for cross-validation.  
+        The random seed used for cross-validation.
 
     Attributes
     ----------
@@ -1395,7 +1405,7 @@ class ForwardSolver(FobaSolver):
         The indices of selected variables, sorted in ascending order.
 
     """
- 
+
     def __init__(
         self,
         dimensionality,
@@ -1530,7 +1540,7 @@ class OMPSolver(ForwardSolver):
         A function to calculate the information criterion.
         `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
-        The random seed used for cross-validation.  
+        The random seed used for cross-validation.
 
     Attributes
     ----------
@@ -1540,11 +1550,12 @@ class OMPSolver(ForwardSolver):
         The value of objective function on the solution.
     support_set : array of int
         The indices of selected variables, sorted in ascending order.
-    
+
     References
     ----------
     Shalev-Shwartz S, Srebro N, Zhang T. Trading accuracy for sparsity in optimization problems with sparsity constraints[J]. SIAM Journal on Optimization, 2010, 20(6): 2807-2832.Shalev-Shwartz S, Srebro N, Zhang T. Trading accuracy for sparsity in optimization problems with sparsity constraints[J]. SIAM Journal on Optimization, 2010, 20(6): 2807-2832.
     """
+
     def __init__(
         self,
         dimensionality,
@@ -1581,4 +1592,4 @@ class OMPSolver(ForwardSolver):
             split_method=split_method,
             random_state=random_state,
         )
-        self.use_gradient=True
+        self.use_gradient = True

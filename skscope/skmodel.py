@@ -193,4 +193,4 @@ class NonlinearSelection(BaseEstimator):
         ignore.
         ``score`` is not used in ``NonlinearSelection``.
         """
-        print( "score is not used in NonlinearSelection.")
+        print("score is not used in NonlinearSelection.")

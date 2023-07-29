@@ -1,0 +1,42 @@
+name: Format Python Code
+
+on:
+  push:
+    paths:
+      - "skscope/*.py"
+      - ".github/workflows/format.yml"
+  pull_request:
+    paths:
+      - "skscope/*.py"
+      - ".github/workflows/format.yml"
+  workflow_dispatch:
+
+
+jobs:
+  python-code-format:
+    runs-on: ubuntu-latest
+    env:
+      PYTHON: "3.9"
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup Python
+        uses: actions/setup-python@master
+        with:
+          python-version: 3.9
+      - name: Checkout repository and submodules
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install packages
+        run: pip install black
+      - name: Formatter
+        run: |
+          black ./skscope
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: Auto code format
+          title: Fixes by format action
+          body: This is an auto-generated PR with fixes.
+          labels: automated pr

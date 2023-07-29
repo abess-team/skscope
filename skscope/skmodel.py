@@ -189,4 +189,8 @@ class NonlinearSelection(BaseEstimator):
         return self
 
     def score(self, X, y=None, sample_weight=None):
-        pass
+        """
+        ignore.
+        ``score`` is not used in ``NonlinearSelection``.
+        """
+        print( "score is not used in NonlinearSelection.")

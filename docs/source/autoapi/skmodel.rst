@@ -7,7 +7,7 @@ Classes
 -------------
 
 .. autoapisummary:: skscope.skmodel
-    :members: PortfolioSelection
+    :members: PortfolioSelection, NonlinearSelection
 
 .. autoapimodule:: skscope.skmodel
-    :members: PortfolioSelection
+    :members: PortfolioSelection, NonlinearSelection

@@ -23,7 +23,7 @@ Just In Time Compilation
     )
     solver.solve(objective_fn, jit=True)
 
-The runtime comparison on the JIT mode is on or off shows that, JIT generally speedup 10 times. Here are the ratios of the runtime of non-JIT mode to JIT mode for different solvers on different problems:
+The runtime comparison on the JIT mode is on or off shows that, JIT generally speedup computation, ranging from 2 to 30 times. Here are the ratios of the runtime of non-JIT mode to JIT mode for different solvers on different problems:
 
 +-------------+-------------------+---------------------+---------------------+-----------------------------+-----------------+-------------+
 |             | Linear regression | Logistic regression | Multi-task learning | Nonlinear feature selection | Trend filtering | Ising model |

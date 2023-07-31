@@ -104,7 +104,7 @@ autosummary_generate = True
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "pydata_sphinx_theme"
-html_logo = "_static/skscope-bright.svg"
+html_logo = "_static/skscope-light.svg"
 html_favicon = "_static/logo-short.svg"
 html_sourcelink_suffix = ""
 
@@ -199,21 +199,6 @@ todo_include_todos = True
 
 # see https://sphinx-favicon.readthedocs.io for more information about the
 # sphinx-favicon extension
-favicons = [
-    # generic icons compatible with most browsers
-    "favicon-32x32.png",
-    "favicon-16x16.png",
-    {"rel": "shortcut icon", "sizes": "any", "href": "favicon.ico"},
-    # chrome specific
-    "android-chrome-192x192.png",
-    # apple icons
-    {"rel": "mask-icon", "color": "#459db9", "href": "safari-pinned-tab.svg"},
-    {"rel": "apple-touch-icon", "href": "apple-touch-icon.png"},
-    # msapplications
-    {"name": "msapplication-TileColor", "content": "#459db9"},
-    {"name": "theme-color", "content": "#ffffff"},
-    {"name": "msapplication-TileImage", "content": "mstile-150x150.png"},
-]
 
 html_sidebars = {
     "userguide/**": [

@@ -1,5 +1,7 @@
 [![codecov](https://codecov.io/gh/abess-team/skscope/branch/master/graphs/sunburst.svg)](https://codecov.io/gh/abess-team/skscope)
 
+![](docs/source/_static/skscope.png)
+
 # ``skscope``: Fast Sparse-Constraint Optimization
 
 ## What is `skscope`?

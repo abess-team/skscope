@@ -104,7 +104,7 @@ autosummary_generate = True
 # -- Options for HTML output -------------------------------------------------
 
 html_theme = "pydata_sphinx_theme"
-html_logo = "_static/skscope-light.svg"
+html_logo = "_static/skscope-light.png"
 html_favicon = "_static/logo-short.svg"
 html_sourcelink_suffix = ""
 
@@ -154,7 +154,7 @@ html_theme_options = {
     # "twitter_url": "https://twitter.com/PyData",
     "logo": {
         #"text": "skscope",
-        "image_dark": "_static/skscope-dark.svg",
+        "image_dark": "_static/skscope-dark.png",
         "alt_text": "skscope",
     },
     "use_edit_page_button": True,

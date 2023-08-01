@@ -14,6 +14,7 @@ from sklearn.utils.estimator_checks import check_estimator
 from sklearn.utils._param_validation import Hidden, Interval, StrOptions
 from numbers import Integral, Real
 
+
 class PortfolioSelection(BaseEstimator):
     r"""
     Construct a sparse portfolio using ``skscope`` with ``MinVar`` or ``MeanVar`` measure.
@@ -282,3 +283,107 @@ class NonlinearSelection(BaseEstimator):
         covariate = K_bar
         score = - np.mean((response - covariate @ self.coef_) ** 2)
         return score
+
+
+class RobustRegression(BaseEstimator):
+    r"""
+    A robust regression procedure via sparsity constrained exponential loss minimization.
+    Specifically, ``RobustRegression`` solves the following problem: 
+    :math:`\min_{\beta}-\sum_{i=1}^n\exp\{-(y_i-x_i^{\top}\beta)^2/\gamma\} \text{ s.t. } \|\beta\|_0 \leq s`
+    where :math:`\gamma` is a hyperparameter controlling the degree of robustness and 
+    :math:`s` is a hyperparameter controlling the sparsity level of :math:`\beta`.
+
+    Parameters
+    -----------
+    sparsity : int, default=5
+        The number of features to be selected, i.e., the sparsity level.
+
+    gamma : float, default=1
+        The parameter controlling the degree of robustness for the estimator.
+    """
+
+    _parameter_constraints: dict = { 
+     "sparsity": [Interval(Integral, 1, None, closed="left")], 
+     "gamma": [Interval(Real, 0, None, closed="neither")], 
+    } 
+
+    def __init__(
+        self,
+        sparsity=5,
+        gamma=1
+    ):
+        self.sparsity = sparsity
+        self.gamma = gamma
+
+    def fit(self, X, y, sample_weight=None):
+        r"""
+        The fit function is used to comupte the coeffifient vector ``coef_``.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            Feature matrix.
+
+        y : array-like of shape (n_samples,)
+            Target values.
+
+        sample_weight : ignored
+            Not used, present here for API consistency by convention.
+        
+        Returns
+        --------
+        self : object
+            Fitted Estimator.
+        """
+        X, y = check_X_y(X, y)
+        n, p = X.shape
+        if sample_weight is None:
+            sample_weight = np.ones(n)
+        else:
+            sample_weight = np.array(sample_weight)
+        
+        def custom_objective(params):
+            err = - jnp.exp(- jnp.square(y - X @ params) / self.gamma)
+            loss = jnp.average(err, weights=sample_weight)
+            return loss
+
+        solver = ScopeSolver(p, self.sparsity)
+        self.coef_ = solver.solve(custom_objective, jit=True)
+
+        return self
+    
+    def score(self, X, y, sample_weight=None):
+        r"""
+        Give test data, and it return the test score of this fitted model.
+
+        Parameters
+        ----------
+        X : array-like, shape(n_samples, n_features)
+            Feature matrix.
+
+        y : array-like, shape(n_samples,)
+            Target values.
+
+        sample_weight : ignored
+            Not used, present here for API consistency by convention.
+
+        Returns
+        -------
+        score : float
+            The weighted exponential loss of the given data.
+        """
+        X, y = check_X_y(X, y)
+        n, p = X.shape
+        if sample_weight is None:
+            sample_weight = np.ones(n)
+        else:
+            sample_weight = np.array(sample_weight)
+
+        err = - np.exp(- np.square(y - X @ self.coef_) / self.gamma)
+        loss = np.average(err, weights=sample_weight)
+        score = - loss
+        return score
+
+        
+
+

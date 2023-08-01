@@ -7,8 +7,18 @@ from skscope.skmodel import (
     NonlinearSelection,
     RobustRegression,
 )
+from sklearn.linear_model import LinearRegression
+from sklearn.pipeline import Pipeline
 from sklearn.utils.estimator_checks import check_estimator
-from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
+from sklearn.model_selection import (
+    GridSearchCV, 
+    TimeSeriesSplit,
+    train_test_split
+)
+from sklearn.feature_selection import SelectFromModel
+from sklearn.neural_network import MLPRegressor
+import warnings
+warnings.filterwarnings("ignore")
 
 CURRENT = os.path.dirname(os.path.abspath(__file__))
 
@@ -74,6 +84,20 @@ def test_NonlinearSelection():
     selector = NonlinearSelection(5)
     selector.fit(X, y)
     assert set(np.nonzero(selector.coef_)[0]) == set(true_support_set)
+
+    # supervised dimension reduction
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=1)
+
+    mlp = MLPRegressor(random_state=1, max_iter=1000).fit(X_train, y_train)
+    score1 = mlp.score(X_test, y_test)
+
+    selector = NonlinearSelection(5).fit(X_train, y_train)
+    transformer = SelectFromModel(selector, threshold=1e-7, prefit=True)
+    estimators = [("reduce_dim", transformer), 
+                  ('reg', MLPRegressor(random_state=1, max_iter=1000))]
+    pipe = Pipeline(estimators).fit(X_train, y_train)
+    score2 = pipe.score(X_test, y_test)
+    assert score2 > score1
 
     # gridsearch
     # selector = NonlinearSelection(5)

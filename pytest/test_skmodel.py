@@ -9,9 +9,9 @@ from sklearn.model_selection import GridSearchCV, TimeSeriesSplit
 CURRENT = os.path.dirname(os.path.abspath(__file__))
 
 
-def test_portfolio():
+def test_PortfolioSelection():
     # load data
-    port = PortfolioSelection(s=50, alpha=0.001, random_state=0)
+    port = PortfolioSelection(sparsity=50, alpha=0.001, random_state=0)
     dir = "/../docs/source/userguide/examples/Miscellaneous/data/csi500-2020-2021.csv"
     X = pd.read_csv(CURRENT + dir, encoding="gbk")
     keep_cols = X.columns[(X.isnull().sum() <= 20)]
@@ -32,11 +32,13 @@ def test_portfolio():
     # gridsearch with time-series splitting
     tscv = TimeSeriesSplit(n_splits=5)
     param_grid = {"alpha": [1e-4, 1e-3, 1e-2]}
-    port = PortfolioSelection(obj="MeanVar", s=50, random_state=0)
+    port = PortfolioSelection(obj="MeanVar", sparsity=50, random_state=0)
     grid_search = GridSearchCV(port, param_grid, cv=tscv)
     grid_search.fit(X)
     grid_search.cv_results_
     assert grid_search.best_score_ > 0.05
+
+test_PortfolioSelection()
 
 
 def test_NonlinearSelection():
@@ -67,3 +69,13 @@ def test_NonlinearSelection():
     selector = NonlinearSelection(5)
     selector.fit(X, y)
     assert set(np.nonzero(selector.coef_)[0]) == set(true_support_set)
+
+    # gridsearch
+    selector = NonlinearSelection(5)
+    param_grid = {"gamma_x": [0.7, 1.5], "gamma_y": [0.7, 1.5]}
+    grid_search = GridSearchCV(selector, param_grid)
+    grid_search.fit(X, y)
+    grid_search.cv_results_
+    assert set(np.nonzero(grid_search.best_estimator_.coef_)[0]) == set(true_support_set)
+
+test_NonlinearSelection()

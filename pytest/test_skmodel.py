@@ -70,6 +70,7 @@ def test_NonlinearSelection():
         + noise
     )
 
+    check_estimator(NonlinearSelection())
     selector = NonlinearSelection(5)
     selector.fit(X, y)
     assert set(np.nonzero(selector.coef_)[0]) == set(true_support_set)
@@ -97,6 +98,7 @@ def test_RobustRegression():
     beta_true[true_support_set] = 1
     y = X @ beta_true + noise
 
+    check_estimator(RobustRegression())
     model = RobustRegression(sparsity=5, gamma=1)
     model = model.fit(X, y)
     sample_weight = rng.random(n)

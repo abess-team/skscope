@@ -10,10 +10,41 @@ from sklearn.utils.validation import (
     check_X_y,
     check_is_fitted
 )
-from sklearn.utils.estimator_checks import check_estimator
 from sklearn.utils._param_validation import Hidden, Interval, StrOptions
 from numbers import Integral, Real
 
+def check_data(X, y=None, sample_weight=None):
+    if y is None:
+        X = check_array(X)
+    else:
+        X, y = check_X_y(X, y, dtype="numeric", y_numeric=True)
+    n, p = X.shape
+
+    
+    if sample_weight is None:
+        sample_weight = np.ones(n)
+    else:
+        sample_weight = np.array(sample_weight, dtype="float")
+        if sample_weight.ndim > 1:
+            raise ValueError("sample_weight should be a 1-D array.")
+        if sample_weight.size != n:
+            raise ValueError(
+                "X.shape[0] should be equal to sample_weight.size")
+        if sample_weight.sum() == 0:
+            raise ValueError("Weights sum to zero, can't be normalized.")
+
+        useful_index = list()
+        for i, w in enumerate(sample_weight):
+            if w > 0:
+                useful_index.append(i)
+        if len(useful_index) < n:
+            X = X[useful_index, :]
+            if not (y is None):
+                y = y[useful_index, :] if len(y.shape) > 1 else y[useful_index]
+            sample_weight = sample_weight[useful_index]
+            n = len(useful_index)
+
+    return X, y, sample_weight
 
 class PortfolioSelection(BaseEstimator):
     r"""
@@ -40,7 +71,7 @@ class PortfolioSelection(BaseEstimator):
 
     def __init__(
         self, 
-        sparsity=5, 
+        sparsity=1, 
         obj="MinVar",
         alpha=0,
         cov_matrix="lw",
@@ -84,11 +115,12 @@ class PortfolioSelection(BaseEstimator):
         self : object
             Fitted Estimator.
         """
+        self._validate_params()
+        X, y, sample_weight = check_data(X, y, sample_weight)
+        T, N = X.shape
+        self.n_features_in_ = N
 
         self.random_state_ = check_random_state(self.random_state)
-        X = check_array(X)
-        T, N = X.shape
-        
         # rng = np.random.default_rng(self.random_state)
         # init_params = rng.standard_normal(N)
         init_params = self.random_state_.randn(N)
@@ -148,14 +180,18 @@ class PortfolioSelection(BaseEstimator):
         score : float
             The Sharpe ratio of the constructed portfolio.
         """
-        X = check_array(X)
+        check_is_fitted(self)
+        X, y, sample_weight = check_data(X, y, sample_weight)
+        n, p = X.shape
+        if p != self.n_features_in_:
+            raise ValueError("X.shape[1] should be " + str(self.n_features_in_))
+
         return_ = X @ self.coef_
         if measure == "Sharpe":
             score = np.mean(return_) / np.std(return_)
         else:
             raise ValueError("{} measure is not supported.".format(measure))
         return score
-
 
 
 class NonlinearSelection(BaseEstimator):
@@ -182,7 +218,7 @@ class NonlinearSelection(BaseEstimator):
 
     def __init__(
         self,
-        sparsity=5,
+        sparsity=1,
         gamma_x=0.7,
         gamma_y=0.7,
     ):
@@ -217,17 +253,10 @@ class NonlinearSelection(BaseEstimator):
         self : object
             Fitted Estimator.
         """
-        X, y = check_X_y(X, y)
-        if sample_weight is None:
-            pass
-        else:
-            sample_weight = np.array(sample_weight).reshape(-1)
-            if sample_weight.shape[0] != X.shape[0]:
-                raise ValueError("Dimension mismatch.")
+        self._validate_params()
+        X, y, sample_weight = check_data(X, y, sample_weight)
         n, p = X.shape
-        if p < self.sparsity:
-            raise ValueError("invalid sparsity.")
-
+        self.n_features_in_ = p
 
         Gamma = np.eye(n) - np.ones((n, 1)) @ np.ones((1, n)) / n
         L = rbf_kernel(y.reshape(-1, 1), gamma=self.gamma_y)
@@ -269,8 +298,12 @@ class NonlinearSelection(BaseEstimator):
         score : float
             The negative loss on the given data.
         """
-        X, y = check_X_y(X, y)
+        check_is_fitted(self)
+        X, y, sample_weight = check_data(X, y, sample_weight)
         n, p = X.shape
+        if p != self.n_features_in_:
+            raise ValueError("X.shape[1] should be " + str(self.n_features_in_))
+        
         Gamma = np.eye(n) - np.ones((n, 1)) @ np.ones((1, n)) / n
         L = rbf_kernel(y.reshape(-1, 1), gamma=self.gamma_y)
         L_bar = Gamma @ L @ Gamma
@@ -295,7 +328,7 @@ class RobustRegression(BaseEstimator):
 
     Parameters
     -----------
-    sparsity : int, default=5
+    sparsity : int, default=1
         The number of features to be selected, i.e., the sparsity level.
 
     gamma : float, default=1
@@ -309,13 +342,16 @@ class RobustRegression(BaseEstimator):
 
     def __init__(
         self,
-        sparsity=5,
+        sparsity=1,
         gamma=1
     ):
         self.sparsity = sparsity
         self.gamma = gamma
 
-    def fit(self, X, y, sample_weight=None):
+    def _more_tags(self):
+        return {"requires_y": False}
+
+    def fit(self, X, y=None, sample_weight=None):
         r"""
         The fit function is used to comupte the coeffifient vector ``coef_``.
 
@@ -335,13 +371,11 @@ class RobustRegression(BaseEstimator):
         self : object
             Fitted Estimator.
         """
-        X, y = check_X_y(X, y)
+        self._validate_params()
+        X, y, sample_weight = check_data(X, y, sample_weight)
         n, p = X.shape
-        if sample_weight is None:
-            sample_weight = np.ones(n)
-        else:
-            sample_weight = np.array(sample_weight)
-        
+        self.n_features_in_ = p
+
         def custom_objective(params):
             err = - jnp.exp(- jnp.square(y - X @ params) / self.gamma)
             loss = jnp.average(err, weights=sample_weight)
@@ -372,12 +406,11 @@ class RobustRegression(BaseEstimator):
         score : float
             The weighted exponential loss of the given data.
         """
-        X, y = check_X_y(X, y)
+        check_is_fitted(self)
+        X, y, sample_weight = check_data(X, y, sample_weight)
         n, p = X.shape
-        if sample_weight is None:
-            sample_weight = np.ones(n)
-        else:
-            sample_weight = np.array(sample_weight)
+        if p != self.n_features_in_:
+            raise ValueError("X.shape[1] should be " + str(self.n_features_in_))
 
         err = - np.exp(- np.square(y - X @ self.coef_) / self.gamma)
         loss = np.average(err, weights=sample_weight)

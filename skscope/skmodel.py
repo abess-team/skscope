@@ -326,6 +326,13 @@ class RobustRegression(BaseEstimator):
     where :math:`\gamma` is a hyperparameter controlling the degree of robustness and 
     :math:`s` is a hyperparameter controlling the sparsity level of :math:`\beta`.
 
+    Note: When :math:`\gamma` is large, the exponential loss is approximately equivalent to :math:`|y_i-x_i^{\top}\beta|^2/\gamma` and thus similar to
+    the least square estimator. When :math:`\gamma` is small, the sample :math:`i` with large error :math:`|y_i-x_i^{\top}\beta|`
+    will obtain small impact on the estimation of :math:`\beta` and thus limiting the impact of outlier (i.e., improve the robustness
+    but reduce the efficiency).
+    Therefore, :math:`\gamma` need to be selected carefully with prior knowledge of the data or via some data-dirven methods (e.g. cross validation) to
+    achieve a appropriate trade-off between robustness and efficiency of the resulting estimator.
+
     Parameters
     -----------
     sparsity : int, default=1

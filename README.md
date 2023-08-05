@@ -3,7 +3,7 @@
 # ``skscope``: Fast Sparse-Constraint Optimization
 
 ![Build](https://github.com/abess-team/skscope/actions/workflows/CI.yml/badge.svg)
-[![codecov](https://codecov.io/gh/abess-team/skscope/branch/master/graphs/sunburst.svg)](https://codecov.io/gh/abess-team/skscope)
+[![codecov](https://codecov.io/gh/abess-team/skscope/branch/master/graph/badge.svg?token=XRD5BDMR2E)](https://codecov.io/gh/abess-team/skscope)
 
 ## What is `skscope`?
 

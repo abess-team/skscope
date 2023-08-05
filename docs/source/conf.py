@@ -29,7 +29,7 @@ copyright = '2023, abess-team'
 author = 'abess-team'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0'
+release = '0.0.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -109,7 +109,7 @@ html_favicon = "_static/logo-short.svg"
 html_sourcelink_suffix = ""
 
 # Define the json_url for our version switcher.
-json_url = "./_static/switcher.json"
+json_url = "https://skscope.readthedocs.io/en/latest/_static/switcher.json"
 
 # Define the version we use for matching in the version switcher.
 version_match = os.environ.get("READTHEDOCS_VERSION")

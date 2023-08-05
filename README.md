@@ -4,6 +4,7 @@
 
 [![Build](https://github.com/abess-team/skscope/actions/workflows/CI.yml/badge.svg)](https://github.com/abess-team/skscope/actions/workflows/CI.yml/badge.svg)
 [![codecov](https://codecov.io/gh/abess-team/skscope/branch/master/graph/badge.svg?token=XRD5BDMR2E)](https://codecov.io/gh/abess-team/skscope)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## What is `skscope`?
 

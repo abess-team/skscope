@@ -5,13 +5,14 @@ from sklearn.base import BaseEstimator
 from sklearn.covariance import LedoitWolf
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.utils.validation import (
-    check_array, 
-    check_random_state, 
+    check_array,
+    check_random_state,
     check_X_y,
-    check_is_fitted
+    check_is_fitted,
 )
 from sklearn.utils._param_validation import Hidden, Interval, StrOptions
 from numbers import Integral, Real
+
 
 def check_data(X, y=None, sample_weight=None):
     if y is None:
@@ -20,7 +21,6 @@ def check_data(X, y=None, sample_weight=None):
         X, y = check_X_y(X, y, dtype="numeric", y_numeric=True)
     n, p = X.shape
 
-    
     if sample_weight is None:
         sample_weight = np.ones(n)
     else:
@@ -28,8 +28,7 @@ def check_data(X, y=None, sample_weight=None):
         if sample_weight.ndim > 1:
             raise ValueError("sample_weight should be a 1-D array.")
         if sample_weight.size != n:
-            raise ValueError(
-                "X.shape[0] should be equal to sample_weight.size")
+            raise ValueError("X.shape[0] should be equal to sample_weight.size")
         if sample_weight.sum() == 0:
             raise ValueError("Weights sum to zero, can't be normalized.")
 
@@ -45,6 +44,7 @@ def check_data(X, y=None, sample_weight=None):
             n = len(useful_index)
 
     return X, y, sample_weight
+
 
 class PortfolioSelection(BaseEstimator):
     r"""
@@ -70,28 +70,27 @@ class PortfolioSelection(BaseEstimator):
     """
 
     def __init__(
-        self, 
-        sparsity=1, 
+        self,
+        sparsity=1,
         obj="MinVar",
         alpha=0,
         cov_matrix="lw",
         random_state=None,
     ):
-        self.sparsity =  sparsity
+        self.sparsity = sparsity
         self.obj = obj
         self.alpha = alpha
         self.cov_matrix = cov_matrix
         self.random_state = random_state
 
-    _parameter_constraints: dict = { 
-     "sparsity": [Interval(Integral, 1, None, closed="left")], 
-     "obj": [StrOptions({"MinVar", "MeanVar"})], 
-     "alpha": [Interval(Real, 0, None, closed="left")],
-     "cov_matrix": [StrOptions({"empirical", "lw"})], 
-     "random_state": ["random_state"], 
-    } 
+    _parameter_constraints: dict = {
+        "sparsity": [Interval(Integral, 1, None, closed="left")],
+        "obj": [StrOptions({"MinVar", "MeanVar"})],
+        "alpha": [Interval(Real, 0, None, closed="left")],
+        "cov_matrix": [StrOptions({"empirical", "lw"})],
+        "random_state": ["random_state"],
+    }
 
-    
     # def _more_tags(self):
     #     return {'non_deterministic': True}
 
@@ -197,7 +196,7 @@ class PortfolioSelection(BaseEstimator):
 class NonlinearSelection(BaseEstimator):
     r"""
     Select relevant features which may have nonlinear dependence on the target.
-    
+
     Parameters
     -----------
     sparsity : int, default=5
@@ -205,16 +204,16 @@ class NonlinearSelection(BaseEstimator):
 
     gamma_x : float, default=0.7
         The width parameter of Gaussian kernel for X.
-    
+
     gamma_y : float, default=0.7
         The width parameter of Gaussian kernel for y.
     """
 
-    _parameter_constraints: dict = { 
-     "sparsity": [Interval(Integral, 1, None, closed="left")], 
-     "gamma_x": [Interval(Real, 0, None, closed="neither")], 
-     "gamma_y": [Interval(Real, 0, None, closed="neither")], 
-    } 
+    _parameter_constraints: dict = {
+        "sparsity": [Interval(Integral, 1, None, closed="left")],
+        "gamma_x": [Interval(Real, 0, None, closed="neither")],
+        "gamma_y": [Interval(Real, 0, None, closed="neither")],
+    }
 
     def __init__(
         self,
@@ -227,13 +226,13 @@ class NonlinearSelection(BaseEstimator):
         self.gamma_y = gamma_y
 
     def fit(
-        self, 
-        X, 
-        y, 
-        sample_weight=None, 
+        self,
+        X,
+        y,
+        sample_weight=None,
     ):
         r"""
-        The fit function is used to comupte the coeffifient vector ``coef_`` and 
+        The fit function is used to comupte the coeffifient vector ``coef_`` and
         those features corresponding to larger coefficients are considered having
         stronger dependence on the target.
 
@@ -247,7 +246,7 @@ class NonlinearSelection(BaseEstimator):
 
         sample_weight : ignored
             Not used, present here for API consistency by convention.
-        
+
         Returns
         --------
         self : object
@@ -277,7 +276,7 @@ class NonlinearSelection(BaseEstimator):
         alpha = solver.solve(custom_objective)
         self.coef_ = np.abs(alpha)
         return self
-    
+
     def score(self, X, y, sample_weight=None):
         r"""
         Give test data, and it return the test score of this fitted model.
@@ -303,7 +302,7 @@ class NonlinearSelection(BaseEstimator):
         n, p = X.shape
         if p != self.n_features_in_:
             raise ValueError("X.shape[1] should be " + str(self.n_features_in_))
-        
+
         Gamma = np.eye(n) - np.ones((n, 1)) @ np.ones((1, n)) / n
         L = rbf_kernel(y.reshape(-1, 1), gamma=self.gamma_y)
         L_bar = Gamma @ L @ Gamma
@@ -314,16 +313,16 @@ class NonlinearSelection(BaseEstimator):
             tmp = rbf_kernel(x.reshape(-1, 1), gamma=self.gamma_x)
             K_bar[:, k] = (Gamma @ tmp @ Gamma).reshape(-1)
         covariate = K_bar
-        score = - np.mean((response - covariate @ self.coef_) ** 2)
+        score = -np.mean((response - covariate @ self.coef_) ** 2)
         return score
 
 
 class RobustRegression(BaseEstimator):
     r"""
     A robust regression procedure via sparsity constrained exponential loss minimization.
-    Specifically, ``RobustRegression`` solves the following problem: 
+    Specifically, ``RobustRegression`` solves the following problem:
     :math:`\min_{\beta}-\sum_{i=1}^n\exp\{-(y_i-x_i^{\top}\beta)^2/\gamma\} \text{ s.t. } \|\beta\|_0 \leq s`
-    where :math:`\gamma` is a hyperparameter controlling the degree of robustness and 
+    where :math:`\gamma` is a hyperparameter controlling the degree of robustness and
     :math:`s` is a hyperparameter controlling the sparsity level of :math:`\beta`.
 
     Note: When :math:`\gamma` is large, the exponential loss is approximately equivalent to :math:`|y_i-x_i^{\top}\beta|^2/\gamma` and thus similar to
@@ -342,16 +341,12 @@ class RobustRegression(BaseEstimator):
         The parameter controlling the degree of robustness for the estimator.
     """
 
-    _parameter_constraints: dict = { 
-     "sparsity": [Interval(Integral, 1, None, closed="left")], 
-     "gamma": [Interval(Real, 0, None, closed="neither")], 
-    } 
+    _parameter_constraints: dict = {
+        "sparsity": [Interval(Integral, 1, None, closed="left")],
+        "gamma": [Interval(Real, 0, None, closed="neither")],
+    }
 
-    def __init__(
-        self,
-        sparsity=1,
-        gamma=1
-    ):
+    def __init__(self, sparsity=1, gamma=1):
         self.sparsity = sparsity
         self.gamma = gamma
 
@@ -372,7 +367,7 @@ class RobustRegression(BaseEstimator):
 
         sample_weight : ignored
             Not used, present here for API consistency by convention.
-        
+
         Returns
         --------
         self : object
@@ -384,7 +379,7 @@ class RobustRegression(BaseEstimator):
         self.n_features_in_ = p
 
         def custom_objective(params):
-            err = - jnp.exp(- jnp.square(y - X @ params) / self.gamma)
+            err = -jnp.exp(-jnp.square(y - X @ params) / self.gamma)
             loss = jnp.average(err, weights=sample_weight)
             return loss
 
@@ -392,7 +387,7 @@ class RobustRegression(BaseEstimator):
         self.coef_ = solver.solve(custom_objective, jit=True)
 
         return self
-    
+
     def score(self, X, y, sample_weight=None):
         r"""
         Give test data, and it return the test score of this fitted model.
@@ -419,11 +414,7 @@ class RobustRegression(BaseEstimator):
         if p != self.n_features_in_:
             raise ValueError("X.shape[1] should be " + str(self.n_features_in_))
 
-        err = - np.exp(- np.square(y - X @ self.coef_) / self.gamma)
+        err = -np.exp(-np.square(y - X @ self.coef_) / self.gamma)
         loss = np.average(err, weights=sample_weight)
-        score = - loss
+        score = -loss
         return score
-
-        
-
-

@@ -6,6 +6,7 @@ from .numeric_solver import convex_solver_nlopt
 import math
 from . import layer
 
+
 class BaseSolver(BaseEstimator):
     r"""
     Get sparse optimal solution of convex objective function by searching all possible combinations of variables.
@@ -276,7 +277,7 @@ class BaseSolver(BaseEstimator):
                 group = layer.transform_group(group)
                 preselect = layer.transform_preselect(preselect)
         else:
-            p = self.dimensionality 
+            p = self.dimensionality
             loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
 
         def loss_fn(params, data):
@@ -305,17 +306,16 @@ class BaseSolver(BaseEstimator):
                 raise ValueError(
                     "The initial active set should be an 1D array of integers."
                 )
-            if (
-                init_support_set.min() < 0
-                or init_support_set.max() >= p
-            ):
+            if init_support_set.min() < 0 or init_support_set.max() >= p:
                 raise ValueError("init_support_set contains wrong index.")
 
         # init_params
         if init_params is None:
             random_init = False
             if len(layers) > 0:
-                random_init = np.any(np.array([layer.random_initilization for layer in layers]))
+                random_init = np.any(
+                    np.array([layer.random_initilization for layer in layers])
+                )
             if random_init:
                 init_params = np.random.RandomState(self.random_state).randn(p)
             else:
@@ -331,7 +331,14 @@ class BaseSolver(BaseEstimator):
             is_first_loop: bool = True
             for s in sparsity:
                 init_params, init_support_set = self._solve(
-                    s, loss_fn, value_and_grad, init_support_set, init_params, data, preselect, group
+                    s,
+                    loss_fn,
+                    value_and_grad,
+                    init_support_set,
+                    init_params,
+                    data,
+                    preselect,
+                    group,
                 )  # warm start: use results of previous sparsity as initial value
                 objective_value = loss_fn(init_params, data)
                 eval = self._metric(
@@ -363,7 +370,7 @@ class BaseSolver(BaseEstimator):
                         init_params,
                         self.split_method(data, train_index),
                         preselect,
-                        group
+                        group,
                     )  # warm start: use results of previous sparsity as initial value
                     cv_eval[s] += loss_fn(
                         init_params, self.split_method(data, test_index)
@@ -379,7 +386,7 @@ class BaseSolver(BaseEstimator):
                 cache_init_params[best_sparsity],
                 data,
                 preselect,
-                group
+                group,
             )
             self.objective_value = loss_fn(self.params, data)
             self.eval_objective = cv_eval[best_sparsity]
@@ -393,13 +400,15 @@ class BaseSolver(BaseEstimator):
 
     @staticmethod
     def _set_objective(objective, gradient, jit, layers=[]):
-        
         # objective function
         if objective.__code__.co_argcount == 1:
             if len(layers) == 0:
+
                 def loss_(params, data):
                     return objective(params)
+
             else:
+
                 def loss_(params, data):
                     for layer in layers:
                         params = layer.transform_params(params)
@@ -407,9 +416,12 @@ class BaseSolver(BaseEstimator):
 
         else:
             if len(layers) == 0:
+
                 def loss_(params, data):
                     return objective(params, data)
+
             else:
+
                 def loss_(params, data):
                     for layer in layers:
                         params = layer.transform_params(params)

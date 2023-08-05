@@ -16,6 +16,7 @@ loss
 @jax.tree_util.register_pytree_node_class
 class Identity:
     random_initilization = False
+
     def __init__(self, dimensionality):
         self.in_features = dimensionality
         self.out_features = dimensionality
@@ -55,7 +56,9 @@ class LinearConstraint(Identity):
     """
     constraint: coef * params = 1
     """
+
     random_initilization = True
+
     def __init__(self, dimensionality, coef=None):
         if coef is None:
             coef = jnp.ones(dimensionality)
@@ -80,12 +83,15 @@ class LinearConstraint(Identity):
     def tree_unflatten(cls, aux_data, children):
         return cls(aux_data["dimensionality"], *children)
 
+
 @jax.tree_util.register_pytree_node_class
 class SimplexConstraint(Identity):
     """
     constraint: coef * params = 1 ans params >= 0
     """
+
     random_initilization = True
+
     def __init__(self, dimensionality, coef=None):
         if coef is None:
             coef = jnp.ones(dimensionality)
@@ -158,4 +164,3 @@ if __name__ == "__main__":
     params = jnp.array([1, -1])
     layer = LinearConstraint(2)
     print(layer.transform_params(params))
-

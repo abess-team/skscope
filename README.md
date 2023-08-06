@@ -19,7 +19,7 @@ The recommended option for most of users:
 pip install skscope
 ```
 
-If you want to work with the latest development version, the further [installation instructions](https://skscope.readthedocs.io/userguide/install.html) help you install from source.
+If you want to work with the latest development version, the further [installation instructions](https://skscope.readthedocs.io/en/latest/userguide/index.html) help you install from source.
 
 ## Quick examples
 
@@ -150,6 +150,6 @@ All solvers (except `IHTSolver`) in `skscope` consistently outperformed `cvxpy` 
 
 ## Contributions
 
-Any kind of contribution to `skscope` would be highly appreciated! Please check the [contributor's guide](https://skscope.readthedocs.io/contribute/index.html).
+Any kind of contribution to `skscope` would be highly appreciated! Please check the [contributor's guide](https://skscope.readthedocs.io/en/latest/contribute/index.html).
 
 - Bug report via [github issues](https://github.com/abess-team/skscope/issues)

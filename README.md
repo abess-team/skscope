@@ -10,13 +10,13 @@
 
 ## What is `skscope`?
 
-``skscope`` aims to make sparsity-constrained optimization (SCO) is accessible to **everyone** because SCO holds immense potential across various domains, including machine learning, statistics, and signal processing. By providing a user-friendly interface, ``skscope`` empowers individuals from diverse backgrounds to harness the power of SCO and unlock its broad range of applications (see examples exhibited below).
+``skscope`` aims to make sparsity-constrained optimization (SCO) accessible to **everyone** because SCO holds immense potential across various domains, including machine learning, statistics, and signal processing. By providing a user-friendly interface, ``skscope`` empowers individuals from diverse backgrounds to harness the power of SCO and unlock its broad range of applications (see examples exhibited below).
 
 ![](docs/source/first_page.png)
 
 ## Installation
 
-The recommended option for most of users:
+The recommended option for most users:
   
 ```bash
 pip install skscope
@@ -47,7 +47,7 @@ solver = ScopeSolver(10, 3)
 params = solver.solve(ols_loss) 
 ```
 
-Below's another example illustrates that you can modify objective function to address another totally different problem. 
+Below's another example illustrates that you can modify the objective function to address another totally different problem. 
 
 ```python
 import numpy as np
@@ -79,7 +79,7 @@ plt.legend(); plt.show()
 <img src="docs/source/userguide/figure/tf.png" width="300"/>
 </p>
 
-The above Figure shows that the solution of ``ScopeSolver`` now capture the main trend of the observed random work. Again, 4 lines of code help us attain the solution. 
+The above Figure shows that the solution of ``ScopeSolver`` now captures the main trend of the observed random work. Again, 4 lines of code help us attain the solution. 
 
 ## Example gallery
 
@@ -87,33 +87,33 @@ Since ``skscope`` can easily be applied to diverse objective functions, we can d
 
 ## Why ``skscope`` is versatile?
 
-The high versatility of ``skscope`` in effectively addressing SCO problems are derived from two key factors: theoretical concepts and computational implementation. In terms of theoretical concepts, there have been remarkable advancements on SCO in recent years, offering a range of efficient iterative methods for solving SCO. Some of these algorithms exhibit elegance by only relying on the current parameters and gradients for the iteration process. On the other hand, significant progress has been made in automatic differentiation, a fundamental component of deep learning algorithms that plays a vital role in computing gradients. By ingeniously combining these two important advancements, ``skscope`` emerges as the pioneering tool capable of handling diverse sparse optimization tasks.
+The high versatility of ``skscope`` in effectively addressing SCO problems are derived from two key factors: theoretical concepts and computational implementation. In terms of theoretical concepts, there have been remarkable advancements in SCO in recent years, offering a range of efficient iterative methods for solving SCO. Some of these algorithms exhibit elegance by only relying on the current parameters and gradients for the iteration process. On the other hand, significant progress has been made in automatic differentiation, a fundamental component of deep learning algorithms that plays a vital role in computing gradients. By ingeniously combining these two important advancements, ``skscope`` emerges as the pioneering tool capable of handling diverse sparse optimization tasks.
 
 With ``skscope``, the creation of new machine learning methods becomes effortless, leading to the advancement of the "sparsity idea" in machine learning. This, in turn, facilitates the availability of a broader spectrum of machine learning algorithms for tackling real-world problems.
 
 ## Software features
 
-- Support multiple state-of-the-art SCO solvers. Now, ``skscope`` has supported these algorithm: SCOPE, HTP, Grasp, IHT, OMP, FoBa. 
+- Support multiple state-of-the-art SCO solvers. Now, ``skscope`` has supported these algorithms: SCOPE, HTP, Grasp, IHT, OMP, and FoBa. 
 
 - User-friendly API
   
   - zero-knowledge of SCO solvers: the state-of-the-art solvers in ``skscope`` has intuitive and highly unified APIs. 
   
-  - extensive documentation: ``skscope`` is fully documented and accompanied with example gallery and reproduction scripts.
+  - extensive documentation: ``skscope`` is fully documented and accompanied by example gallery and reproduction scripts.
 
 - Solving SCO and its generalization: 
   
   - SCO: $\arg\min\limits_{\theta \in R^p} f(\theta) \text{ s.t. } ||\theta||_0 \leq s$; 
   
-  - SCO for group-structure parameters: $\arg\min\limits_{\theta \in R^p} f(\theta) \text{ s.t. } I(||\theta_{{G}_i}||_2 \neq 0) \leq s$ where $\{{G}_i\}_{i=1}^q$ is a non-overlapping partition for $\{1, \ldots, p\}$;
+  - SCO for group-structure parameters: $\arg\min\limits_{\theta \in R^p} f(\theta) \text{ s.t. } I(||\theta_{G_i}||_2 \neq 0) \leq s$ where ${G_i}_{i=1}^q$ is a non-overlapping partition for $\{1, \ldots, p\}$;
   
   - SCO when pre-selecting parameters in set $\mathcal{P}$: $\arg\min\limits_{\theta \in R^p} f(\theta) \text{ s.t. } ||\theta_{\mathcal{P}^c}||_0 \leq s$. 
 
 - Data science toolkit
   
-  - Information criterion and cross validation for selecting $s$
+  - Information criterion and cross-validation for selecting $s$
   
-  - Portable interface for developing new machine learning methods
+  - Portable interface for developing new machine-learning methods
 
 - Just-in-time-compilation compatibility
 
@@ -133,7 +133,7 @@ With ``skscope``, the creation of new machine learning methods becomes effortles
 
 All solvers (except `IHTSolver`) in `skscope` consistently outperformed `cvxpy` in terms of accuracy for the selection of the support set. 
 
-- Runtime (measured in second):
+- Runtime (measured in seconds):
 
 | Methods      | Linear regression | Logistic regression | Trend filtering | Multi-task learning | Ising model  | Nonlinear feature selection |
 | ------------ | ----------------- | ------------------- | --------------- | ------------------- | ------------ | --------------------------- |

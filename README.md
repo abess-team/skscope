@@ -4,6 +4,8 @@
 
 [![Build](https://github.com/abess-team/skscope/actions/workflows/CI.yml/badge.svg)](https://github.com/abess-team/skscope/actions/workflows/CI.yml/badge.svg)
 [![codecov](https://codecov.io/gh/abess-team/skscope/branch/master/graph/badge.svg?token=XRD5BDMR2E)](https://codecov.io/gh/abess-team/skscope)
+[![docs](https://readthedocs.org/projects/skscope/badge/?version=latest)](https://skscope.readthedocs.io/en/latest/?badge=latest)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 ## What is `skscope`?

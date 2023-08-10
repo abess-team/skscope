@@ -1,0 +1,83 @@
+name: PyPI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    paths:
+      - "skscope/**"
+      - "src/**"
+      - ".github/workflows/pypi.yml"
+  release:
+    types:
+      - published
+
+jobs:
+  build_sdist:
+    name: Build SDist
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: python
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build SDist
+        run: |
+          pipx run build --sdist
+
+      - name: Check metadata
+        run: |
+          pipx run twine check dist/*
+          realpath dist/*
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: python/dist/*
+
+  build_wheels:
+    name: Wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: all
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.3.1
+
+      - name: Verify clean directory
+        run: git diff --exit-code
+        shell: bash
+
+      - name: Upload wheels to the project's github page
+        uses: actions/upload-artifact@v3
+        with:
+          path: wheelhouse/*.whl
+
+  upload_PyPI:
+    name: Upload to PyPI if release
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
+
+    steps:
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}

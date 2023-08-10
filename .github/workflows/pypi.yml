@@ -35,6 +35,9 @@ jobs:
           path: dist/*
 
   build_wheels:
+    env:
+      CIBW_TEST_REQUIRES: pytest
+      CIBW_TEST_COMMAND: "pytest {project}/pytest"
     name: Wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:

@@ -17,9 +17,7 @@ jobs:
   build_sdist:
     name: Build SDist
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: python
+
     steps:
       - uses: actions/checkout@v3
 
@@ -34,7 +32,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          path: python/dist/*
+          path: dist/*
 
   build_wheels:
     name: Wheels on ${{ matrix.os }}

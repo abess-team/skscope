@@ -9,6 +9,7 @@ on:
       - "skscope/**"
       - "src/**"
       - ".github/workflows/pypi.yml"
+      - "pyproject.toml"
   release:
     types:
       - published
@@ -53,7 +54,7 @@ jobs:
           platforms: all
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.3.1
+        uses: pypa/cibuildwheel@v2.14.0
 
       - name: Verify clean directory
         run: git diff --exit-code

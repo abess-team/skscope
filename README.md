@@ -2,11 +2,14 @@
 
 # ``skscope``: Fast Sparse-Constraint Optimization
 
+[![pypi](https://img.shields.io/pypi/v/skscope?logo=Pypi)](https://pypi.org/project/skscope)
 [![Build](https://github.com/abess-team/skscope/actions/workflows/CI.yml/badge.svg)](https://github.com/abess-team/skscope/actions/workflows/CI.yml/badge.svg)
 [![codecov](https://codecov.io/gh/abess-team/skscope/branch/master/graph/badge.svg?token=XRD5BDMR2E)](https://codecov.io/gh/abess-team/skscope)
 [![docs](https://readthedocs.org/projects/skscope/badge/?version=latest)](https://skscope.readthedocs.io/en/latest/?badge=latest)
+[![pyversions](https://img.shields.io/pypi/pyversions/skscope)](https://img.shields.io/pypi/pyversions/skscope)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Downloads](https://static.pepy.tech/badge/skscope)](https://pepy.tech/project/skscope)
 
 ## What is `skscope`?
 

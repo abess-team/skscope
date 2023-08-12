@@ -140,7 +140,7 @@ html_theme_options = {
         },
         {
             "name": "PyPI",
-            "url": "https://pypi.org/",
+            "url": "https://pypi.org/project/skscope/",
             "icon": "fa-brands fa-python",
         },
         {

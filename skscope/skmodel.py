@@ -12,6 +12,7 @@ from sklearn.utils.validation import (
 )
 from sklearn.utils._param_validation import Hidden, Interval, StrOptions
 from numbers import Integral, Real
+from sksurv.util import check_array_survival
 
 
 def check_data(X, y=None, sample_weight=None):
@@ -418,3 +419,166 @@ class RobustRegression(BaseEstimator):
         loss = np.average(err, weights=sample_weight)
         score = -loss
         return score
+
+
+class CoxPH(BaseEstimator):
+    r"""
+    Cox proportional hazards model.
+
+    Parameters
+    ----------
+    sparsity : int, default=5
+        The number of features to be selected, i.e., the sparsity level.
+    """
+    _parameter_constraints: dict = {
+        "sparsity": [Interval(Integral, 1, None, closed="left")],
+    }
+    def __init__(
+            self,
+            sparsity=5,
+        ):
+            self.sparsity = sparsity
+
+    def fit(self, X, y, sample_weight=None):
+        r"""
+        Minimize negative partial log-likelihood with sparsity constraint for provided data.
+
+        Parameters
+        ----------
+        X : array-like, shape = (n_samples, n_features)
+            Data matrix
+
+        y : structured array, shape = (n_samples,)
+            A structured array containing the binary event indicator
+            as first field, and time of event or time of censoring as
+            second field.
+
+        sample_weight : ignored
+            Not used, present here for API consistency by convention.
+        
+        Returns
+        --------
+        self : object
+            Fitted Estimator.
+        """
+        self._validate_params()
+        X = self._validate_data(X, ensure_min_samples=2, dtype=np.float64)
+        event, time = check_array_survival(X, y)
+        n, p = X.shape
+
+        o = np.argsort(-time, kind="mergesort")  # sort descending
+        X = X[o, :]
+        event = event[o]
+        time = time[o]
+
+        # an indicator matrix for logsum
+        I = (time >= time.reshape(-1, 1)).astype(int)
+        # I = np.zeros((n, n))
+        # for i in range(n):
+        #     I[i] = (time >= time[i]).astype(int)
+        
+        init_params = np.zeros(p)
+
+        def custom_objective(beta):
+            Xbeta = jnp.matmul(X, beta)
+            theta = jnp.exp(Xbeta)
+            loss = - event.astype(int) @ (Xbeta - jnp.log(I @ theta))
+            return loss
+
+        solver = ScopeSolver(p, self.sparsity)
+        self.coef_ = solver.solve(custom_objective, jit=True, init_params=init_params)
+        return self
+    
+    def predict(self, X):
+        r"""
+        Given the features, predict the respone with the estimated coefficient.
+
+
+        Parameters
+        ----------
+        X : array-like, shape(n_samples, n_features)
+            Feature matrix.
+        
+        Returns
+        --------
+        Xbeta : array, shape = (n_samples,)
+                Predicted linear part
+        """
+        check_is_fitted(self)
+        X, _, _ = check_data(X)
+        Xbeta = X @ self.coef_
+        return Xbeta
+
+    def score(self, X, y, sample_weight=None):
+        r"""
+        Give test data, and it return the test score of this fitted model.
+
+        Parameters
+        ----------
+        X : array-like, shape(n_samples, n_features)
+            Feature matrix.
+
+        y : array-like, shape(n_samples,)
+            Target values.
+
+        sample_weight : ignored
+            Not used, present here for API consistency by convention.
+
+        Returns
+        -------
+        score : float
+            The weighted exponential loss of the given data.
+        """
+        check_is_fitted(self)
+        X, y, sample_weight = check_data(X, y, sample_weight)
+        event, time = check_array_survival(X, y)
+        n, p = X.shape
+        if p != self.n_features_in_:
+            raise ValueError("X.shape[1] should be " + str(self.n_features_in_))
+
+        # an indicator matrix for logsum
+        I = (time >= time.reshape(-1, 1)).astype(int)
+
+        Xbeta = np.matmul(X, self.coef_)
+        theta = np.exp(Xbeta)
+        score = event.astype(int) @ (Xbeta - np.log(I @ theta))
+        return score
+
+
+
+# class ExamplarClustering(BaseEstimator):
+#     r"""
+#     """
+#     _parameter_constraints: dict = {
+#         "sparsity": [Interval(Integral, 1, None, closed="left"), None],
+#         "gamma": [Interval(Real, 0, None, closed="neither"), None],
+#     }
+#     def __init__(
+#         self,
+#         sparsity=None,
+#         gamma=None,
+#     ):
+#         self.sparsity = sparsity
+#         self.gamma = gamma
+
+#     def fit(self, X, y=None, sample_weight=None):
+#         self._validate_params()
+#         X, y, sample_weight = check_data(X, y, sample_weight)
+#         n, p = X.shape
+#         K = rbf_kernel(X, gamma=self.gamma)
+#         init_params = np.ones(n) / n
+
+#         def custom_objective(params):
+#             params = (params ** 2) / jnp.sum(params ** 2)
+#             # params = jnp.abs(params) / jnp.linalg.norm(params, 1)
+#             # params = params / jnp.sum(params)
+#             loss = - jnp.mean(jnp.log(K @ params))
+#             return loss
+
+#         solver = ScopeSolver(n, self.sparsity)
+#         params = solver.solve(custom_objective, init_params=init_params)
+#         params = (params ** 2) / np.sum(params ** 2)
+#         self.coef_ = params
+    
+#     def score(self):
+#         pass

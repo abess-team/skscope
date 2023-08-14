@@ -6,6 +6,7 @@ from skscope.skmodel import (
     PortfolioSelection,
     NonlinearSelection,
     RobustRegression,
+    CoxPH
 )
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
@@ -13,6 +14,8 @@ from sklearn.utils.estimator_checks import check_estimator
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit, train_test_split
 from sklearn.feature_selection import SelectFromModel
 from sklearn.neural_network import MLPRegressor
+from sksurv.datasets import load_veterans_lung_cancer
+from sksurv.preprocessing import OneHotEncoder
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -134,3 +137,15 @@ def test_RobustRegression():
 
 
 test_RobustRegression()
+
+def test_CoxPH():
+    data_x, data_y = load_veterans_lung_cancer()
+    data_x_numeric = OneHotEncoder().fit_transform(data_x)
+    X, y = data_x_numeric.values, data_y
+
+    model = CoxPH(3)
+    model = model.fit(X, y)
+    pred = model.predict(X)
+    score = model.score(X, y)
+
+test_CoxPH()

@@ -12,6 +12,7 @@ class Identity:
     dimensionality : int
         Dimensionality of the parameters.
     """
+
     random_initilization = False
 
     def __init__(self, dimensionality):
@@ -51,6 +52,7 @@ class NonNegative(Identity):
     dimensionality : int
         Dimensionality of the parameters.
     """
+
     @jax.jit
     def transform_params(self, params):
         return jnp.abs(params)
@@ -153,12 +155,12 @@ class BoxConstraint(Identity):
         Upper bound of the box, if ``upper`` is a float, then ``upper * ones(dimensionality)`` is used.
         ``upper`` must be non-negative.
     """
+
     def __init__(self, dimensionality, lower, upper):
         self.in_features = dimensionality
         self.out_features = dimensionality
         self.lower = jnp.zeros(dimensionality) + lower
         self.upper = jnp.zeros(dimensionality) + upper
- 
 
     @jax.jit
     def transform_params(self, params):
@@ -186,6 +188,7 @@ class OffsetSparse(Identity):
     offset : float or array with shape (dimensionality,)
         Offset of the sparse constraint.
     """
+
     def __init__(self, dimensionality, offset):
         self.in_features = dimensionality
         self.out_features = dimensionality

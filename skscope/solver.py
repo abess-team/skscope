@@ -7,6 +7,7 @@ from jax import numpy as jnp
 from . import _scope
 from .numeric_solver import convex_solver_nlopt
 
+
 class ScopeSolver(BaseEstimator):
     r"""
     Get sparse optimal solution of convex objective function by Sparse-Constrained Optimization via Splicing Iteration (SCOPE) algorithm, which also can be used for variables selection.
@@ -272,6 +273,10 @@ class ScopeSolver(BaseEstimator):
             ``objective`` must be written in ``JAX`` library if ``gradient`` is not provided.
         data : optional
             Extra arguments passed to the objective function and its derivatives (if existed).
+        layers : list of ``Layer`` objects, default=[]
+            The list of layers to be used for re-parameterization. The ``Layer`` objects can be found in ``skscope.layers``.
+            If ``layers`` is not empty, ``objective`` must be written in ``JAX`` library 
+            and the ``params`` in ``objective`` will be the output of the last layer.
         init_support_set : array of int, default=[]
             The index of the variables in initial active set.
         init_params : array of shape (dimensionality,), optional
@@ -472,8 +477,6 @@ class ScopeSolver(BaseEstimator):
         else:
             self.cv_fold_id = np.array([], dtype="int32")
 
-
-
         if gradient is None and len(layers) > 0:
             if len(layers) == 1:
                 assert layers[0].out_features == self.dimensionality
@@ -487,7 +490,7 @@ class ScopeSolver(BaseEstimator):
                 sparsity = layer.transform_sparsity(sparsity)
                 group = layer.transform_group(group)
                 preselect = layer.transform_preselect(preselect)
-        else: 
+        else:
             # set optimization objective
             if cpp:
                 loss_fn = self.__set_objective_cpp(objective, gradient, hessian)
@@ -510,7 +513,9 @@ class ScopeSolver(BaseEstimator):
         if init_params is None:
             random_init = False
             if len(layers) > 0:
-                random_init = np.any(np.array([layer.random_initilization for layer in layers]))
+                random_init = np.any(
+                    np.array([layer.random_initilization for layer in layers])
+                )
             if random_init:
                 init_params = np.random.RandomState(self.random_state).randn(p)
             else:
@@ -521,7 +526,7 @@ class ScopeSolver(BaseEstimator):
                 raise ValueError(
                     "The length of init_params should be equal to dimensionality."
                 )
-            
+
         result = _scope.pywrap_Universal(
             data,
             self.model,
@@ -560,12 +565,12 @@ class ScopeSolver(BaseEstimator):
         if len(layers) > 0:
             for layer in layers:
                 self.params = layer.transform_params(self.params)
-        
+
         self.support_set = np.sort(np.nonzero(self.params)[0])
         self.cv_train_loss = result[1] if self.cv == 1 else 0.0
         self.cv_test_loss = result[2] if self.cv == 1 else 0.0
         self.information_criterion = result[3]
-        
+
         return self.params
 
     def get_result(self):

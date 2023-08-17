@@ -1,21 +1,19 @@
-import numpy as np
 from jax import numpy as jnp
 import jax
-
-"""
-must transform_params(0) == 0 !!
-
-p_optim -1, 3
-L1 non-negative   1, 3
-L2 sum_up_to_one  0.25, 0.75
-p_user 0.25, 0.75
-loss 
-"""
 
 
 @jax.tree_util.register_pytree_node_class
 class Identity:
+    """
+    Identity layer does nothing to the parameters. It is used to be base class for other layers.
+
+    Parameters
+    ----------
+    dimensionality : int
+        Dimensionality of the parameters.
+    """
     random_initilization = False
+
     def __init__(self, dimensionality):
         self.in_features = dimensionality
         self.out_features = dimensionality
@@ -45,6 +43,14 @@ class Identity:
 
 @jax.tree_util.register_pytree_node_class
 class NonNegative(Identity):
+    """
+    NonNegative layer ensures that all parameters are non-negative.
+
+    Parameters
+    ----------
+    dimensionality : int
+        Dimensionality of the parameters.
+    """
     @jax.jit
     def transform_params(self, params):
         return jnp.abs(params)
@@ -53,9 +59,19 @@ class NonNegative(Identity):
 @jax.tree_util.register_pytree_node_class
 class LinearConstraint(Identity):
     """
-    constraint: coef * params = 1
+    LinearConstraint layer ensures that the parameters satisfy the linear constraint: ``<coef, params> = 1``.
+
+    Parameters
+    ----------
+    dimensionality : int
+        Dimensionality of the parameters.
+    coef : float or array with shape (dimensionality,)
+        Coefficients of the linear constraint ``<coef, params> = 1``.
+        If ``coef`` is a float, then ``coef * ones(dimensionality)`` is used.
     """
+
     random_initilization = True
+
     def __init__(self, dimensionality, coef=None):
         if coef is None:
             coef = jnp.ones(dimensionality)
@@ -80,12 +96,23 @@ class LinearConstraint(Identity):
     def tree_unflatten(cls, aux_data, children):
         return cls(aux_data["dimensionality"], *children)
 
+
 @jax.tree_util.register_pytree_node_class
 class SimplexConstraint(Identity):
     """
-    constraint: coef * params = 1 ans params >= 0
+    SimplexConstraint layer ensures that the parameters satisfy the linear constraint: ``<coef, params> = 1`` and all parameters are non-negative.
+
+    Parameters
+    ----------
+    dimensionality : int
+        Dimensionality of the parameters.
+    coef : float or array with shape (dimensionality,)
+        Coefficients of the linear constraint ``<coef, params> = 1``.
+        If ``coef`` is a float, then ``coef * ones(dimensionality)`` is used.
     """
+
     random_initilization = True
+
     def __init__(self, dimensionality, coef=None):
         if coef is None:
             coef = jnp.ones(dimensionality)
@@ -112,12 +139,26 @@ class SimplexConstraint(Identity):
 
 @jax.tree_util.register_pytree_node_class
 class BoxConstraint(Identity):
+    """
+    BoxConstraint layer ensures that the parameters are in the box: ``lower <= params <= upper``.
+
+    Parameters
+    ----------
+    dimensionality : int
+        Dimensionality of the parameters.
+    lower : float or array with shape (dimensionality,)
+        Lower bound of the box, if ``lower`` is a float, then ``lower * ones(dimensionality)`` is used.
+        ``lower`` must be non-positive.
+    upper : float or array with shape (dimensionality,)
+        Upper bound of the box, if ``upper`` is a float, then ``upper * ones(dimensionality)`` is used.
+        ``upper`` must be non-negative.
+    """
     def __init__(self, dimensionality, lower, upper):
-        # TODO check lower <= 0 <= upper
         self.in_features = dimensionality
         self.out_features = dimensionality
         self.lower = jnp.zeros(dimensionality) + lower
         self.upper = jnp.zeros(dimensionality) + upper
+ 
 
     @jax.jit
     def transform_params(self, params):
@@ -135,6 +176,16 @@ class BoxConstraint(Identity):
 
 @jax.tree_util.register_pytree_node_class
 class OffsetSparse(Identity):
+    """
+    OffsetSparse layer ensures that the sparse constraint of sparse solvers changes from ``||params||_0 = s`` to ``||params - offset||_0 = s``. In other words, the layer ensures that the parameters corresponding to the non-selected features are equal to ``offset`` rather than zero.
+
+    Parameters
+    ----------
+    dimensionality : int
+        Dimensionality of the parameters.
+    offset : float or array with shape (dimensionality,)
+        Offset of the sparse constraint.
+    """
     def __init__(self, dimensionality, offset):
         self.in_features = dimensionality
         self.out_features = dimensionality
@@ -158,4 +209,3 @@ if __name__ == "__main__":
     params = jnp.array([1, -1])
     layer = LinearConstraint(2)
     print(layer.transform_params(params))
-

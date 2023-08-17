@@ -4,6 +4,7 @@ import numpy as np
 import jax
 from .numeric_solver import convex_solver_nlopt
 import math
+from . import layer
 
 
 class BaseSolver(BaseEstimator):
@@ -134,6 +135,7 @@ class BaseSolver(BaseEstimator):
         self,
         objective,
         data=None,
+        layers=[],
         gradient=None,
         init_support_set=None,
         init_params=None,
@@ -151,6 +153,10 @@ class BaseSolver(BaseEstimator):
             ``objective`` must be written in ``JAX`` library if ``gradient`` is not provided.
         data : optional
             Extra arguments passed to the objective function and its derivatives (if existed).
+        layers : list of ``Layer`` objects, default=[]
+            The list of layers to be used for re-parameterization. The ``Layer`` objects can be found in ``skscope.layers``.
+            If ``layers`` is not empty, ``objective`` must be written in ``JAX`` library
+            and the ``params`` in ``objective`` will be the output of the last layer.
         init_support_set : array of int, default=[]
             The index of the variables in initial active set.
         init_params : array of shape (dimensionality,), optional
@@ -258,30 +264,25 @@ class BaseSolver(BaseEstimator):
                         "The number of different elements in cv_fold_id should be equal to cv."
                     )
 
-        if init_support_set is None:
-            init_support_set = np.array([], dtype="int32")
+        sparsity = self.sparsity
+        group = self.group
+        preselect = self.preselect
+        if gradient is None and len(layers) > 0:
+            if len(layers) == 1:
+                assert layers[0].out_features == self.dimensionality
+            else:
+                for i in range(len(layers) - 1):
+                    assert layers[i].out_features == layers[i + 1].in_features
+                assert layers[-1].out_features == self.dimensionality
+            loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit, layers)
+            p = layers[0].in_features
+            for layer in layers[::-1]:
+                sparsity = layer.transform_sparsity(sparsity)
+                group = layer.transform_group(group)
+                preselect = layer.transform_preselect(preselect)
         else:
-            init_support_set = np.array(init_support_set, dtype="int32")
-            if init_support_set.ndim > 1:
-                raise ValueError(
-                    "The initial active set should be an 1D array of integers."
-                )
-            if (
-                init_support_set.min() < 0
-                or init_support_set.max() >= self.dimensionality
-            ):
-                raise ValueError("init_support_set contains wrong index.")
-
-        if init_params is None:
-            init_params = np.zeros(self.dimensionality, dtype=float)
-        else:
-            init_params = np.array(init_params, dtype=float)
-            if init_params.shape != (self.dimensionality,):
-                raise ValueError(
-                    "The length of init_params should be equal to dimensionality."
-                )
-
-        loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
+            p = self.dimensionality
+            loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
 
         def loss_fn(params, data):
             value = loss_(params, data)
@@ -301,11 +302,47 @@ class BaseSolver(BaseEstimator):
                 return value, np.array(grad)
             return value.item(), np.array(grad)
 
+        if init_support_set is None:
+            init_support_set = np.array([], dtype="int32")
+        else:
+            init_support_set = np.array(init_support_set, dtype="int32")
+            if init_support_set.ndim > 1:
+                raise ValueError(
+                    "The initial active set should be an 1D array of integers."
+                )
+            if init_support_set.min() < 0 or init_support_set.max() >= p:
+                raise ValueError("init_support_set contains wrong index.")
+
+        # init_params
+        if init_params is None:
+            random_init = False
+            if len(layers) > 0:
+                random_init = np.any(
+                    np.array([layer.random_initilization for layer in layers])
+                )
+            if random_init:
+                init_params = np.random.RandomState(self.random_state).randn(p)
+            else:
+                init_params = np.zeros(p, dtype=float)
+        else:
+            init_params = np.array(init_params, dtype=float)
+            if init_params.shape != (p,):
+                raise ValueError(
+                    "The length of init_params should be equal to dimensionality."
+                )
+
         if self.cv == 1:
             is_first_loop: bool = True
-            for s in self.sparsity:
+            for s in sparsity:
                 init_params, init_support_set = self._solve(
-                    s, loss_fn, value_and_grad, init_support_set, init_params, data
+                    s,
+                    loss_fn,
+                    value_and_grad,
+                    init_support_set,
+                    init_params,
+                    data,
+                    preselect,
+                    group,
                 )  # warm start: use results of previous sparsity as initial value
                 objective_value = loss_fn(init_params, data)
                 eval = self._metric(
@@ -322,10 +359,10 @@ class BaseSolver(BaseEstimator):
                     self.eval_objective = eval
 
         else:  # self.cv > 1
-            cv_eval = {s: 0.0 for s in self.sparsity}
+            cv_eval = {s: 0.0 for s in sparsity}
             cache_init_support_set = {}
             cache_init_params = {}
-            for s in self.sparsity:
+            for s in sparsity:
                 for i in range(self.cv):
                     train_index = np.where(self.cv_fold_id != i)[0]
                     test_index = np.where(self.cv_fold_id == i)[0]
@@ -336,6 +373,8 @@ class BaseSolver(BaseEstimator):
                         init_support_set,
                         init_params,
                         self.split_method(data, train_index),
+                        preselect,
+                        group,
                     )  # warm start: use results of previous sparsity as initial value
                     cv_eval[s] += loss_fn(
                         init_params, self.split_method(data, test_index)
@@ -350,25 +389,47 @@ class BaseSolver(BaseEstimator):
                 cache_init_support_set[best_sparsity],
                 cache_init_params[best_sparsity],
                 data,
+                preselect,
+                group,
             )
             self.objective_value = loss_fn(self.params, data)
             self.eval_objective = cv_eval[best_sparsity]
 
-        self.support_set = np.sort(self.support_set)
+        if len(layers) > 0:
+            for layer in layers:
+                self.params = layer.transform_params(self.params)
+
+        self.support_set = np.sort(np.nonzero(self.params)[0])
         return self.params
 
     @staticmethod
-    def _set_objective(objective, gradient, jit):
+    def _set_objective(objective, gradient, jit, layers=[]):
         # objective function
         if objective.__code__.co_argcount == 1:
+            if len(layers) == 0:
 
-            def loss_(params, data):
-                return objective(params)
+                def loss_(params, data):
+                    return objective(params)
+
+            else:
+
+                def loss_(params, data):
+                    for layer in layers:
+                        params = layer.transform_params(params)
+                    return objective(params)
 
         else:
+            if len(layers) == 0:
 
-            def loss_(params, data):
-                return objective(params, data)
+                def loss_(params, data):
+                    return objective(params, data)
+
+            else:
+
+                def loss_(params, data):
+                    for layer in layers:
+                        params = layer.transform_params(params)
+                    return objective(params, data)
 
         if jit:
             loss_ = jax.jit(loss_)
@@ -446,20 +507,22 @@ class BaseSolver(BaseEstimator):
         init_support_set,
         init_params,
         data,
+        preselect,
+        group,
     ):
         if sparsity == 0:
-            return np.zeros(self.dimensionality), np.array([], dtype=int)
-        if sparsity < self.preselect.size:
+            return np.zeros_like(init_params), np.array([], dtype=int)
+        if sparsity < preselect.size:
             raise ValueError(
                 "The number of always selected variables is larger than the sparsity."
             )
-        group_num = len(np.unique(self.group))
-        group_indices = [np.where(self.group == i)[0] for i in range(group_num)]
+        group_num = len(np.unique(group))
+        group_indices = [np.where(group == i)[0] for i in range(group_num)]
 
         if (
             math.comb(
-                group_num - self.preselect.size,
-                sparsity - self.preselect.size,
+                group_num - preselect.size,
+                sparsity - preselect.size,
             )
             > self.max_iter
         ):
@@ -485,7 +548,7 @@ class BaseSolver(BaseEstimator):
 
         result = {"params": None, "support_set": None, "objective_value": math.inf}
         params = init_params.copy()
-        for support_set_group in all_subsets(group_num, sparsity, self.preselect):
+        for support_set_group in all_subsets(group_num, sparsity, preselect):
             support_set = np.concatenate([group_indices[i] for i in support_set_group])
             inactive_set = np.ones_like(init_params, dtype=bool)
             inactive_set[support_set] = False

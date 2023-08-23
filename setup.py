@@ -150,14 +150,14 @@ setup(
         "jax[cpu]",
         "nlopt",
     ],
-    license="GPL-3",
-    #url="https://skscope.readthedocs.io",
-    #download_url="https://pypi.python.org/pypi/skscope",
-    #project_urls={
-    #    "Bug Tracker": "https://github.com/abess-team/skscope/issues",
-    #    "Documentation": "https://skscope.readthedocs.io",
-    #    "Source Code": "https://github.com/abess-team/skscope",
-    #},
+    license="MIT",
+    url="https://skscope.readthedocs.io",
+    download_url="https://pypi.python.org/pypi/skscope",
+    project_urls={
+        "Bug Tracker": "https://github.com/abess-team/skscope/issues",
+        "Documentation": "https://skscope.readthedocs.io",
+        "Source Code": "https://github.com/abess-team/skscope",
+    },
     classifiers=[
         "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",
@@ -175,7 +175,6 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
     ],
-    ## there is no wheel version available for nlopt with python 3.11 now
     python_requires='>=3.9', 
     ext_modules=[CMakeExtension("skscope._scope")],
     cmdclass={"build_ext": CMakeBuild}

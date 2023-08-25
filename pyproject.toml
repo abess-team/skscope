@@ -13,9 +13,7 @@ build-backend = "setuptools.build_meta"
 test-requires = "pytest"
 before-test = "pip install pandas"
 test-command = "pytest {package}/pytest"
-# Disable building PyPy wheels on all platforms
-skip = "pp* *-musllinux_*"
-# cp39-win32: scipy install fail
+skip = "pp* *-musllinux_* cp37-win* cp38-win*"
 test-skip = "*-win32 *-manylinux_i686"
 
 # Install openmp library

@@ -146,7 +146,7 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=[
         "numpy",
-        "scikit-learn>=0.24",
+        "scikit-learn>=1.2.2",
         "jax[cpu]",
         "nlopt",
     ],
@@ -175,7 +175,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
     ],
-    python_requires='>=3.7', 
+    python_requires='>=3.8', 
     ext_modules=[CMakeExtension("skscope._scope")],
     cmdclass={"build_ext": CMakeBuild}
 )

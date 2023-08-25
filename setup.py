@@ -176,7 +176,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
     ],
-    python_requires='>=3.8', 
+    python_requires='>=3.7', 
     ext_modules=[CMakeExtension("skscope._scope")],
     cmdclass={"build_ext": CMakeBuild}
 )

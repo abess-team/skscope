@@ -3,6 +3,7 @@
 # ``skscope``: Fast Sparse-Constraint Optimization
 
 [![pypi](https://img.shields.io/pypi/v/skscope?logo=Pypi)](https://pypi.org/project/skscope)
+[![Conda version](https://img.shields.io/conda/vn/conda-forge/skscope.svg?logo=condaforge)](https://anaconda.org/conda-forge/skscope)
 [![Build](https://github.com/abess-team/skscope/actions/workflows/CI.yml/badge.svg)](https://github.com/abess-team/skscope/actions/workflows/CI.yml/badge.svg)
 [![codecov](https://codecov.io/gh/abess-team/skscope/branch/master/graph/badge.svg?token=XRD5BDMR2E)](https://codecov.io/gh/abess-team/skscope)
 [![docs](https://readthedocs.org/projects/skscope/badge/?version=latest)](https://skscope.readthedocs.io/en/latest/?badge=latest)
@@ -23,6 +24,12 @@ The recommended option for most users:
   
 ```bash
 pip install skscope
+```
+
+For Linux or Mac users, an alternative is
+
+```bash
+conda install skscope
 ```
 
 If you want to work with the latest development version, the further [installation instructions](https://skscope.readthedocs.io/en/latest/userguide/index.html) help you install from source.

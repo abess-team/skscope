@@ -17,19 +17,20 @@ from typing import Any, Dict
 
 import pydata_sphinx_theme
 from sphinx.application import Sphinx
-sys.path.insert(0, os.path.abspath('..'))
-sys.path.insert(0, os.path.abspath('../../skscope'))
+
+sys.path.insert(0, os.path.abspath(".."))
+sys.path.insert(0, os.path.abspath("../../skscope"))
 sys.path.append(str(Path(".").resolve()))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'skscope'
-copyright = '2023, abess-team'
-author = 'abess-team'
+project = "skscope"
+copyright = "2023, abess-team"
+author = "abess-team"
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = "0.0.1"
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,35 +42,35 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.todo",
-    'sphinx.ext.coverage',
-    'sphinx.ext.graphviz',
+    "sphinx.ext.coverage",
+    "sphinx.ext.graphviz",
     "sphinx.ext.viewcode",
-    #"sphinxext.rediraffe",
+    # "sphinxext.rediraffe",
     "sphinx.ext.mathjax",
-    'sphinx.ext.intersphinx',
-    'sphinx.ext.inheritance_diagram',
-    'sphinx.ext.napoleon',
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.inheritance_diagram",
+    "sphinx.ext.napoleon",
     "sphinx_design",
     "sphinx_copybutton",
-    #"_extension.gallery_directive",
+    # "_extension.gallery_directive",
     # For extension examples and demos
     "nbsphinx",
-    #"ablog",
+    # "ablog",
     "jupyter_sphinx",
-    'IPython.sphinxext.ipython_console_highlighting',
-    'IPython.sphinxext.ipython_directive',
+    "IPython.sphinxext.ipython_console_highlighting",
+    "IPython.sphinxext.ipython_directive",
     "matplotlib.sphinxext.plot_directive",
-    #"myst_nb",
-    #"sphinxcontrib.youtube",
+    # "myst_nb",
+    # "sphinxcontrib.youtube",
     "numpydoc",
     "sphinx_togglebutton",
-    #"jupyterlite_sphinx",
+    # "jupyterlite_sphinx",
     "sphinx_favicon",
     "autoapi.extension",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # sphinx-panels shouldn't add bootstrap css since the pydata-sphinx-theme
 # already loads it
@@ -127,10 +128,9 @@ if not version_match or version_match.isdigit():
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
 
 html_theme_options = {
-    
     "header_links_before_dropdown": 4,
     "icon_links": [
         {
@@ -153,7 +153,7 @@ html_theme_options = {
     # "github_url": "https://github.com/pydata/pydata-sphinx-theme",
     # "twitter_url": "https://twitter.com/PyData",
     "logo": {
-        #"text": "skscope",
+        # "text": "skscope",
         "image_dark": "_static/skscope-dark.png",
         "alt_text": "skscope",
     },
@@ -188,9 +188,9 @@ html_context = {
     "doc_path": "docs",
 }
 
-#rediraffe_redirects = {
+# rediraffe_redirects = {
 #    "contributing.rst": "community/index.rst",
-#}
+# }
 
 html_static_path = ["_static"]
 html_css_files = ["custom.css"]
@@ -208,20 +208,20 @@ html_sidebars = {
     "feature/**": [
         "search-field",
         "sidebar-nav-bs",
-    ], 
+    ],
     "autoapi/**": [
         "search-field",
         "sidebar-nav-bs",
-    ], 
+    ],
     "contribute/**": [
         "search-field",
         "sidebar-nav-bs",
-    ], 
-    #"examples/no-sidebar": [],  # Test what page looks like with no sidebar items
-    #"examples/persistent-search-field": ["search-field"],
+    ],
+    # "examples/no-sidebar": [],  # Test what page looks like with no sidebar items
+    # "examples/persistent-search-field": ["search-field"],
     # Blog sidebars
     # ref: https://ablog.readthedocs.io/manual/ablog-configuration-options/#blog-sidebars
-    #"examples/blog/*": [
+    # "examples/blog/*": [
     #    "ablog/postcard.html",
     #    "ablog/recentposts.html",
     #    "ablog/tagcloud.html",
@@ -230,29 +230,30 @@ html_sidebars = {
     #    "ablog/languages.html",
     #    "ablog/locations.html",
     #    "ablog/archives.html",
-    #],
+    # ],
 }
 
 # nb_execution_mode = "off"
 # nb_render_markdown_format = "myst"
 
 
-#nbsphinx_execute = 'never'  # 每次构建时都执行 Jupyter Notebook
-#nbsphinx_allow_errors = True  # 允许出现错误时继续构建
-#nbsphinx_requirejs_path = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.1/require.min.js'  # 指定 require.js 的路径
+# nbsphinx_execute = 'never'  # 每次构建时都执行 Jupyter Notebook
+# nbsphinx_allow_errors = True  # 允许出现错误时继续构建
+# nbsphinx_requirejs_path = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.1/require.min.js'  # 指定 require.js 的路径
 
-#myst_url_schemes = ("http", "https", "mailto", "#")
+# myst_url_schemes = ("http", "https", "mailto", "#")
 
 # nbsphinx_assume_equations = True
 
-autoapi_dirs = ['../../']
-#autoapi_ignore = ['test_*', 'util*']
-#autoapi_add_toctree_entry = False
-#autoapi_options = [ 'members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'imported-members', ]
+autoapi_dirs = ["../../"]
+# autoapi_ignore = ['test_*', 'util*']
+# autoapi_add_toctree_entry = False
+# autoapi_options = [ 'members', 'undoc-members', 'show-inheritance', 'show-module-summary', 'imported-members', ]
 autoapi_template_dir = "_templates/autoapi/"
 autoapi_generate_api_docs = False
-#autoapi_keep_files = True
-#autoapi_root = 'api'
+# autoapi_keep_files = True
+# autoapi_root = 'api'
+
 
 def setup_to_main(
     app: Sphinx, pagename: str, templatename: str, context, doctree

@@ -2,6 +2,8 @@ name: Format Python Code
 
 on:
   push:
+    branches:
+      - '**' 
     paths:
       - "skscope/*.py"
       - "pytest/*.py"

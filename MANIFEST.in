@@ -1,3 +1,7 @@
-include README.rst
+include README.md
 include LICENSE
+include CMakeLists.txt
 recursive-include skscope *
+recursive-include pybind11 *
+recursive-include src *
+recursive-include include *

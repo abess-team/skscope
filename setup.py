@@ -146,19 +146,19 @@ setup(
     long_description_content_type='text/markdown',
     install_requires=[
         "numpy",
-        "scikit-learn>=0.24",
+        "scikit-learn>=1.2.2",
         "jax[cpu]",
         "nlopt",
         "scikit-survival",
     ],
-    license="GPL-3",
-    #url="https://skscope.readthedocs.io",
-    #download_url="https://pypi.python.org/pypi/skscope",
-    #project_urls={
-    #    "Bug Tracker": "https://github.com/abess-team/skscope/issues",
-    #    "Documentation": "https://skscope.readthedocs.io",
-    #    "Source Code": "https://github.com/abess-team/skscope",
-    #},
+    license="MIT",
+    url="https://skscope.readthedocs.io",
+    download_url="https://pypi.python.org/pypi/skscope",
+    project_urls={
+        "Bug Tracker": "https://github.com/abess-team/skscope/issues",
+        "Documentation": "https://skscope.readthedocs.io",
+        "Source Code": "https://github.com/abess-team/skscope",
+    },
     classifiers=[
         "Intended Audience :: Science/Research",
         "Intended Audience :: Developers",
@@ -172,13 +172,11 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Operating System :: MacOS",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
-    ## there is no wheel version available for nlopt with python 3.11 now
-    python_requires='>=3.9', 
+    python_requires='>=3.8', 
     ext_modules=[CMakeExtension("skscope._scope")],
     cmdclass={"build_ext": CMakeBuild}
 )

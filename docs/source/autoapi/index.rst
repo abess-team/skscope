@@ -8,6 +8,7 @@ This page contains auto-generated API reference documentation [#f1]_.
 
    solver
    numeric_solver
+   layer
    skmodel
    base_solver
 

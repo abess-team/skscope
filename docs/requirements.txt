@@ -17,4 +17,3 @@ sphinx-togglebutton==0.3.2
 sphinx-favicon==1.0.1
 sphinx-sitemap==2.5.0
 networkx==3.1
-scikit-survival

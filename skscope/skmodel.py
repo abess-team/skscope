@@ -12,7 +12,6 @@ from sklearn.utils.validation import (
 )
 from sklearn.utils._param_validation import Hidden, Interval, StrOptions
 from numbers import Integral, Real
-from sksurv.util import check_array_survival
 
 
 def check_data(X, y=None, sample_weight=None):
@@ -421,9 +420,9 @@ class RobustRegression(BaseEstimator):
         return score
 
 
-class CoxPH(BaseEstimator):
+class MultivariateFailure(BaseEstimator):
     r"""
-    Cox proportional hazards model.
+    Multivariate failure time model.
 
     Parameters
     ----------
@@ -433,13 +432,10 @@ class CoxPH(BaseEstimator):
     _parameter_constraints: dict = {
         "sparsity": [Interval(Integral, 1, None, closed="left")],
     }
-    def __init__(
-            self,
-            sparsity=5,
-        ):
-            self.sparsity = sparsity
-
-    def fit(self, X, y, sample_weight=None):
+    def __init__(self, sparsity=5):
+        self.sparsity = sparsity
+    
+    def fit(self, X, y, delta, sample_weight=None):
         r"""
         Minimize negative partial log-likelihood with sparsity constraint for provided data.
 
@@ -448,10 +444,11 @@ class CoxPH(BaseEstimator):
         X : array-like, shape = (n_samples, n_features)
             Data matrix
 
-        y : structured array, shape = (n_samples,)
-            A structured array containing the binary event indicator
-            as first field, and time of event or time of censoring as
-            second field.
+        y : array-like, shape = (n_samples, n_events)
+            Observed time of multiple events.
+        
+        delta : array-like, shape = (n_samples, n_events)
+            Indicator matrix of censoring.
 
         sample_weight : ignored
             Not used, present here for API consistency by convention.
@@ -462,37 +459,25 @@ class CoxPH(BaseEstimator):
             Fitted Estimator.
         """
         self._validate_params()
-        X = self._validate_data(X, ensure_min_samples=2, dtype=np.float64)
-        event, time = check_array_survival(X, y)
         n, p = X.shape
-
-        o = np.argsort(-time, kind="mergesort")  # sort descending
-        X = X[o, :]
-        event = event[o]
-        time = time[o]
-
-        # an indicator matrix for logsum
-        I = (time >= time.reshape(-1, 1)).astype(int)
-        # I = np.zeros((n, n))
-        # for i in range(n):
-        #     I[i] = (time >= time[i]).astype(int)
-        
-        init_params = np.zeros(p)
-
-        def custom_objective(beta):
-            Xbeta = jnp.matmul(X, beta)
-            theta = jnp.exp(Xbeta)
-            loss = - event.astype(int) @ (Xbeta - jnp.log(I @ theta))
+        K = delta.shape[1]
+        self.n_features_in_ = p
+        self.n_events = K
+        def multivariate_failure_objective(params):
+            Xbeta = jnp.matmul(X, params)
+            tmp = jnp.ones((n, K))
+            for i in range(n):
+                for k in range(K):
+                    tmp = tmp.at[i, k].set(X[i] @ params - jnp.log(jnp.matmul(y[:,k] >= y[i,k], jnp.exp(Xbeta))))
+            loss = - jnp.mean(tmp * delta)
             return loss
-
         solver = ScopeSolver(p, self.sparsity)
-        self.coef_ = solver.solve(custom_objective, jit=True, init_params=init_params)
+        self.coef_ = solver.solve(multivariate_failure_objective, jit=True)
         return self
     
     def predict(self, X):
         r"""
-        Given the features, predict the respone with the estimated coefficient.
-
+        Given the features, predict the hazard function up to some constant independent of the sample.
 
         Parameters
         ----------
@@ -501,25 +486,30 @@ class CoxPH(BaseEstimator):
         
         Returns
         --------
-        Xbeta : array, shape = (n_samples,)
-                Predicted linear part
+        hazard : array, shape = (n_samples,)
+            the quantity :math:`e^{\beta^{\top}X_i}` proportional to the harzard function up to 
+            some constant independent of the sample index :math:`i` such that 
+            :math:`\lambda_k(t;X_{i})=\lambda_{0k}(t)e^{\beta^{\top}X_i}`.
         """
         check_is_fitted(self)
         X, _, _ = check_data(X)
         Xbeta = X @ self.coef_
-        return Xbeta
-
-    def score(self, X, y, sample_weight=None):
+        return np.exp(Xbeta)
+    
+    def score(self, X, y, delta, sample_weight=None):
         r"""
         Give test data, and it return the test score of this fitted model.
 
         Parameters
         ----------
-        X : array-like, shape(n_samples, n_features)
-            Feature matrix.
+        X : array-like, shape = (n_samples, n_features)
+            Data matrix
 
-        y : array-like, shape(n_samples,)
-            Target values.
+        y : array-like, shape = (n_samples, n_events)
+            Observed time of multiple events.
+        
+        delta : array-like, shape = (n_samples, n_events)
+            Indicator matrix of censoring.
 
         sample_weight : ignored
             Not used, present here for API consistency by convention.
@@ -527,22 +517,145 @@ class CoxPH(BaseEstimator):
         Returns
         -------
         score : float
-            The weighted exponential loss of the given data.
+            The log likelihood of the given data.
         """
         check_is_fitted(self)
-        X, y, sample_weight = check_data(X, y, sample_weight)
-        event, time = check_array_survival(X, y)
         n, p = X.shape
+        K = delta.shape[1]
         if p != self.n_features_in_:
             raise ValueError("X.shape[1] should be " + str(self.n_features_in_))
-
-        # an indicator matrix for logsum
-        I = (time >= time.reshape(-1, 1)).astype(int)
-
+        if K != self.n_events:
+            raise ValueError("y.shape[1] and delta.shape[1] should be " + str(self.events))
+        
         Xbeta = np.matmul(X, self.coef_)
-        theta = np.exp(Xbeta)
-        score = event.astype(int) @ (Xbeta - np.log(I @ theta))
+        tmp = np.ones((n, K))
+        for k in range(K):
+            tmp[:, k] = X @ self.coef_ - np.log(np.matmul(y[:,k].reshape(1,-1) >= y[:,k].reshape(-1,1), np.exp(Xbeta)))
+        score = np.mean(tmp * delta)
         return score
+
+# class CoxPH(BaseEstimator):
+#     r"""
+#     Cox proportional hazards model.
+
+#     Parameters
+#     ----------
+#     sparsity : int, default=5
+#         The number of features to be selected, i.e., the sparsity level.
+#     """
+#     _parameter_constraints: dict = {
+#         "sparsity": [Interval(Integral, 1, None, closed="left")],
+#     }
+#     def __init__(
+#             self,
+#             sparsity=5,
+#         ):
+#             self.sparsity = sparsity
+
+#     def fit(self, X, y, sample_weight=None):
+#         r"""
+#         Minimize negative partial log-likelihood with sparsity constraint for provided data.
+
+#         Parameters
+#         ----------
+#         X : array-like, shape = (n_samples, n_features)
+#             Data matrix
+
+#         y : structured array, shape = (n_samples,)
+#             A structured array containing the binary event indicator
+#             as first field, and time of event or time of censoring as
+#             second field.
+
+#         sample_weight : ignored
+#             Not used, present here for API consistency by convention.
+        
+#         Returns
+#         --------
+#         self : object
+#             Fitted Estimator.
+#         """
+#         self._validate_params()
+#         X = self._validate_data(X, ensure_min_samples=2, dtype=np.float64)
+#         event, time = check_array_survival(X, y)
+#         n, p = X.shape
+
+#         o = np.argsort(-time, kind="mergesort")  # sort descending
+#         X = X[o, :]
+#         event = event[o]
+#         time = time[o]
+
+#         # an indicator matrix for logsum
+#         I = (time >= time.reshape(-1, 1)).astype(int)
+#         # I = np.zeros((n, n))
+#         # for i in range(n):
+#         #     I[i] = (time >= time[i]).astype(int)
+        
+#         init_params = np.zeros(p)
+
+#         def custom_objective(beta):
+#             Xbeta = jnp.matmul(X, beta)
+#             theta = jnp.exp(Xbeta)
+#             loss = - event.astype(int) @ (Xbeta - jnp.log(I @ theta))
+#             return loss
+
+#         solver = ScopeSolver(p, self.sparsity)
+#         self.coef_ = solver.solve(custom_objective, jit=True, init_params=init_params)
+#         return self
+    
+#     def predict(self, X):
+#         r"""
+#         Given the features, predict the respone with the estimated coefficient.
+
+
+#         Parameters
+#         ----------
+#         X : array-like, shape(n_samples, n_features)
+#             Feature matrix.
+        
+#         Returns
+#         --------
+#         Xbeta : array, shape = (n_samples,)
+#                 Predicted linear part
+#         """
+#         check_is_fitted(self)
+#         X, _, _ = check_data(X)
+#         Xbeta = X @ self.coef_
+#         return Xbeta
+
+#     def score(self, X, y, sample_weight=None):
+#         r"""
+#         Give test data, and it return the test score of this fitted model.
+
+#         Parameters
+#         ----------
+#         X : array-like, shape(n_samples, n_features)
+#             Feature matrix.
+
+#         y : array-like, shape(n_samples,)
+#             Target values.
+
+#         sample_weight : ignored
+#             Not used, present here for API consistency by convention.
+
+#         Returns
+#         -------
+#         score : float
+#             The weighted exponential loss of the given data.
+#         """
+#         check_is_fitted(self)
+#         X, y, sample_weight = check_data(X, y, sample_weight)
+#         event, time = check_array_survival(X, y)
+#         n, p = X.shape
+#         if p != self.n_features_in_:
+#             raise ValueError("X.shape[1] should be " + str(self.n_features_in_))
+
+#         # an indicator matrix for logsum
+#         I = (time >= time.reshape(-1, 1)).astype(int)
+
+#         Xbeta = np.matmul(X, self.coef_)
+#         theta = np.exp(Xbeta)
+#         score = event.astype(int) @ (Xbeta - np.log(I @ theta))
+#         return score
 
 
 

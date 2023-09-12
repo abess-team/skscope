@@ -1,3 +1,2 @@
 pytest
 pandas
-scikit-survival

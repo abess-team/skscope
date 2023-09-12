@@ -6,7 +6,7 @@ from skscope.skmodel import (
     PortfolioSelection,
     NonlinearSelection,
     RobustRegression,
-    CoxPH
+    MultivariateFailure,
 )
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
@@ -14,8 +14,8 @@ from sklearn.utils.estimator_checks import check_estimator
 from sklearn.model_selection import GridSearchCV, TimeSeriesSplit, train_test_split
 from sklearn.feature_selection import SelectFromModel
 from sklearn.neural_network import MLPRegressor
-from sksurv.datasets import load_veterans_lung_cancer
-from sksurv.preprocessing import OneHotEncoder
+# from sksurv.datasets import load_veterans_lung_cancer
+# from sksurv.preprocessing import OneHotEncoder
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -51,7 +51,7 @@ def test_PortfolioSelection():
     grid_search.fit(X)
     grid_search.cv_results_
     assert grid_search.best_score_ > 0.05
-
+    print('PortfolioSelection passed test!')
 
 test_PortfolioSelection()
 
@@ -109,6 +109,7 @@ def test_NonlinearSelection():
     # grid_search.fit(X, y)
     # grid_search.cv_results_
     # assert set(np.nonzero(grid_search.best_estimator_.coef_)[0]) == set(true_support_set)
+    print('NonlinearSelection passed test!')
 
 
 test_NonlinearSelection()
@@ -134,18 +135,48 @@ def test_RobustRegression():
     score = model.score(X, y, sample_weight)
     est_support_set = np.nonzero(model.coef_)[0]
     assert set(est_support_set) == set(true_support_set)
+    print('RobustRegression passed test!')
 
 
 test_RobustRegression()
 
-def test_CoxPH():
-    data_x, data_y = load_veterans_lung_cancer()
-    data_x_numeric = OneHotEncoder().fit_transform(data_x)
-    X, y = data_x_numeric.values, data_y
+def test_MultivariateFailure():
+    def make_Clayton2_data(n, theta=15, lambda1=1, lambda2=1, c1=1, c2=1):
+        u1 = np.random.uniform(0, 1, n)
+        u2 = np.random.uniform(0, 1, n)
+        time2 = -np.log(1-u2)/lambda2
+        time1 = np.log(1-np.power((1-u2),-theta) + np.power((1-u1), -theta/(1+theta))*np.power((1-u2),-theta))/theta/lambda1
+        ctime1 = np.random.uniform(0, c1, n)
+        ctime2 =  np.random.uniform(0, c2, n)
+        delta1 = (time1 < ctime1) * 1
+        delta2 = (time2 < ctime2) * 1
+        censoringrate1 = 1 - sum(delta1) / n
+        censoringrate2 = 1 - sum(delta2) / n
+        # print("censoring rate1:" + str(censoringrate1))
+        # print("censoring rate2:" + str(censoringrate2))
+        time1 = np.minimum(time1,ctime1)
+        time2 = np.minimum(time2,ctime2)
+        y = np.hstack((time1.reshape((-1, 1)), time2.reshape((-1, 1))))
+        delta = np.hstack((delta1.reshape((-1, 1)), delta2.reshape((-1, 1))))
+        return y, delta
 
-    model = CoxPH(3)
-    model = model.fit(X, y)
+    K = 2
+    np.random.seed(1234)
+    n, p, s, rho = 100, 100, 10, 0.5
+    beta = np.zeros(p)
+    beta[:s] = 5
+    Sigma = np.power(rho, np.abs(np.linspace(1, p, p) - np.linspace(1, p, p).reshape(p, 1)))
+    X = np.random.multivariate_normal(mean=np.zeros(p), cov=Sigma, size=(n,))
+    lambda1 = 1*np.exp(np.matmul(X, beta))
+    lambda2 = 10*np.exp(np.matmul(X, beta))
+
+    y, delta = make_Clayton2_data(n, theta=50, lambda1=lambda1, lambda2=lambda2, c1=5, c2=5)
+
+    model = MultivariateFailure(s)
+    model = model.fit(X, y, delta)
+    assert (np.nonzero(model.coef_)[0] == np.nonzero(beta)[0]).all()
     pred = model.predict(X)
-    score = model.score(X, y)
+    score = model.score(X, y, delta)
+    print('MultivariateFailure passed test!')
 
-test_CoxPH()
+test_MultivariateFailure()

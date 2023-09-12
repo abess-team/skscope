@@ -149,7 +149,6 @@ setup(
         "scikit-learn>=1.2.2",
         "jax[cpu]",
         "nlopt",
-        "scikit-survival",
     ],
     license="MIT",
     url="https://skscope.readthedocs.io",

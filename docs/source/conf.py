@@ -68,7 +68,6 @@ extensions = [
     "autoapi.extension",
 ]
 
-# Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # sphinx-panels shouldn't add bootstrap css since the pydata-sphinx-theme

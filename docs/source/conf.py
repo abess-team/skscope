@@ -145,7 +145,7 @@ html_theme_options = {
         },
         {
             "name": "Conda",
-            "url": "https://anaconda.org/",
+            "url": "https://anaconda.org/conda-forge/skscope",
             "icon": "fa-solid fa-box",
         },
     ],

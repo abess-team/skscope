@@ -3,7 +3,7 @@
 Installation
 ===================
 
-There are two ways to install the python package ``skscope`` depending on your main purpose.
+There are two ways to install the python package :ref:`skscope <skscope_package>` depending on your main purpose.
 
 Install official release
 -------------------------------------------------------------------------
@@ -14,37 +14,43 @@ This is the recommended approach for most users. Simply install the latest offic
 
     pip install skscope
 
+For Linux or Mac users, an alternative is
+
+.. code-block:: Bash
+
+    conda install skscope
+
 
 Install library from source
 ----------------------------------------
 
-This is recommended if you want to work with the latest development version or if you wish to contribute to ``skscope``. 
+This is recommended if you want to work with the latest development version or if you wish to contribute to :ref:`skscope <skscope_package>`. 
 
-In this case, there are some prerequisites:
 
-- A compiler with C++17 support
-- pip 10+
+1. First of all, make sure that you have a compiler with C++17 support installed. 
+:ref:`skscope <skscope_package>` is a python package with C++ extension, so a C++ Toolchain is required for building it.
+For Windows users, the easiest way to configure the C++ compile environment is to install the latest version of 
+`Visual Studio Community Edition <https://visualstudio.microsoft.com/downloads/>`_ and choose the "Desktop development with C++" workload. 
+`Here <https://learn.microsoft.com/en-us/cpp/build/vscpp-step-0-installation>`_ is a detailed tutorial. 
 
-- clone the latest source code from GitHub via
+
+2. Then, clone the latest source code from GitHub and enter the directory of ``setup.py``:
 
 .. code-block:: Bash
 
     git clone git@github.com:abess-team/skscope.git --recurse-submodules
+    cd skscope
 
-Note that ``--recurse-submodules`` is required since there are some submodules in the project. If there are any problem about submodules, you can search the solution in the `guide <https://git-scm.com/book/en/v2/Git-Tools-Submodules>`_ or simply raise a `github issue <https://github.com/abess-team/skscope/issues>`_.
+Note that ``--recurse-submodules`` is required since there are some submodules in the project. 
 
-Install on Linux or Mac
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Build the package from source using pip in the editable mode:
+3. Finally, build the package from source using pip (in the editable mode):
 
 .. code-block:: Bash
 
     pip install -e .
 
 Thanks to the editable mode with the flag ``-e``, we needn't re-build the package :ref:`skscope <skscope_package>` when the source python code changes. 
-
-.. However, if the C++ code changes, we have re-build it by ``pip install -e .`` again.
 
 If the dependence packages has been installed, we can build the package faster by  
 
@@ -54,21 +60,10 @@ If the dependence packages has been installed, we can build the package faster b
 
 where the function of the flag ``develop`` is similar with ``-e`` of command ``pip``.
 
-This command will not check or prepare the required environment, so it can save a lot of time. Thus, we can use ``pip`` with first building and ``python`` with re-building.
+This command will not check or prepare the required environment, so it can save a lot of time. 
+Thus, we can use ``pip`` with first building and ``python`` with re-building.
 
 
-Install on Windows
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-If you have troubles on Windows platform, here are some helpful tips.
-
-- Builting from source needs a C++ compiler, and the easiest way to configure the C++ compile environment on the Windows platform is to download and install the latest version of `Visual Studio Community Edition <https://visualstudio.microsoft.com/downloads/>`_ and choose the **Desktop development with C++** workload. `Here <https://learn.microsoft.com/en-us/cpp/build/vscpp-step-0-installation>`_ is a detailed tutorial. 
-
-- There are no official binary releases of ``jaxlib`` which is necessary for ``jax`` on Windows platform. However, currently ``jax`` provides experimental windows builds. To install them you can type: 
- 
-.. code-block:: 
-
-    pip install --upgrade "jax[cpu]"
 
 
 Dependencies
@@ -78,5 +73,5 @@ The current minimum dependencies to run ``skscope`` are:
 
 - ``numpy``
 - ``nlopt``
-- ``scikit-learn>=0.24``
+- ``scikit-learn>=1.2.2``
 - ``"jax[cpu]"``

@@ -276,8 +276,8 @@ class ScopeSolver(BaseEstimator):
         layers : list of ``Layer`` objects, default=[]
             ``Layer`` is a "decorator" of the objective function.
             The parameters will be processed by the ``Layer`` before entering the objective function.
-            The different layers can achieve different effects, 
-            and they can be sequentially concatenated together to form a larger layer, 
+            The different layers can achieve different effects,
+            and they can be sequentially concatenated together to form a larger layer,
             enabling the implementation of more complex functionalities.
             The ``Layer`` objects can be found in ``skscope.layers``.
             If ``layers`` is not empty, ``objective`` must be written in ``JAX`` library.

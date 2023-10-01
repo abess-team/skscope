@@ -148,7 +148,7 @@ Further, we can use several layers at the same time to achieve more complex func
             Layer.NonNegative(dimensionality=3),]
     )
 
-This will add a linear constraint :math:`\theta_1 + \theta_2 + \theta_3 = 0` and a non-negative constraint to the parameters.
+This will add a linear constraint :math:`\theta_1 + \theta_2 + \theta_3 = 1` and a non-negative constraint to the parameters.
 
 In ``skscope.layer``, we provide several layers for re-parameterization: ``NonNegative``, ``LinearConstraint``, ``SimplexConstraint`` and ``BoxConstraint``.
 In addition, users can also define their own layers by inheriting the ``skscope.layer.Identity`` class.

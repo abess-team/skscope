@@ -86,29 +86,36 @@ Here is an illustrative example for the usage of ``preselect``:
     )
 
 
-Re-parameterization by Layers
+Layers
 ---------------------------------------------------------
-In practice, we may need certain requirements for parameters, which can be achieved through re-parameterization. 
-For example, in some cases, we want the parameters corresponding to the non-selected features to be equal to a constant rather than zero.
+``Layer``, i.e. any of the classes defined in ``skscope.layer``, is a "decorator" of the objective function.
+The parameters will be processed by the ``Layer`` before entering the objective function.
+The different layers can achieve different effects, 
+and they can be sequentially concatenated together to form a larger layer, 
+enabling the implementation of more complex functionalities.
+
+In practice, there may be certain requirements for parameters that can be achieved by modifying the objective function.
+For example, if we want the parameters corresponding to the non-selected features to be equal to a constant rather than zero, i.e.,
 
 .. math:: 
     
         \arg\min_{\theta \in R^p} f(\theta) \text{ s.t. } ||\theta - \mu||_0 \leq s, 
     
-where :math:`\mu \in R^p` is a offset vector. For this, we can re-parameterize the original problem as follows: 
+where :math:`\mu \in R^p` is a offset vector. For this, we can reform the original problem as follows: 
 
 .. math::
         
-        \arg\min_{\theta' \in R^p} f(\theta' + \mu) \text{ s.t. } ||\theta'||_0 \leq s,
-    
-which the parameters are re-parameterized before entering the objective function.
+        \arg\min_{\theta' \in R^p} f(L(\theta')) \text{ s.t. } ||\theta'||_0 \leq s,
+
+where :math:`L(\theta') = \theta' + \mu` is a layer that adds a constant offset to the parameters.
+
 
 In :ref:`skscope <skscope_package>`, we can achieve this by ``layers`` parameter in the ``solve`` method of sparse solvers.
 
 .. code-block:: python
 
     from skscope import ScopeSolver
-    from skscope.layer import OffsetSparse
+    import skscope.layer as Layer 
     from jax import numpy as jnp
 
     X = jnp.array([[1, 2, 3], [4, 5, 6]])
@@ -121,16 +128,27 @@ In :ref:`skscope <skscope_package>`, we can achieve this by ``layers`` parameter
 
     solver.solve(
         loss,
-        layers=[OffsetSparse(dimensionality=3, offset=1)], 
+        layers=[Layer.OffsetSparse(dimensionality=3, offset=1)], 
     )
 
     print(solver.get_estimated_params())
 
-Let ``params`` pass through an offset-layer ``OffsetSparse`` before entering ``loss``. 
+``params`` will pass through an offset-layer ``OffsetSparse`` before entering ``loss``. 
 In this way, the parameters corresponding to the non-selected features will be equal to 1 rather than zero.
 
-Further, we can use several layers at the same time to achieve more complex re-parameterization.
+Further, we can use several layers at the same time to achieve more complex functionalities.
 ``layers`` is a list of layers, and the parameters will pass through these layers in order before entering ``loss``.
+
+.. code-block:: python
+
+    solver.solve(
+        loss,
+        layers=[
+            Layer.LinearConstraint(dimensionality=3, coef=jnp.array([[1, 1, 1]])),
+            Layer.NonNegative(dimensionality=3),]
+    )
+
+This will add a linear constraint :math:`\theta_1 + \theta_2 + \theta_3 = 1` and a non-negative constraint to the parameters.
 
 In ``skscope.layer``, we provide several layers for re-parameterization: ``NonNegative``, ``LinearConstraint``, ``SimplexConstraint`` and ``BoxConstraint``.
 In addition, users can also define their own layers by inheriting the ``skscope.layer.Identity`` class.

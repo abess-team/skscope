@@ -13,5 +13,3 @@ to make valuable contribution to the ``skscope``.
     BugReport&FeatureRequest
     ContributeDocs
     ContributeCode
-    .. AfterCodeDeveloping
-    .. AppendixArchitecture

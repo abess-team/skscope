@@ -154,9 +154,13 @@ class BaseSolver(BaseEstimator):
         data : optional
             Extra arguments passed to the objective function and its derivatives (if existed).
         layers : list of ``Layer`` objects, default=[]
-            The list of layers to be used for re-parameterization. The ``Layer`` objects can be found in ``skscope.layers``.
-            If ``layers`` is not empty, ``objective`` must be written in ``JAX`` library
-            and the ``params`` in ``objective`` will be the output of the last layer.
+            ``Layer`` is a "decorator" of the objective function.
+            The parameters will be processed by the ``Layer`` before entering the objective function.
+            The different layers can achieve different effects,
+            and they can be sequentially concatenated together to form a larger layer,
+            enabling the implementation of more complex functionalities.
+            The ``Layer`` objects can be found in ``skscope.layers``.
+            If ``layers`` is not empty, ``objective`` must be written in ``JAX`` library.
         init_support_set : array of int, default=[]
             The index of the variables in initial active set.
         init_params : array of shape (dimensionality,), optional

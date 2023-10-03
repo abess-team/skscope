@@ -11,5 +11,4 @@ Software Features
    Variants
    DataScienceTool
    ComputationalTips
-   .. PredefindModel
 

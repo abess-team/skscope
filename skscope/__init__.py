@@ -20,6 +20,7 @@ from .solver import (
 )
 from .base_solver import BaseSolver
 from .numeric_solver import convex_solver_nlopt
+from .skmodel import PortfolioSelection, NonlinearSelection, RobustRegression
 
 __all__ = [
     "ScopeSolver",
@@ -31,4 +32,7 @@ __all__ = [
     "ForwardSolver",
     "OMPSolver",
     "convex_solver_nlopt",
+    "PortfolioSelection",
+    "NonlinearSelection",
+    "RobustRegression",
 ]

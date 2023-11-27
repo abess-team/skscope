@@ -273,7 +273,7 @@ class NonlinearSelection(BaseEstimator):
             return loss
 
         solver = ScopeSolver(p, sparsity=self.sparsity)
-        alpha = solver.solve(custom_objective)
+        alpha = solver.solve(custom_objective, jit=True)
         self.coef_ = np.abs(alpha)
         return self
 

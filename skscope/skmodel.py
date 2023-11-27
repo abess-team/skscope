@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# author: Peng Chen
+# Copyright (C) 2023 abess-team
+# Licensed under the MIT License.
+
 import numpy as np
 import jax.numpy as jnp
 from skscope import ScopeSolver

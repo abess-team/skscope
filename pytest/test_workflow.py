@@ -1,3 +1,9 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# author: Zezhi Wang
+# Copyright (C) 2023 abess-team
+# Licensed under the MIT License.
+
 from skscope import (
     ScopeSolver,
     BaseSolver,

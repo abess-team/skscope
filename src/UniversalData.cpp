@@ -1,3 +1,9 @@
+/**
+ * author: Zezhi Wang
+ * Copyright (C) 2023 abess-team
+ * Licensed under the MIT License.
+ */
+
 #include "UniversalData.h"
 #include "utilities.h"
 #include <autodiff/forward/dual/eigen.hpp>

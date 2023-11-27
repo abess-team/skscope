@@ -1,6 +1,8 @@
-﻿//
-// Created by jiangkangkang on 2020/3/9.
-//
+﻿/**
+ * author: Kangkang Jiang
+ * Copyright (C) 2023 abess-team
+ * Licensed under the MIT License.
+ */
 
 
 #include <Eigen/Eigen>

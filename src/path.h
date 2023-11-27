@@ -1,7 +1,8 @@
-//
-// Created by Jin Zhu on 2020/3/8.
-//
-
+/**
+ * author: Jin Zhu
+ * Copyright (C) 2023 abess-team
+ * Licensed under the MIT License.
+ */
 
 #pragma once
 

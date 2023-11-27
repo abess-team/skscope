@@ -1,10 +1,7 @@
-//
-// Created by jiangkangkang on 2020/3/9.
-//
-
 /**
- * @file utilities.h
- * @brief some utilities for abess package.
+ * author: Kangkang Jiang
+ * Copyright (C) 2023 abess-team
+ * Licensed under the MIT License.
  */
 
 #pragma once

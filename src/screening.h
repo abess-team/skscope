@@ -1,3 +1,8 @@
+/**
+ * Copyright (C) 2023 abess-team
+ * Licensed under the MIT License.
+ */
+
 #pragma once
 
 #include <Eigen/Eigen>

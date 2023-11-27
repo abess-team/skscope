@@ -1,43 +1,8 @@
 /**
- * @file Algorithm.h
- * @brief the algorithm for fitting on given parameter.
- * @author   Jin Zhu (zhuj37@mail2.sysu.edu.cn),
- * Kangkang Jiang (jiangkk3@mail2.sysu.edu.cn),
- * Junhao Huang (huangjh256@mail2.sysu.edu.cn)
- * @version  0.0.1
- * @date     2021-07-31
- * @copyright  GNU General Public License (GPL)
+ * author: Kangkang Jiang
+ * Copyright (C) 2023 abess-team
+ * Licensed under the MIT License.
  */
-
-/*****************************************************************************
- *  OpenST Basic tool library                                                 *
- *  Copyright (C) 2021 Kangkang Jiang  jiangkk3@mail2.sysu.edu.cn                         *
- *                                                                            *
- *  This file is part of OST.                                                 *
- *                                                                            *
- *  This program is free software; you can redistribute it and/or modify      *
- *  it under the terms of the GNU General Public License version 3 as         *
- *  published by the Free Software Foundation.                                *
- *                                                                            *
- *  You should have received a copy of the GNU General Public License         *
- *  along with OST. If not, see <http://www.gnu.org/licenses/>.               *
- *                                                                            *
- *  Unless required by applicable law or agreed to in writing, software       *
- *  distributed under the License is distributed on an "AS IS" BASIS,         *
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  *
- *  See the License for the specific language governing permissions and       *
- *  limitations under the License.                                            *
- *                                                                            *
- *----------------------------------------------------------------------------*
- *  Remark         : Description                                              *
- *----------------------------------------------------------------------------*
- *  Change History :                                                          *
- *  <Date>     | <Version> | <Author>       | <Description>                   *
- *----------------------------------------------------------------------------*
- *  2021/07/31 | 0.0.1     | Kangkang Jiang | First version                   *
- *----------------------------------------------------------------------------*
- *                                                                            *
- *****************************************************************************/
 
 #pragma once
 

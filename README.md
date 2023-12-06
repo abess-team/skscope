@@ -10,7 +10,8 @@
 [![pyversions](https://img.shields.io/pypi/pyversions/skscope)](https://img.shields.io/pypi/pyversions/skscope)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Downloads](https://static.pepy.tech/badge/skscope)](https://pepy.tech/project/skscope)
+
+<!-- [![Downloads](https://static.pepy.tech/badge/skscope)](https://pepy.tech/project/skscope) -->
 
 ## What is `skscope`?
 

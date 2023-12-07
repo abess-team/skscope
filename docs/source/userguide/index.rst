@@ -22,8 +22,3 @@ User Guide
 
   quickstart
 
-
-.. toctree::
-  :maxdepth: 2
-
-  examples/index

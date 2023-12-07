@@ -30,7 +30,7 @@
       The quick example demonstrates the basic usage of ``skscope``, which is remarkably straightforward. All you need is programming an objective function.
 
    .. grid-item-card::
-      :link: userguide/examples/index.html
+      :link: gallery/index.html
 
       :fas:`list;pst-color-primary` **Examples Gallery**
       ^^^
@@ -64,6 +64,12 @@
    :hidden:
 
    userguide/index
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   gallery/index
 
 
 .. toctree::

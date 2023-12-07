@@ -131,7 +131,7 @@ if not version_match or version_match.isdigit():
 html_static_path = ["_static"]
 
 html_theme_options = {
-    "header_links_before_dropdown": 4,
+    "header_links_before_dropdown": 5,
     "icon_links": [
         {
             "name": "GitHub",
@@ -202,6 +202,10 @@ todo_include_todos = True
 
 html_sidebars = {
     "userguide/**": [
+        "search-field",
+        "sidebar-nav-bs",
+    ],
+    "gallery/**": [
         "search-field",
         "sidebar-nav-bs",
     ],  # This ensures we test for custom sidebars

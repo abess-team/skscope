@@ -30,7 +30,6 @@ copyright = "2023, abess-team"
 author = "abess-team"
 
 # The full version, including alpha/beta/rc tags
-release = "0.0.1"
 
 
 # -- General configuration ---------------------------------------------------
@@ -113,17 +112,13 @@ html_sourcelink_suffix = ""
 json_url = "https://skscope.readthedocs.io/en/latest/_static/switcher.json"
 
 # Define the version we use for matching in the version switcher.
-version_match = os.environ.get("READTHEDOCS_VERSION")
-if not version_match or version_match.isdigit():
-    # For local development, infer the version to match from the package.
-    release = "dev"
-    if "dev" in release or "rc" in release:
-        version_match = "dev"
-        # We want to keep the relative reference if we are in dev mode
-        # but we want the whole url if we are effectively in a released version
-        json_url = "_static/switcher.json"
-    else:
-        version_match = "v" + release
+version = os.environ.get("READTHEDOCS_VERSION")
+rd = os.environ.get("READTHEDOCS")
+
+if not rd:
+    version = "dev"
+    json_url = "_static/switcher.json"
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -176,7 +171,7 @@ html_theme_options = {
     # "secondary_sidebar_items": ["page-toc.html"],  # Remove the source buttons
     "switcher": {
         "json_url": json_url,
-        "version_match": version_match,
+        "version_match": version,
     },
     # "search_bar_position": "navbar",  # TODO: Deprecated - remove in future version
 }

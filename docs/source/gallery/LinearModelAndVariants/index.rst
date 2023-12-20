@@ -8,6 +8,7 @@ Linear Model and its Variants
     :glob:
     
     linear-regression
+    linear-square-root-loss
     robust-regression
     quantile-expectile-regression
     linear-mixed-model

@@ -27,8 +27,8 @@ CURRENT = os.path.normpath(CURRENT)
 def test_PortfolioSelection():
     # load data
     port = PortfolioSelection(sparsity=50, alpha=0.001, random_state=0)
-    dir = os.path.normpath("/docs/source/gallery/Miscellaneous/data/csi500-2020-2021.csv")
-    X = pd.read_csv(CURRENT+dir, encoding="gbk")
+    dir = os.path.normpath("../docs/source/gallery/Miscellaneous/data/csi500-2020-2021.csv")
+    X = pd.read_csv(dir, encoding="gbk")
     keep_cols = X.columns[(X.isnull().sum() <= 20)]
     X = X[keep_cols]
     X = X.fillna(0)

@@ -20,7 +20,7 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-CURRENT = os.path.abspath(os.path.dirname(os.getcwd()))
+CURRENT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 def test_PortfolioSelection():

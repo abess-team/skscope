@@ -26,8 +26,8 @@ CURRENT = os.path.dirname(os.path.abspath(__file__))
 def test_PortfolioSelection():
     # load data
     port = PortfolioSelection(sparsity=50, alpha=0.001, random_state=0)
-    dir = "/../docs/source/userguide/examples/Miscellaneous/data/csi500-2020-2021.csv"
-    X = pd.read_csv(CURRENT + dir, encoding="gbk")
+    dir = "../docs/source/gallery/Miscellaneous/data/csi500-2020-2021.csv"
+    X = pd.read_csv(dir, encoding="gbk")
     keep_cols = X.columns[(X.isnull().sum() <= 20)]
     X = X[keep_cols]
     X = X.fillna(0)

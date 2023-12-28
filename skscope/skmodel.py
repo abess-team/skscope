@@ -432,9 +432,10 @@ class MultivariateFailure(BaseEstimator):
     _parameter_constraints: dict = {
         "sparsity": [Interval(Integral, 1, None, closed="left")],
     }
+
     def __init__(self, sparsity=5):
         self.sparsity = sparsity
-    
+
     def fit(self, X, y, delta, sample_weight=None):
         r"""
         Minimize negative partial log-likelihood with sparsity constraint for provided data.
@@ -446,13 +447,13 @@ class MultivariateFailure(BaseEstimator):
 
         y : array-like, shape = (n_samples, n_events)
             Observed time of multiple events.
-        
+
         delta : array-like, shape = (n_samples, n_events)
             Indicator matrix of censoring.
 
         sample_weight : ignored
             Not used, present here for API consistency by convention.
-        
+
         Returns
         --------
         self : object
@@ -463,18 +464,23 @@ class MultivariateFailure(BaseEstimator):
         K = delta.shape[1]
         self.n_features_in_ = p
         self.n_events = K
+
         def multivariate_failure_objective(params):
             Xbeta = jnp.matmul(X, params)
             tmp = jnp.ones((n, K))
             for i in range(n):
                 for k in range(K):
-                    tmp = tmp.at[i, k].set(X[i] @ params - jnp.log(jnp.matmul(y[:,k] >= y[i,k], jnp.exp(Xbeta))))
-            loss = - jnp.mean(tmp * delta)
+                    tmp = tmp.at[i, k].set(
+                        X[i] @ params
+                        - jnp.log(jnp.matmul(y[:, k] >= y[i, k], jnp.exp(Xbeta)))
+                    )
+            loss = -jnp.mean(tmp * delta)
             return loss
+
         solver = ScopeSolver(p, self.sparsity)
         self.coef_ = solver.solve(multivariate_failure_objective, jit=True)
         return self
-    
+
     def predict(self, X):
         r"""
         Given the features, predict the hazard function up to some constant independent of the sample.
@@ -483,19 +489,19 @@ class MultivariateFailure(BaseEstimator):
         ----------
         X : array-like, shape(n_samples, n_features)
             Feature matrix.
-        
+
         Returns
         --------
         hazard : array, shape = (n_samples,)
-            the quantity :math:`e^{\beta^{\top}X_i}` proportional to the harzard function up to 
-            some constant independent of the sample index :math:`i` such that 
+            the quantity :math:`e^{\beta^{\top}X_i}` proportional to the harzard function up to
+            some constant independent of the sample index :math:`i` such that
             :math:`\lambda_k(t;X_{i})=\lambda_{0k}(t)e^{\beta^{\top}X_i}`.
         """
         check_is_fitted(self)
         X, _, _ = check_data(X)
         Xbeta = X @ self.coef_
         return np.exp(Xbeta)
-    
+
     def score(self, X, y, delta, sample_weight=None):
         r"""
         Give test data, and it return the test score of this fitted model.
@@ -507,7 +513,7 @@ class MultivariateFailure(BaseEstimator):
 
         y : array-like, shape = (n_samples, n_events)
             Observed time of multiple events.
-        
+
         delta : array-like, shape = (n_samples, n_events)
             Indicator matrix of censoring.
 
@@ -525,12 +531,17 @@ class MultivariateFailure(BaseEstimator):
         if p != self.n_features_in_:
             raise ValueError("X.shape[1] should be " + str(self.n_features_in_))
         if K != self.n_events:
-            raise ValueError("y.shape[1] and delta.shape[1] should be " + str(self.events))
-        
+            raise ValueError(
+                "y.shape[1] and delta.shape[1] should be " + str(self.events)
+            )
+
         Xbeta = np.matmul(X, self.coef_)
         tmp = np.ones((n, K))
         for k in range(K):
-            tmp[:, k] = X @ self.coef_ - np.log(np.matmul(y[:,k].reshape(1,-1) >= y[:,k].reshape(-1,1), np.exp(Xbeta)))
+            tmp[:, k] = X @ self.coef_ - np.log(
+                np.matmul(
+                    y[:, k].reshape(1, -1) >= y[:, k].reshape(-1, 1), np.exp(Xbeta)
+                )
+            )
         score = np.mean(tmp * delta)
         return score
-

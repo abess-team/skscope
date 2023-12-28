@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.utils import check_array, check_consistent_length
 
+
 def check_y_survival(y_or_event, *args, allow_all_censored=False):
     """Check that array correctly represents an outcome for survival analysis.
 
@@ -30,7 +31,11 @@ def check_y_survival(y_or_event, *args, allow_all_censored=False):
     if len(args) == 0:
         y = y_or_event
 
-        if not isinstance(y, np.ndarray) or y.dtype.fields is None or len(y.dtype.fields) != 2:
+        if (
+            not isinstance(y, np.ndarray)
+            or y.dtype.fields is None
+            or len(y.dtype.fields) != 2
+        ):
             raise ValueError(
                 "y must be a structured array with the first field"
                 " being a binary class event indicator and the second field"
@@ -46,7 +51,9 @@ def check_y_survival(y_or_event, *args, allow_all_censored=False):
 
     event = check_array(y_event, ensure_2d=False)
     if not np.issubdtype(event.dtype, np.bool_):
-        raise ValueError(f"elements of event indicator must be boolean, but found {event.dtype}")
+        raise ValueError(
+            f"elements of event indicator must be boolean, but found {event.dtype}"
+        )
 
     if not (allow_all_censored or np.any(event)):
         raise ValueError("all samples are censored")
@@ -59,7 +66,9 @@ def check_y_survival(y_or_event, *args, allow_all_censored=False):
 
         yt = check_array(yt, ensure_2d=False)
         if not np.issubdtype(yt.dtype, np.number):
-            raise ValueError(f"time must be numeric, but found {yt.dtype} for argument {i + 2}")
+            raise ValueError(
+                f"time must be numeric, but found {yt.dtype} for argument {i + 2}"
+            )
 
         return_val.append(yt)
 

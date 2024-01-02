@@ -165,9 +165,9 @@ All solvers (except `IHTSolver`) in `skscope` consistently outperformed `cvxpy` 
 ## Contributions
 
 <div align="center">
-<details>
+<!-- <details> -->
 
-<summary>👏 Thanks for the support 👏</summary>
+<summary>👏 Thanks for the following support 👏</summary>
 
 ### Stargazers
 

@@ -164,6 +164,41 @@ All solvers (except `IHTSolver`) in `skscope` consistently outperformed `cvxpy` 
 
 ## Contributions
 
+<div align="center">
+<!-- <details> -->
+
+<summary>👏 Thanks for the support 👏</summary>
+
+### Stargazers
+
+
+<div align="center">
+
+[![Stargazers repo roster for @abess-team/skscope](http://reporoster.com/stars/abess-team/skscope)](https://github.com/abess-team/skscope/stargazers)
+
+
+
+</div>
+
+### Forkers
+
+<div align="center" >
+
+[![Forkers repo roster for @abess-team/skscope](http://reporoster.com/forks/abess-team/skscope)](https://github.com/abess-team/skscope/network/members)
+
+</div>
+
+<!-- ## Contributors
+
+<a href = "https://github.com/walidbosso">
+  <img src = "https://contrib.rocks/image?repo=walidbosso/SpringBoot_Football_Matches"/>
+</a> -->
+
+
+<br/></details><br/>
+
+</div>
+
 Any kind of contribution to `skscope` would be highly appreciated! Please check the [contributor's guide](https://skscope.readthedocs.io/en/latest/contribute/index.html).
 
 - Bug report via [github issues](https://github.com/abess-team/skscope/issues)

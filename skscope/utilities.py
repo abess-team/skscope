@@ -88,9 +88,6 @@ def check_array_survival(X, y):
         as first field, and time of event or time of censoring as
         second field.
 
-    kwargs : dict
-        Additional arguments passed to :func:`sklearn.utils.check_array`.
-
     Returns
     -------
     event : array, shape=[n_samples,], dtype=bool

@@ -365,9 +365,11 @@ class ScopeSolver(BaseEstimator):
         force_min_sparsity = preselect.size
         default_max_sparsity = max(
             force_min_sparsity,
-            group_num
-            if group_num <= 5
-            else int(group_num / np.log(np.log(group_num)) / np.log(group_num)),
+            (
+                group_num
+                if group_num <= 5
+                else int(group_num / np.log(np.log(group_num)) / np.log(group_num))
+            ),
         )
 
         # path_type

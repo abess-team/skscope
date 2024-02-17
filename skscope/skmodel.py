@@ -430,6 +430,7 @@ class MultivariateFailure(BaseEstimator):
     sparsity : int, default=5
         The number of features to be selected, i.e., the sparsity level.
     """
+
     _parameter_constraints: dict = {
         "sparsity": [Interval(Integral, 1, None, closed="left")],
     }

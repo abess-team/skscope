@@ -22,13 +22,24 @@ solvers_ids = ("scope", "Base")  # , "GraHTP", "GraSP", "IHT")
 
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
+def test_numeric_solver(model, solver_creator):
+    from skscope.numeric_solver import convex_solver_BFGS
+
+    solver = solver_creator(
+        model["n_features"], model["n_informative"], numeric_solver=convex_solver_BFGS
+    )
+    solver.solve(model["loss"], jit=True)
+
+    assert set(model["support_set"]) == set(solver.get_support())
+
+
+@pytest.mark.parametrize("model", models, ids=models_ids)
+@pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_init_support_set(model, solver_creator):
     solver = solver_creator(model["n_features"], model["n_informative"])
     solver.solve(model["loss"], init_support_set=[0, 1, 2], jit=True)
-    solver.get_result()
-    solver.get_estimated_params()
-    solver.get_support()
-    assert set(model["support_set"]) == set(solver.support_set)
+
+    assert set(model["support_set"]) == set(solver.get_support())
 
 
 @pytest.mark.parametrize("model", models, ids=models_ids)

@@ -18,6 +18,7 @@ PLAT_TO_CMAKE = {
     "win-arm64": "ARM64",
 }
 
+
 def get_info():
     # get information from `__init__.py`
     labels = ["__version__", "__author__"]
@@ -39,6 +40,7 @@ class CMakeExtension(Extension):
         self.sourcedir = os.path.abspath(sourcedir)
         self.parallel = 4
 
+
 class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = os.path.abspath(os.path.dirname(self.get_ext_fullpath(ext.name)))
@@ -59,7 +61,7 @@ class CMakeBuild(build_ext):
         cmake_args = [
             f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={extdir}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
-            f"-DCMAKE_BUILD_TYPE={cfg}"
+            f"-DCMAKE_BUILD_TYPE={cfg}",
         ]
         build_args = []
         # Adding CMake arguments set as environment variable
@@ -128,27 +130,29 @@ class CMakeBuild(build_ext):
         subprocess.check_call(["cmake", ext.sourcedir] + cmake_args, cwd=build_temp)
         subprocess.check_call(["cmake", "--build", "."] + build_args, cwd=build_temp)
 
-with open(os.path.join(CURRENT_DIR, 'README.md'), encoding='utf-8') as f:
+
+with open(os.path.join(CURRENT_DIR, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 package_info = get_info()
 
 setup(
-    name='skscope',
-    version=package_info['__version__'],
-    author=package_info['__author__'],
+    name="skscope",
+    version=package_info["__version__"],
+    author=package_info["__author__"],
     author_email="homura@mail.ustc.edu.cn",
     maintainer="Zezhi Wang",
     maintainer_email="homura@mail.ustc.edu.cn",
     packages=find_packages(),
-    description="Sparsity-Constraint OPtimization via itErative-algorithm", 
+    description="Sparsity-Constraint OPtimization via itErative-algorithm",
     long_description=long_description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     install_requires=[
         "numpy",
         "scikit-learn>=1.2.2",
         "jax[cpu]",
         "nlopt",
+        "scipy",
     ],
     license="MIT",
     url="https://skscope.readthedocs.io",
@@ -176,7 +180,7 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
     ],
-    python_requires='>=3.8', 
+    python_requires=">=3.8",
     ext_modules=[CMakeExtension("skscope._scope")],
-    cmdclass={"build_ext": CMakeBuild}
+    cmdclass={"build_ext": CMakeBuild},
 )

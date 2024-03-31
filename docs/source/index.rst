@@ -91,3 +91,15 @@
    :hidden:
 
    contribute/index
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   more/frequentaskedquestions
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   more/benchmark

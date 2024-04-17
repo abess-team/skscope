@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from create_test_model import CreateTestModel
-from skscope import ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver
+from skscope import utilities, ScopeSolver, BaseSolver, HTPSolver, GraspSolver, IHTSolver
 import skscope._scope as _scope
 
 model_creator = CreateTestModel()
@@ -25,9 +25,7 @@ solvers_ids = ("scope", "Base")  # , "GraHTP", "GraSP", "IHT")
 def test_numeric_solver(model, solver_creator):
     from skscope.numeric_solver import convex_solver_BFGS
 
-    solver = solver_creator(
-        model["n_features"], model["n_informative"], numeric_solver=convex_solver_BFGS
-    )
+    solver = solver_creator(model["n_features"], model["n_informative"], numeric_solver=convex_solver_BFGS)
     solver.solve(model["loss"], jit=True)
 
     assert set(model["support_set"]) == set(solver.get_support())
@@ -53,12 +51,12 @@ def test_init_params(model, solver_creator):
 
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
-@pytest.mark.parametrize("ic_type", ["aic", "bic", "sic", "ebic"])
-def test_ic(model, solver_creator, ic_type):
+def test_ic(model, solver_creator):
     solver = solver_creator(
         model["n_features"],
+        [0, model["n_informative"]],
         sample_size=model["n_samples"],
-        ic_type=ic_type,
+        ic_method=utilities.LinearSIC,
     )
     solver.solve(model["loss"], jit=True)
 
@@ -73,8 +71,9 @@ def test_cv_random_split(model, solver_creator):
         [0, model["n_informative"]],
         model["n_samples"],
         cv=2,
+        split_method=lambda data, indeices: (data[0][indeices], data[1][indeices]),
     )
-    solver.solve(model["loss_data"], jit=True)
+    solver.solve(model["loss_data"], data=model["data"], jit=True)
 
     assert set(model["support_set"]) == set(solver.support_set)
 
@@ -92,8 +91,9 @@ def test_cv_given_split(model, solver_creator):
         model["n_samples"],
         cv=n_fold,
         cv_fold_id=cv_fold_id,
+        split_method=lambda data, indeices: (data[0][indeices], data[1][indeices]),
     )
-    solver.solve(model["loss_data"], jit=True)
+    solver.solve(model["loss_data"], data=model["data"], jit=True)
 
     assert set(model["support_set"]) == set(solver.support_set)
 
@@ -160,9 +160,7 @@ def test_scope_hessian():
 
 
 def test_scope_dynamic_max_exchange_num():
-    solver = ScopeSolver(
-        linear["n_features"], linear["n_informative"], is_dynamic_max_exchange_num=False
-    )
+    solver = ScopeSolver(linear["n_features"], linear["n_informative"], is_dynamic_max_exchange_num=False)
     solver.solve(linear["loss"], jit=True)
 
     assert set(linear["support_set"]) == set(solver.support_set)
@@ -190,6 +188,7 @@ def test_scope_args():
         path_type="gs",
         sample_size=linear["n_samples"],
         cv=2,
+        split_method=lambda data, indeices: (data[0][indeices], data[1][indeices]),
         file_log_level="error",
     )
-    solver.solve(linear["loss_data"])
+    solver.solve(linear["loss_data"], data=linear["data"])

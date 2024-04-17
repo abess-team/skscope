@@ -71,16 +71,6 @@ In other places, we presume the sparsity level would be appropriate set. However
 
 Note that when using a list for ``sparsity``, the ``sample_size`` parameter must also be provided to the solver in ``skscope``.
 
-
-.. code-block:: python
-
-    solver = ScopeSolver(
-        dimensionality=p,         ## there are p parameters
-        sparsity=[1, 2, 3, 4, 5], ## the candidate support sizes
-        sample_size=n,            ## the number of samples
-    )
-
-
 There are two ways to evaluate sparsity levels: `Information Criterion`_ and `Cross Validation`_.
 
 
@@ -90,19 +80,42 @@ Information Criterion
 
 Information criterion is a statistical measure used to assess the goodness of fit of a model while penalizing model complexity. It helps in selecting the optimal model from a set of competing models. In the context of sparsity-constrained optimization, information criterion can be used to evaluate different sparsity levels and identify the most suitable support size.
 .. There is another way to evaluate sparsity levels, which is information criterion. The larger the information criterion, the better the model. 
-There are four types of information criterion can be used in ``skscope``: Akaike information criterion `[1]`_, Bayesian information criterion (BIC, `[2]`_), extend BIC `[3]`_, and special information criterion (SIC `[4]`_). 
+There are four types of information criterion can be implemented in ``skscope.utilities``: Akaike information criterion `[1]`_, Bayesian information criterion (BIC, `[2]`_), extend BIC `[3]`_, and special information criterion (SIC `[4]`_). 
 .. If sparsity is list and ``cv=None``, the solver will use information criterions to evaluate the sparsity level. 
-The input parameter ``ic`` in the solvers of skscope can be used to choose the information criterion. The default value is ``ic='sic'``. Here is an example using SIC to find the optimal support size.
+The input parameter ``ic_method`` in the solvers of skscope can be used to choose the information criterion. It should be a method to compute information criterion which has the same parameters with this example:
 
 .. code-block:: python
 
+    def SIC(
+        objective_value: float,
+        dimensionality: int,
+        effective_params_num: int,
+        train_size: int,
+    ):
+        return 2 * objective_value + effective_params_num * np.log(np.log(train_size)) * np.log(dimensionality)
+
+
+Here is an example using SIC to find the optimal support size.
+
+.. code-block:: python
+    import jax.numpy as jnp
+    import numpy as np
+    from skscope.utilities import LinearSIC
+
+    n, p = 100, 10
     solver = ScopeSolver(
         dimensionality=p,        
         sparsity=[1, 2, 3, 4, 5] ## we want to select 1-5 variables
         sample_size=n,           ## the number of samples
-        ic='sic',                ## use SIC to evaluate sparsity levels
+        ic_method=LinearSIC,                ## use SIC to evaluate sparsity levels
     )
+    solver.solve(
+        lambda params: jnp.sum(jnp.square(np.random.randn(n, p) @ params - np.random.randn(n))),
+        jit = True,
+    )
+    print(solver.get_result())
 
+Please note that the effectiveness of information criterion heavily depends on the implementation of the objective function. Before usage, carefully check whether the objective function and the information criterion implementations match.
 
 Cross Validation
 ^^^^^^^^^^^^^^^^^^^^
@@ -148,31 +161,6 @@ To utilizing cross validation `[5]`_, there are some requirements:
     )
 
     params = solver.solve(custom_objective, data = (X, y))
-
-There is a simpler way to use cross validation: let objective function comprise a additional parameter ``index``. In this case, we do not need to set ``split_method``. Below is the illustrative example for this usage. 
-
-.. code-block:: python
-    
-    import jax.numpy as jnp
-    from sklearn.datasets import make_regression
-
-    ## generate data
-    n, p, k= 10, 5, 3
-    X, y, true_params = make_regression(n_samples=n, n_features=p, n_informative=k, coef=True)
-
-    def custom_objective(params, index):
-        return jnp.sum(
-            jnp.square(y[index] - X[index,:] @ params)
-        )
-    
-    solver = ScopeSolver(
-        dimensionality=p,        ## there are p parameters
-        sparsity=[1, 2, 3, 4, 5] ## we want to select 1-5 variables
-        sample_size=n,           ## the number of samples
-        cv=10,                   ## 10-folds use cross validation
-    )
-
-    params = solver.solve(custom_objective)
 
 
 Reference

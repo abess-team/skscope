@@ -10,6 +10,7 @@
 #include <Eigen/Eigen>
 #include <tuple>
 #include <vector>
+#include <functional>
 
 #include "Algorithm.h"
 #include "UniversalData.h"
@@ -47,8 +48,7 @@ using namespace std;
  * s_max), where the specific support size to be considered is determined by golden section.
  * @param is_warm_start                 When tuning the optimal parameter combination, whether to use the last solution
  * as a warm start to accelerate the iterative convergence of the splicing algorithm.
- * @param ic_type                       The type of criterion for choosing the support size. Available options are
- * "sic", "ebic", "bic", "aic".
+ * @param ic_method                     A function pointer to the information criterion function.
  * @param Kfold                         The folds number to use the Cross-validation method. If Kfold=1,
  * Cross-validation will not be used.
  * @param sequence                      An integer vector representing the alternative support sizes. Only used for
@@ -88,7 +88,7 @@ using namespace std;
  * @param algorithm_type type of algorithm
  * @param path_type type of path: 1 for sequencial search and 2 for golden section search
  * @param is_warm_start whether enable warm-start
- * @param ic_type type of information criterion, used for not CV
+ * @param ic_method a function pointer to the information criterion function, used for not CV
  * @param Kfold number of folds, used for CV
  * @param parameters parameters to be selected, including `support_size`, `lambda`
  * @param screening_size size of screening
@@ -104,7 +104,7 @@ using namespace std;
 
 tuple<VectorXd, double, double, double>
 pywrap_Universal(pybind11::object universal_data, UniversalModel universal_model, ConvexSolver convex_solver, int model_size, int sample_size, int aux_para_size, int max_iter,
-                 int exchange_num, int path_type, bool is_greedy, bool use_hessian, bool is_dynamic_exchange_num, bool is_warm_start, int ic_type, double ic_coef, int Kfold, VectorXi sequence,
+                 int exchange_num, int path_type, bool is_greedy, bool use_hessian, bool is_dynamic_exchange_num, bool is_warm_start, std::function<double(double, int, int, int)> ic_method, int Kfold, VectorXi sequence,
                  VectorXd lambda_seq, int s_min, int s_max, int screening_size, VectorXi g_index, VectorXi always_select,
                  int thread, int splicing_type, int sub_search, VectorXi cv_fold_id, VectorXi A_init, VectorXd beta_init, VectorXd coef0_init)
 {
@@ -150,14 +150,14 @@ pywrap_Universal(pybind11::object universal_data, UniversalModel universal_model
     if (screening_size >= 0)
     {
         screening_A = screening(data, algorithm_list, screening_size, beta_size,
-                                                                             parameters.lambda_list(0), A_init);
+                                parameters.lambda_list(0), A_init);
     }
 
     // Prepare for CV:
     //     if CV is enable,
     //     specify train and test data,
     //     and initialize the fitting argument inside each fold.
-    Metric *metric = new Metric(ic_type, ic_coef, Kfold);
+    Metric *metric = new Metric(ic_method, Kfold);
     if (Kfold > 1)
     {
         metric->set_cv_train_test_mask(data, data.n, cv_fold_id);
@@ -292,7 +292,7 @@ PYBIND11_MODULE(_scope, m)
     m.def("pywrap_Universal", &pywrap_Universal);
     pybind11::class_<UniversalModel>(m, "UniversalModel").def(pybind11::init<>()).def("set_loss_of_model", &UniversalModel::set_loss_of_model).def("set_gradient_autodiff", &UniversalModel::set_gradient_autodiff).def("set_hessian_autodiff", &UniversalModel::set_hessian_autodiff).def("set_gradient_user_defined", &UniversalModel::set_gradient_user_defined).def("set_hessian_user_defined", &UniversalModel::set_hessian_user_defined).def("set_slice_by_sample", &UniversalModel::set_slice_by_sample).def("set_deleter", &UniversalModel::set_deleter);
     m.def("init_spdlog", &init_spdlog);
-    //pybind11::class_<NloptConfig>(m, "NloptConfig").def(pybind11::init<int, const char *, double, double, double, double, double, unsigned, unsigned>());
+    // pybind11::class_<NloptConfig>(m, "NloptConfig").def(pybind11::init<int, const char *, double, double, double, double, double, unsigned, unsigned>());
     pybind11::class_<QuadraticData>(m, "QuadraticData")
         .def(pybind11::init<MatrixXd, VectorXd>());
     m.def("quadratic_loss", &quadratic_loss<double>);

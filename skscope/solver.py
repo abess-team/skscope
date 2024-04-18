@@ -10,7 +10,7 @@ from sklearn.base import BaseEstimator
 import numpy as np
 import jax
 from jax import numpy as jnp
-from . import _scope
+from . import _scope, utilities
 from .numeric_solver import convex_solver_nlopt
 
 
@@ -36,9 +36,11 @@ class ScopeSolver(BaseEstimator):
         It should have the same interface as ``skscope.convex_solver_nlopt``.
     max_iter : int, default=20
         Maximum number of iterations taken for converging.
-    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='sic'
-        The type of information criterion for choosing the sparsity level.
+    ic_method : callable, optional
+        A function to calculate the information criterion for choosing the sparsity level.
+        ``ic(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
         Used only when ``sparsity`` is array and ``cv`` is 1.
+        Note that ``sample_size`` must be given when using ``ic_method``.
     cv : int, default=1
         The folds number when use the cross-validation method. If ``cv`` = 1, the sparsity level will be chosen by the information criterion. If ``cv`` > 1, the sparsity level will be chosen by the cross-validation method.
     split_method: callable, optional
@@ -122,7 +124,7 @@ class ScopeSolver(BaseEstimator):
         preselect=[],
         numeric_solver=convex_solver_nlopt,
         max_iter=20,
-        ic_type="aic",
+        ic_method=None,
         cv=1,
         split_method=None,
         cv_fold_id=None,
@@ -150,8 +152,7 @@ class ScopeSolver(BaseEstimator):
         self.preselect = preselect
         self.numeric_solver = numeric_solver
         self.max_iter = max_iter
-        self.ic_type = ic_type
-        self.ic_coef = 1.0
+        self.ic_method = ic_method
         self.cv = cv
         self.split_method = split_method
         self.deleter = None
@@ -322,17 +323,6 @@ class ScopeSolver(BaseEstimator):
         # max_exchange_num
         BaseSolver._check_positive_integer(self.max_exchange_num, "max_exchange_num")
 
-        # ic_type
-        information_criterion_dict = {
-            "aic": 1,
-            "bic": 2,
-            "sic": 3,
-            "ebic": 4,
-        }
-        if self.ic_type not in information_criterion_dict.keys():
-            raise ValueError("ic_type should be one of ['aic', 'bic', 'sic','ebic'].")
-        ic_type = information_criterion_dict[self.ic_type]
-
         # group
         if self.group is None:
             group = np.arange(p, dtype="int32")
@@ -459,9 +449,7 @@ class ScopeSolver(BaseEstimator):
         if self.cv > n:
             raise ValueError("cv should not be greater than sample_size.")
         if self.cv > 1:
-            if data is None and self.split_method is None:
-                data = np.arange(n)
-                self.split_method = lambda data, index: index
+            ic_method = utilities.AIC if self.ic_method is None else self.ic_method
             if self.split_method is None:
                 raise ValueError("split_method should be provided when cv > 1.")
             self.model.set_slice_by_sample(self.split_method)
@@ -488,7 +476,16 @@ class ScopeSolver(BaseEstimator):
                     )
         else:
             self.cv_fold_id = np.array([], dtype="int32")
-
+            if sparsity.size == 1 and self.ic_method is None:
+                ic_method = utilities.AIC
+            elif sparsity.size > 1 and self.ic_method is None:
+                raise ValueError(
+                    "ic_method should be provided for choosing sparsity level with information criterion."
+                )
+            elif self.sample_size <= 1:
+                raise ValueError("sample_size should be given when using ic_method.")
+            else:
+                ic_method = self.ic_method
         if gradient is None and len(layers) > 0:
             if len(layers) == 1:
                 assert layers[0].out_features == self.dimensionality
@@ -553,8 +550,7 @@ class ScopeSolver(BaseEstimator):
             self.use_hessian,
             self.is_dynamic_max_exchange_num,
             self.warm_start,
-            ic_type,
-            self.ic_coef,
+            ic_method,
             self.cv,
             sparsity,
             np.array([0.0]),
@@ -579,9 +575,8 @@ class ScopeSolver(BaseEstimator):
                 self.params = layer.transform_params(self.params)
 
         self.support_set = np.sort(np.nonzero(self.params)[0])
-        self.cv_train_loss = result[1] if self.cv == 1 else 0.0
-        self.cv_test_loss = result[2] if self.cv == 1 else 0.0
         self.information_criterion = result[3]
+        self.cross_validation_loss = result[2] if self.cv > 1 else None
 
         return self.params
 
@@ -600,20 +595,17 @@ class ScopeSolver(BaseEstimator):
                 The support set of the optimal parameters.
             + ``objective_value`` : float
                 The value of objective function at the optimal parameters.
-            + ``cv_train_loss`` : float
-                The average value of objective function on training sets.
-            + ``cv_test_loss`` : float
-                The average value of objective function on testing sets.
             + ``information_criterion`` : float
                 The value of information criterion.
+            + ``cross_validation_loss`` : float
+                The mean loss of cross-validation.
         """
         return {
             "params": self.params,
             "support_set": self.support_set,
             "objective_value": self.objective_value,
-            "cv_train_loss": self.cv_train_loss,
-            "cv_test_loss": self.cv_test_loss,
             "information_criterion": self.information_criterion,
+            "cross_validation_loss": self.cross_validation_loss,
         }
 
     def __set_objective_cpp(self, objective, gradient, hessian):
@@ -716,9 +708,11 @@ class HTPSolver(BaseSolver):
         Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
         and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
-        The type of information criterion for choosing the sparsity level.
+    ic_method : callable, optional
+        A function to calculate the information criterion for choosing the sparsity level.
+        ``ic(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
         Used only when ``sparsity`` is array and ``cv`` is 1.
+        Note that ``sample_size`` must be given when using ``ic_method``.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -730,9 +724,6 @@ class HTPSolver(BaseSolver):
         An array indicates different folds in CV, which samples in the same fold should be given the same number.
         The number of different elements should be equal to ``cv``.
         Used only when `cv` > 1.
-    metric_method : callable, optional
-        A function to calculate the information criterion.
-        `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
         The random seed used for cross-validation.
 
@@ -762,8 +753,7 @@ class HTPSolver(BaseSolver):
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
         group=None,
-        ic_type="aic",
-        metric_method=None,
+        ic_method=None,
         cv=1,
         cv_fold_id=None,
         split_method=None,
@@ -777,8 +767,7 @@ class HTPSolver(BaseSolver):
             numeric_solver=numeric_solver,
             max_iter=max_iter,
             group=group,
-            ic_type=ic_type,
-            metric_method=metric_method,
+            ic_method=ic_method,
             cv=cv,
             cv_fold_id=cv_fold_id,
             split_method=split_method,
@@ -880,9 +869,11 @@ class IHTSolver(HTPSolver):
         Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
         and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
-        The type of information criterion for choosing the sparsity level.
+    ic_method : callable, optional
+        A function to calculate the information criterion for choosing the sparsity level.
+        ``ic(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
         Used only when ``sparsity`` is array and ``cv`` is 1.
+        Note that ``sample_size`` must be given when using ``ic_method``.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -894,9 +885,6 @@ class IHTSolver(HTPSolver):
         An array indicates different folds in CV, which samples in the same fold should be given the same number.
         The number of different elements should be equal to ``cv``.
         Used only when `cv` > 1.
-    metric_method : callable, optional
-        A function to calculate the information criterion.
-        `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
         The random seed used for cross-validation.
 
@@ -966,7 +954,6 @@ class IHTSolver(HTPSolver):
             params[support_new] = params_bias[support_new]
 
         # final optimization for IHT
-        params = np.zeros_like(init_params)
         _, params = self._numeric_solver(
             loss_fn, value_and_grad, params, support_new, data
         )
@@ -1002,9 +989,11 @@ class GraspSolver(BaseSolver):
         Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
         and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
-        The type of information criterion for choosing the sparsity level.
+    ic_method : callable, optional
+        A function to calculate the information criterion for choosing the sparsity level.
+        ``ic(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
         Used only when ``sparsity`` is array and ``cv`` is 1.
+        Note that ``sample_size`` must be given when using ``ic_method``.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -1016,9 +1005,6 @@ class GraspSolver(BaseSolver):
         An array indicates different folds in CV, which samples in the same fold should be given the same number.
         The number of different elements should be equal to ``cv``.
         Used only when `cv` > 1.
-    metric_method : callable, optional
-        A function to calculate the information criterion.
-        `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
         The random seed used for cross-validation.
 
@@ -1164,9 +1150,11 @@ class FobaSolver(BaseSolver):
         Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
         and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
-        The type of information criterion for choosing the sparsity level.
+    ic_method : callable, optional
+        A function to calculate the information criterion for choosing the sparsity level.
+        ``ic(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
         Used only when ``sparsity`` is array and ``cv`` is 1.
+        Note that ``sample_size`` must be given when using ``ic_method``.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -1178,9 +1166,6 @@ class FobaSolver(BaseSolver):
         An array indicates different folds in CV, which samples in the same fold should be given the same number.
         The number of different elements should be equal to ``cv``.
         Used only when `cv` > 1.
-    metric_method : callable, optional
-        A function to calculate the information criterion.
-        `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
         The random seed used for cross-validation.
 
@@ -1212,8 +1197,7 @@ class FobaSolver(BaseSolver):
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
         group=None,
-        ic_type="aic",
-        metric_method=None,
+        ic_method=None,
         cv=1,
         cv_fold_id=None,
         split_method=None,
@@ -1227,8 +1211,7 @@ class FobaSolver(BaseSolver):
             numeric_solver=numeric_solver,
             max_iter=max_iter,
             group=group,
-            ic_type=ic_type,
-            metric_method=metric_method,
+            ic_method=ic_method,
             cv=cv,
             cv_fold_id=cv_fold_id,
             split_method=split_method,
@@ -1442,9 +1425,11 @@ class ForwardSolver(FobaSolver):
         Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
         and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
-        The type of information criterion for choosing the sparsity level.
+    ic_method : callable, optional
+        A function to calculate the information criterion for choosing the sparsity level.
+        ``ic(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
         Used only when ``sparsity`` is array and ``cv`` is 1.
+        Note that ``sample_size`` must be given when using ``ic_method``.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -1456,9 +1441,6 @@ class ForwardSolver(FobaSolver):
         An array indicates different folds in CV, which samples in the same fold should be given the same number.
         The number of different elements should be equal to ``cv``.
         Used only when `cv` > 1.
-    metric_method : callable, optional
-        A function to calculate the information criterion.
-        `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
         The random seed used for cross-validation.
 
@@ -1485,8 +1467,7 @@ class ForwardSolver(FobaSolver):
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
         group=None,
-        ic_type="aic",
-        metric_method=None,
+        ic_method=None,
         cv=1,
         cv_fold_id=None,
         split_method=None,
@@ -1504,8 +1485,7 @@ class ForwardSolver(FobaSolver):
             numeric_solver=numeric_solver,
             max_iter=max_iter,
             group=group,
-            ic_type=ic_type,
-            metric_method=metric_method,
+            ic_method=ic_method,
             cv=cv,
             cv_fold_id=cv_fold_id,
             split_method=split_method,
@@ -1593,9 +1573,11 @@ class OMPSolver(ForwardSolver):
         Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
         and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
-        The type of information criterion for choosing the sparsity level.
+    ic_method : callable, optional
+        A function to calculate the information criterion for choosing the sparsity level.
+        ``ic(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
         Used only when ``sparsity`` is array and ``cv`` is 1.
+        Note that ``sample_size`` must be given when using ``ic_method``.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -1607,9 +1589,6 @@ class OMPSolver(ForwardSolver):
         An array indicates different folds in CV, which samples in the same fold should be given the same number.
         The number of different elements should be equal to ``cv``.
         Used only when `cv` > 1.
-    metric_method : callable, optional
-        A function to calculate the information criterion.
-        `` metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
     random_state : int, optional
         The random seed used for cross-validation.
 
@@ -1639,8 +1618,7 @@ class OMPSolver(ForwardSolver):
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
         group=None,
-        ic_type="aic",
-        metric_method=None,
+        ic_method=None,
         cv=1,
         cv_fold_id=None,
         split_method=None,
@@ -1656,8 +1634,7 @@ class OMPSolver(ForwardSolver):
             numeric_solver=numeric_solver,
             max_iter=max_iter,
             group=group,
-            ic_type=ic_type,
-            metric_method=metric_method,
+            ic_method=ic_method,
             cv=cv,
             cv_fold_id=cv_fold_id,
             split_method=split_method,

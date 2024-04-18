@@ -99,3 +99,76 @@ def check_array_survival(X, y):
     event, time = check_y_survival(y)
     check_consistent_length(X, event, time)
     return event, time
+
+
+def AIC(
+    objective_value: float,
+    dimensionality: int,
+    effective_params_num: int,
+    train_size: int,
+):
+    return 2 * objective_value + 2 * effective_params_num
+
+
+def BIC(
+    objective_value: float,
+    dimensionality: int,
+    effective_params_num: int,
+    train_size: int,
+):
+    return 2 * objective_value + effective_params_num * np.log(train_size)
+
+
+def SIC(
+    objective_value: float,
+    dimensionality: int,
+    effective_params_num: int,
+    train_size: int,
+):
+    return 2 * objective_value + effective_params_num * np.log(
+        np.log(train_size)
+    ) * np.log(dimensionality)
+
+
+def GIC(
+    objective_value: float,
+    dimensionality: int,
+    effective_params_num: int,
+    train_size: int,
+):
+    return 2 * objective_value + effective_params_num * np.log(
+        np.log(train_size)
+    ) * np.log(dimensionality)
+
+
+def EBIC(
+    objective_value: float,
+    dimensionality: int,
+    effective_params_num: int,
+    train_size: int,
+):
+    return 2 * objective_value + effective_params_num * (
+        np.log(train_size) + 2 * np.log(dimensionality)
+    )
+
+
+def LinearSIC(
+    objective_value: float,
+    dimensionality: int,
+    effective_params_num: int,
+    train_size: int,
+):
+    return train_size * np.log(objective_value) + 2 * effective_params_num * np.log(
+        np.log(train_size)
+    ) * np.log(dimensionality)
+
+
+def LinearGIC(
+    objective_value: float,
+    dimensionality: int,
+    effective_params_num: int,
+    train_size: int,
+):
+    return train_size * np.log(objective_value) + 2 * effective_params_num * np.log(
+        np.log(train_size)
+    ) * np.log(dimensionality)

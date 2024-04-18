@@ -9,7 +9,7 @@ import pytest
 import re
 
 from create_test_model import CreateTestModel
-from skscope import ScopeSolver, BaseSolver
+from skscope import utilities, ScopeSolver, BaseSolver
 import skscope._scope as _scope
 
 model_creator = CreateTestModel()
@@ -75,13 +75,18 @@ def test_sparsity(model, solver_creator):
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_ic(model, solver_creator):
-    solver = solver_creator(
-        model["n_features"], model["n_informative"], model["n_samples"]
-    )
-    solver.set_config(ic_type="ic")
+    solver = solver_creator(model["n_features"])
     with pytest.raises(
         ValueError,
-        match=re.escape("ic_type should be one of ['aic', 'bic', 'sic','ebic']."),
+        match=re.escape(
+            "ic_method should be provided for choosing sparsity level with information criterion."
+        ),
+    ):
+        solver.solve(model["loss"], jit=True)
+    solver.set_config(ic_method=utilities.LinearSIC)
+    with pytest.raises(
+        ValueError,
+        match=re.escape("sample_size should be given when using ic_method."),
     ):
         solver.solve(model["loss"], jit=True)
 
@@ -89,30 +94,30 @@ def test_ic(model, solver_creator):
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_cv(model, solver_creator):
-    solver = solver_creator(
-        model["n_features"], model["n_informative"], model["n_samples"]
-    )
-    solver.set_config(cv=1 + model["n_samples"])
+    solver = solver_creator(model["n_features"], cv=2)
     with pytest.raises(
         ValueError, match=re.escape("cv should not be greater than sample_size.")
     ):
         solver.solve(model["loss"], jit=True)
-    solver.set_config(cv=model["n_samples"])
+    solver.set_config(sample_size=model["n_samples"])
     with pytest.raises(
         ValueError, match=re.escape("split_method should be provided when cv > 1.")
     ):
-        solver.solve(model["loss"], data=(), jit=True)
+        solver.solve(model["loss"], jit=True)
+    solver.set_config(
+        split_method=lambda data, indeices: (data[0][indeices], data[1][indeices])
+    )
     solver.set_config(cv_fold_id=np.zeros((1, model["n_samples"])))
     with pytest.raises(
         ValueError, match=re.escape("cv_fold_id should be an 1D array of integers.")
     ):
-        solver.solve(model["loss"], jit=True)
+        solver.solve(model["loss_data"], data=model["data"], jit=True)
     solver.set_config(cv_fold_id=np.zeros(1 + model["n_samples"]))
     with pytest.raises(
         ValueError,
         match=re.escape("The length of cv_fold_id should be equal to sample_size."),
     ):
-        solver.solve(model["loss"], jit=True)
+        solver.solve(model["loss_data"], data=model["data"], jit=True)
     solver.set_config(cv_fold_id=np.zeros(model["n_samples"]))
     with pytest.raises(
         ValueError,
@@ -120,7 +125,7 @@ def test_cv(model, solver_creator):
             "The number of different elements in cv_fold_id should be equal to cv."
         ),
     ):
-        solver.solve(model["loss"], jit=True)
+        solver.solve(model["loss_data"], data=model["data"], jit=True)
 
 
 @pytest.mark.parametrize("model", models, ids=models_ids)

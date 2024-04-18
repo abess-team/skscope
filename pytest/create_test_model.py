@@ -22,24 +22,23 @@ class CreateTestModel:
         )
 
         def linear_model(params):
-            return jnp.sum(jnp.square(Y - jnp.matmul(X, params))) / 2
+            return jnp.sum(jnp.square(Y - jnp.matmul(X, params)))
 
         def linear_model_numpy(params):
-            return np.sum(np.square(Y - np.matmul(X, params))) / 2
+            return np.sum(np.square(Y - np.matmul(X, params)))
 
         def grad_linear_model(params):
-            return -np.matmul(X.T, (Y - np.matmul(X, params)))
+            return -np.matmul(X.T, (Y - np.matmul(X, params))) * 2
 
         def hess_linear_model(params):
-            return np.matmul(X.T, X)
+            return np.matmul(X.T, X) * 2
 
         X_jnp = jnp.array(X)
         Y_jnp = jnp.array(Y)
 
-        def linear_model_data(params, data_indices):
-            return jnp.sum(
-                jnp.square(Y_jnp[data_indices] - X_jnp[data_indices,] @ params)
-            )
+        def linear_model_data(params, data):
+            x, y = data
+            return jnp.sum(jnp.square(y - x @ params))
 
         return {
             "n_samples": self.N,

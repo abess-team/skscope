@@ -10,7 +10,7 @@ import numpy as np
 import jax
 from .numeric_solver import convex_solver_nlopt
 import math
-from . import layer
+from . import utilities
 
 
 class BaseSolver(BaseEstimator):
@@ -41,9 +41,11 @@ class BaseSolver(BaseEstimator):
         Here are wrong examples: ``[0,2,1,2]`` (not incremental), ``[1,2,3,3]`` (not start from 0), ``[0,2,2,3]`` (there is a gap).
         It's worth mentioning that the concept "a variable" means "a group of variables" in fact. For example,``sparsity=[3]`` means there will be 3 groups of variables selected rather than 3 variables,
         and ``always_include=[0,3]`` means the 0-th and 3-th groups must be selected.
-    ic_type : {'aic', 'bic', 'sic', 'ebic'}, default='aic'
-        The type of information criterion for choosing the sparsity level.
+    ic_method : callable, optional
+        A function to calculate the information criterion for choosing the sparsity level.
+        ``ic(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
         Used only when ``sparsity`` is array and ``cv`` is 1.
+        Note that ``sample_size`` must be given when using ``ic_method``.
     cv : int, default=1
         The folds number when use the cross-validation method.
         - If ``cv`` = 1, the sparsity level will be chosen by the information criterion.
@@ -55,10 +57,7 @@ class BaseSolver(BaseEstimator):
         An array indicates different folds in CV, which samples in the same fold should be given the same number.
         The number of different elements should be equal to ``cv``.
         Used only when `cv` > 1.
-    metric_method : callable, optional
-        A function to calculate the information criterion.
-        ``metric(loss, p, s, n) -> ic_value``, where ``loss`` is the value of the objective function, ``p`` is the dimensionality, ``s`` is the sparsity level and ``n`` is the sample size.
-    random_state : int, optional
+        random_state : int, optional
         The random seed used for cross-validation.
 
     Attributes
@@ -82,8 +81,7 @@ class BaseSolver(BaseEstimator):
         numeric_solver=convex_solver_nlopt,
         max_iter=100,
         group=None,
-        ic_type="aic",
-        metric_method=None,
+        ic_method=None,
         cv=1,
         cv_fold_id=None,
         split_method=None,
@@ -95,9 +93,7 @@ class BaseSolver(BaseEstimator):
         self.preselect = preselect
         self.max_iter = max_iter
         self.group = group
-        self.ic_type = ic_type
-        self.ic_coef = 1.0
-        self.metric_method = metric_method
+        self.ic_method = ic_method
         self.cv = cv
         self.cv_fold_id = cv_fold_id
         self.split_method = split_method
@@ -243,16 +239,17 @@ class BaseSolver(BaseEstimator):
 
         BaseSolver._check_positive_integer(self.cv, "cv")
         if self.cv == 1:
-            if self.ic_type not in ["aic", "bic", "sic", "ebic"]:
+            if self.sparsity.size == 1 and self.ic_method is None:
+                self.ic_method = utilities.AIC
+            elif self.sparsity.size > 1 and self.ic_method is None:
                 raise ValueError(
-                    "ic_type should be one of ['aic', 'bic', 'sic','ebic']."
+                    "ic_method should be provided for choosing sparsity level with information criterion."
                 )
-        else:
+            elif self.sample_size <= 1:
+                raise ValueError("sample_size should be given when using ic_method.")
+        elif self.cv > 1:
             if self.cv > self.sample_size:
                 raise ValueError("cv should not be greater than sample_size.")
-            if data is None and self.split_method is None:
-                data = np.arange(self.sample_size)
-                self.split_method = lambda data, index: index
             if self.split_method is None:
                 raise ValueError("split_method should be provided when cv > 1.")
             if self.cv_fold_id is None:
@@ -357,9 +354,9 @@ class BaseSolver(BaseEstimator):
                     group,
                 )  # warm start: use results of previous sparsity as initial value
                 objective_value = loss_fn(init_params, data)
-                eval = self._metric(
+                eval = self.ic_method(
                     objective_value,
-                    self.ic_type,
+                    self.dimensionality,
                     s,
                     self.sample_size,
                 )
@@ -465,51 +462,6 @@ class BaseSolver(BaseEstimator):
             grad_ = jax.jit(grad_)
 
         return loss_, grad_
-
-    def _metric(
-        self,
-        objective_value: float,
-        method: str,
-        effective_params_num: int,
-        train_size: int,
-    ) -> float:
-        """
-        aic: 2L + 2s
-        bic: 2L + s * log(n)
-        sic: 2L + s * log(log(n)) * log(p)
-        ebic: 2L + s * (log(n) + 2 * log(p))
-        """
-        if self.metric_method is not None:
-            return self.metric_method(
-                objective_value,
-                self.dimensionality,
-                effective_params_num,
-                train_size,
-            )
-
-        if method == "aic":
-            return 2 * objective_value + 2 * effective_params_num
-        elif method == "bic":
-            return (
-                objective_value
-                if train_size <= 1.0
-                else 2 * objective_value
-                + self.ic_coef * effective_params_num * np.log(train_size)
-            )
-        elif method == "sic":
-            return (
-                objective_value
-                if train_size <= 1.0
-                else 2 * objective_value
-                + self.ic_coef
-                * effective_params_num
-                * np.log(np.log(train_size))
-                * np.log(self.dimensionality)
-            )
-        elif method == "ebic":
-            return 2 * objective_value + self.ic_coef * effective_params_num * (
-                np.log(train_size) + 2 * np.log(self.dimensionality)
-            )
 
     def _solve(
         self,
@@ -637,11 +589,14 @@ class BaseSolver(BaseEstimator):
                 The support set of the optimal parameters.
             + ``objective_value`` : float
                 The value of objective function at the optimal parameters.
+            + ``eval_objective`` : float
+                The value of information criterion or mean loss of cross-validation.
         """
         return {
             "params": self.params,
             "support_set": self.support_set,
             "objective_value": self.objective_value,
+            "eval_objective": self.eval_objective,
         }
 
     def get_estimated_params(self):

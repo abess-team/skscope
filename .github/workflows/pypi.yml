@@ -56,7 +56,9 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.14.0
-
+        with:
+          output-dir: wheelhouse
+          
       - name: Verify clean directory
         run: git diff --exit-code
         shell: bash

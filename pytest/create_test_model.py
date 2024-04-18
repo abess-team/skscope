@@ -17,7 +17,9 @@ class CreateTestModel:
         self.seed = seed
 
     def create_linear_model(self):
-        X, Y, true_params = make_regression(self.N, self.P, n_informative=self.K, coef=True, random_state=self.seed)
+        X, Y, true_params = make_regression(
+            self.N, self.P, n_informative=self.K, coef=True, random_state=self.seed
+        )
 
         def linear_model(params):
             return jnp.sum(jnp.square(Y - jnp.matmul(X, params)))

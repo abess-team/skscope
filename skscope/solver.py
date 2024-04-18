@@ -243,8 +243,13 @@ class ScopeSolver(BaseEstimator):
         }
         console_log_level = console_log_level.lower()
         file_log_level = file_log_level.lower()
-        if console_log_level not in log_level_dict or file_log_level not in log_level_dict:
-            raise ValueError("console_log_level and file_log_level must be in 'off', 'error', 'warning', 'debug'")
+        if (
+            console_log_level not in log_level_dict
+            or file_log_level not in log_level_dict
+        ):
+            raise ValueError(
+                "console_log_level and file_log_level must be in 'off', 'error', 'warning', 'debug'"
+            )
         console_log_level = log_level_dict[console_log_level]
         file_log_level = log_level_dict[file_log_level]
         # log file name
@@ -301,7 +306,9 @@ class ScopeSolver(BaseEstimator):
         """
         hessian = self.hessian
         cpp = self.cpp
-        ScopeSolver._set_log_level(self.console_log_level, self.file_log_level, self.log_file_name)
+        ScopeSolver._set_log_level(
+            self.console_log_level, self.file_log_level, self.log_file_name
+        )
 
         jax.config.update("jax_platform_name", self.jax_platform)
 
@@ -325,7 +332,9 @@ class ScopeSolver(BaseEstimator):
             if group.ndim > 1:
                 raise ValueError("Group should be an 1D array of integers.")
             if group.size != p:
-                raise ValueError("The length of group should be equal to dimensionality.")
+                raise ValueError(
+                    "The length of group should be equal to dimensionality."
+                )
             group_num = len(np.unique(group))
             if group[0] != 0:
                 raise ValueError("Group should start from 0.")
@@ -333,7 +342,9 @@ class ScopeSolver(BaseEstimator):
                 raise ValueError("Group should be an incremental integer array.")
             if not group_num == max(group) + 1:
                 raise ValueError("There is a gap in group.")
-            group = np.array([np.where(group == i)[0][0] for i in range(group_num)], dtype="int32")
+            group = np.array(
+                [np.where(group == i)[0][0] for i in range(group_num)], dtype="int32"
+            )
 
         # preselect
         preselect = np.unique(np.array(self.preselect, dtype="int32"))
@@ -344,7 +355,11 @@ class ScopeSolver(BaseEstimator):
         force_min_sparsity = preselect.size
         default_max_sparsity = max(
             force_min_sparsity,
-            (group_num if group_num <= 5 else int(group_num / np.log(np.log(group_num)) / np.log(group_num))),
+            (
+                group_num
+                if group_num <= 5
+                else int(group_num / np.log(np.log(group_num)) / np.log(group_num))
+            ),
         )
 
         # path_type
@@ -365,23 +380,31 @@ class ScopeSolver(BaseEstimator):
                     raise ValueError("There is an invalid sparsity.")
         elif self.path_type == "gs":
             if len(layers) > 0:
-                raise ValueError("The path_type should be 'seq' when the layers are specified.")
+                raise ValueError(
+                    "The path_type should be 'seq' when the layers are specified."
+                )
             path_type = 2
             sparsity = np.array([0], dtype="int32")
             if self.gs_lower_bound is None:
                 gs_lower_bound = force_min_sparsity
             else:
-                BaseSolver._check_non_negative_integer(self.gs_lower_bound, "gs_lower_bound")
+                BaseSolver._check_non_negative_integer(
+                    self.gs_lower_bound, "gs_lower_bound"
+                )
                 gs_lower_bound = self.gs_lower_bound
 
             if self.gs_upper_bound is None:
                 gs_upper_bound = default_max_sparsity
             else:
-                BaseSolver._check_non_negative_integer(self.gs_upper_bound, "gs_upper_bound")
+                BaseSolver._check_non_negative_integer(
+                    self.gs_upper_bound, "gs_upper_bound"
+                )
                 gs_upper_bound = self.gs_upper_bound
 
             if gs_lower_bound < force_min_sparsity or gs_upper_bound > group_num:
-                raise ValueError("gs_lower_bound and gs_upper_bound should be between 0 and dimensionality.")
+                raise ValueError(
+                    "gs_lower_bound and gs_upper_bound should be between 0 and dimensionality."
+                )
             if gs_lower_bound > gs_upper_bound:
                 raise ValueError("gs_upper_bound should be larger than gs_lower_bound.")
         else:
@@ -389,15 +412,21 @@ class ScopeSolver(BaseEstimator):
 
         # screening_size
         if len(layers) > 0 and self.screening_size != -1:
-            raise ValueError("The screening_size should be -1 when the layers are specified.")
+            raise ValueError(
+                "The screening_size should be -1 when the layers are specified."
+            )
         if self.screening_size == -1:
             screening_size = -1
         elif self.screening_size == 0:
             screening_size = max(sparsity[-1], gs_upper_bound, default_max_sparsity)
         else:
             screening_size = self.screening_size
-            if screening_size > group_num or screening_size < max(sparsity[-1], gs_upper_bound):
-                raise ValueError("screening_size should be between sparsity and dimensionality.")
+            if screening_size > group_num or screening_size < max(
+                sparsity[-1], gs_upper_bound
+            ):
+                raise ValueError(
+                    "screening_size should be between sparsity and dimensionality."
+                )
 
         # thread
         BaseSolver._check_non_negative_integer(self.thread, "thread")
@@ -411,7 +440,9 @@ class ScopeSolver(BaseEstimator):
             raise ValueError("splicing_type should be 'halve' or 'taper'.")
 
         # important_search
-        BaseSolver._check_non_negative_integer(self.important_search, "important_search")
+        BaseSolver._check_non_negative_integer(
+            self.important_search, "important_search"
+        )
 
         # cv
         BaseSolver._check_positive_integer(self.cv, "cv")
@@ -424,7 +455,9 @@ class ScopeSolver(BaseEstimator):
             self.model.set_slice_by_sample(self.split_method)
             self.model.set_deleter(self.deleter)
             if self.cv_fold_id is None:
-                kf = KFold(n_splits=self.cv, shuffle=True, random_state=self.random_state).split(np.zeros(n))
+                kf = KFold(
+                    n_splits=self.cv, shuffle=True, random_state=self.random_state
+                ).split(np.zeros(n))
 
                 self.cv_fold_id = np.zeros(n)
                 for i, (_, fold_id) in enumerate(kf):
@@ -434,15 +467,21 @@ class ScopeSolver(BaseEstimator):
                 if self.cv_fold_id.ndim > 1:
                     raise ValueError("cv_fold_id should be an 1D array of integers.")
                 if self.cv_fold_id.size != n:
-                    raise ValueError("The length of cv_fold_id should be equal to sample_size.")
+                    raise ValueError(
+                        "The length of cv_fold_id should be equal to sample_size."
+                    )
                 if len(set(self.cv_fold_id)) != self.cv:
-                    raise ValueError("The number of different elements in cv_fold_id should be equal to cv.")
+                    raise ValueError(
+                        "The number of different elements in cv_fold_id should be equal to cv."
+                    )
         else:
             self.cv_fold_id = np.array([], dtype="int32")
             if sparsity.size == 1 and self.ic_method is None:
                 ic_method = utilities.AIC
             elif sparsity.size > 1 and self.ic_method is None:
-                raise ValueError("ic_method should be provided for choosing sparsity level with information criterion.")
+                raise ValueError(
+                    "ic_method should be provided for choosing sparsity level with information criterion."
+                )
             elif self.sample_size <= 1:
                 raise ValueError("sample_size should be given when using ic_method.")
             else:
@@ -473,7 +512,9 @@ class ScopeSolver(BaseEstimator):
         else:
             init_support_set = np.array(init_support_set, dtype="int32")
             if init_support_set.ndim > 1:
-                raise ValueError("The initial active set should be an 1D array of integers.")
+                raise ValueError(
+                    "The initial active set should be an 1D array of integers."
+                )
             if init_support_set.min() < 0 or init_support_set.max() >= p:
                 raise ValueError("init_support_set contains wrong index.")
 
@@ -481,7 +522,9 @@ class ScopeSolver(BaseEstimator):
         if init_params is None:
             random_init = False
             if len(layers) > 0:
-                random_init = np.any(np.array([layer.random_initilization for layer in layers]))
+                random_init = np.any(
+                    np.array([layer.random_initilization for layer in layers])
+                )
             if random_init:
                 init_params = np.random.RandomState(self.random_state).randn(p)
             else:
@@ -489,7 +532,9 @@ class ScopeSolver(BaseEstimator):
         else:
             init_params = np.array(init_params, dtype=float)
             if init_params.shape != (p,):
-                raise ValueError("The length of init_params should be equal to dimensionality.")
+                raise ValueError(
+                    "The length of init_params should be equal to dimensionality."
+                )
 
         result = _scope.pywrap_Universal(
             data,
@@ -568,13 +613,17 @@ class ScopeSolver(BaseEstimator):
         if gradient is None:
             self.model.set_gradient_autodiff(objective)
         else:
-            self.model.set_gradient_user_defined(lambda params, data: (objective(params, data), gradient(params, data)))
+            self.model.set_gradient_user_defined(
+                lambda params, data: (objective(params, data), gradient(params, data))
+            )
         if hessian is None:
             self.model.set_hessian_autodiff(objective)
         else:
             # NOTE: Perfect Forwarding of grad and hess is neccessary for func
             # written in Pybind11_Cpp code
-            self.model.set_hessian_user_defined(lambda params, data: hessian(params, data))
+            self.model.set_hessian_user_defined(
+                lambda params, data: hessian(params, data)
+            )
         return objective
 
     def __set_objective_py(self, objective, gradient, hessian, jit, layers=[]):
@@ -760,7 +809,12 @@ class HTPSolver(BaseSolver):
             # S1: gradient descent
             params_bias = params - self.step_size * value_and_grad(params, data)[1]
             # S2: Gradient Hard Thresholding
-            score = np.array([np.sum(np.square(params_bias[group_indices[i]])) for i in range(group_num)])
+            score = np.array(
+                [
+                    np.sum(np.square(params_bias[group_indices[i]]))
+                    for i in range(group_num)
+                ]
+            )
             score[preselect] = np.inf
             support_new_group = np.argpartition(score, -sparsity)[-sparsity:]
             support_new_group_tuple = tuple(np.sort(support_new_group))
@@ -771,7 +825,9 @@ class HTPSolver(BaseSolver):
             params = np.zeros_like(init_params)
             support_new = np.concatenate([group_indices[i] for i in support_new_group])
             params[support_new] = params_bias[support_new]
-            loss, params = self._numeric_solver(loss_fn, value_and_grad, params, support_new, data)
+            loss, params = self._numeric_solver(
+                loss_fn, value_and_grad, params, support_new, data
+            )
             # update cache
             if loss < best_loss:
                 best_loss = loss
@@ -779,7 +835,9 @@ class HTPSolver(BaseSolver):
             results[support_new_group_tuple] = params
 
         self.n_iters = n_iters
-        return results[best_suppport_group_tuple], np.concatenate([group_indices[i] for i in best_suppport_group_tuple])
+        return results[best_suppport_group_tuple], np.concatenate(
+            [group_indices[i] for i in best_suppport_group_tuple]
+        )
 
 
 class IHTSolver(HTPSolver):
@@ -877,7 +935,12 @@ class IHTSolver(HTPSolver):
             # S1: gradient descent
             params_bias = params - self.step_size * value_and_grad(params, data)[1]
             # S2: Gradient Hard Thresholding
-            score = np.array([np.sum(np.square(params_bias[group_indices[i]])) for i in range(group_num)])
+            score = np.array(
+                [
+                    np.sum(np.square(params_bias[group_indices[i]]))
+                    for i in range(group_num)
+                ]
+            )
             score[preselect] = np.inf
             support_new_group = np.argpartition(score, -sparsity)[-sparsity:]
             # terminating condition
@@ -891,7 +954,9 @@ class IHTSolver(HTPSolver):
             params[support_new] = params_bias[support_new]
 
         # final optimization for IHT
-        _, params = self._numeric_solver(loss_fn, value_and_grad, params, support_new, data)
+        _, params = self._numeric_solver(
+            loss_fn, value_and_grad, params, support_new, data
+        )
         self.n_iters = n_iters
         return params, support_new
 
@@ -990,13 +1055,20 @@ class GraspSolver(BaseSolver):
         for n_iters in range(self.max_iter):
             # compute local gradient
             grad_values = value_and_grad(params, data)[1]
-            score = np.array([np.sum(np.square(grad_values[group_indices[i]])) for i in range(group_num)])
+            score = np.array(
+                [
+                    np.sum(np.square(grad_values[group_indices[i]]))
+                    for i in range(group_num)
+                ]
+            )
             score[preselect] = np.inf
 
             # identify directions
             if 2 * sparsity < group_num:
                 Omega = [
-                    idx for idx in np.argpartition(score, -2 * sparsity)[-2 * sparsity :] if score[idx] != 0.0
+                    idx
+                    for idx in np.argpartition(score, -2 * sparsity)[-2 * sparsity :]
+                    if score[idx] != 0.0
                 ]  # supp of top 2k largest absolute values of gradient
             else:
                 Omega = np.nonzero(score)[0]  # supp(z)
@@ -1013,10 +1085,17 @@ class GraspSolver(BaseSolver):
             # minimize
             params_bias = np.zeros_like(init_params)
             params_bias[support_new] = params[support_new]
-            _, params_bias = self._numeric_solver(loss_fn, value_and_grad, params_bias, support_new, data)
+            _, params_bias = self._numeric_solver(
+                loss_fn, value_and_grad, params_bias, support_new, data
+            )
 
             # prune estimate
-            score = np.array([np.sum(np.square(params_bias[group_indices[i]])) for i in range(group_num)])
+            score = np.array(
+                [
+                    np.sum(np.square(params_bias[group_indices[i]]))
+                    for i in range(group_num)
+                ]
+            )
             score[preselect] = np.inf
             support_set_group = np.argpartition(score, -sparsity)[-sparsity:]
             support_set = np.concatenate([group_indices[i] for i in support_set_group])
@@ -1143,11 +1222,18 @@ class FobaSolver(BaseSolver):
         self.foba_threshold_ratio = foba_threshold_ratio
         self.strict_sparsity = strict_sparsity
 
-    def _forward_step(self, loss_fn, value_and_grad, params, support_set_group, data, group_indices):
+    def _forward_step(
+        self, loss_fn, value_and_grad, params, support_set_group, data, group_indices
+    ):
         if self.use_gradient:
             # FoBa-gdt algorithm
             value_old, grad = value_and_grad(params, data)
-            score = np.array([np.sum(np.square(grad[group_indices[i]])) for i in range(len(group_indices))])
+            score = np.array(
+                [
+                    np.sum(np.square(grad[group_indices[i]]))
+                    for i in range(len(group_indices))
+                ]
+            )
             score[support_set_group] = -np.inf
         else:
             # FoBa-obj algorithm
@@ -1212,7 +1298,9 @@ class FobaSolver(BaseSolver):
         if score[direction] >= backward_threshold:
             return params, support_set_group, False
 
-        support_set_group = np.delete(support_set_group, np.argwhere(support_set_group == direction))
+        support_set_group = np.delete(
+            support_set_group, np.argwhere(support_set_group == direction)
+        )
 
         inactive_set = np.ones_like(params, dtype=bool)
         support_set = np.concatenate([group_indices[i] for i in support_set_group])
@@ -1274,7 +1362,8 @@ class FobaSolver(BaseSolver):
                     params,
                     support_set_group,
                     data,
-                    loss_fn(params, data) + threshold[support_set_group.size] * self.foba_threshold_ratio,
+                    loss_fn(params, data)
+                    + threshold[support_set_group.size] * self.foba_threshold_ratio,
                     group_indices,
                 )
                 if not success:

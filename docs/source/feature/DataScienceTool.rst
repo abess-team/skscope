@@ -98,24 +98,30 @@ The input parameter ``ic_method`` in the solvers of skscope can be used to choos
 Here is an example using SIC to find the optimal support size.
 
 .. code-block:: python
+
     import jax.numpy as jnp
     import numpy as np
-    from skscope.utilities import LinearSIC
+    from sklearn.datasets import make_regression
+    from skscope.utilities import LinearSIC 
 
-    n, p = 100, 10
+    n, p, k = 100, 10, 3
+    X, y = make_regression(n_samples=n, n_features=p, n_informative=k)
     solver = ScopeSolver(
         dimensionality=p,        
         sparsity=[1, 2, 3, 4, 5] ## we want to select 1-5 variables
         sample_size=n,           ## the number of samples
-        ic_method=LinearSIC,                ## use SIC to evaluate sparsity levels
+        ic_method=LinearSIC,     ## use SIC to evaluate sparsity levels
     )
     solver.solve(
-        lambda params: jnp.sum(jnp.square(np.random.randn(n, p) @ params - np.random.randn(n))),
+        lambda params: jnp.sum(X @ params - y)),
         jit = True,
     )
     print(solver.get_result())
 
-Please note that the effectiveness of information criterion heavily depends on the implementation of the objective function. Before usage, carefully check whether the objective function and the information criterion implementations match.
+
+Please note that the effectiveness of information criterion heavily depends on the implementation of the objective function. Even for the same model, different objective function implementations often correspond to different IC implementations. Before usage, carefully check whether the objective function and the information criterion implementations match.
+
+The difference between SIC and LinearSIC: ``utilities.SIC`` assumes that the objective function is the negative logarithmic likelihood function of a statistical model; ``utilities.LinearSIC`` assumes that the objective function is the sum of squared residuals, specifically adapted to linear models.
 
 Cross Validation
 ^^^^^^^^^^^^^^^^^^^^

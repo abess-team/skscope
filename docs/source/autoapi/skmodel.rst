@@ -11,6 +11,7 @@ Classes
     skscope.skmodel.NonlinearSelection
     skscope.skmodel.RobustRegression
     skscope.skmodel.MultivariateFailure
+    skscope.skmodel.IsotonicRegression
 
 .. autoapimodule:: skscope.skmodel
-    :members: PortfolioSelection, NonlinearSelection, RobustRegression, MultivariateFailure
+    :members: PortfolioSelection, NonlinearSelection, RobustRegression, MultivariateFailure, IsotonicRegression

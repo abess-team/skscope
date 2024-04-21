@@ -678,10 +678,6 @@ class IsotonicRegression(BaseEstimator):
             :math:`R^2` of ``self.predict(X)`` w.r.t. `y`.
         """
         check_is_fitted(self)
-        X, y, sample_weight = check_data(X, y, sample_weight)
-        n, p = X.shape
-        if p != self.n_features_in_:
-            raise ValueError("X.shape[1] should be " + str(self.n_features_in_))
         
         y_pred = self.predict(X)
         score = r2_score(y, y_pred, sample_weight=sample_weight)

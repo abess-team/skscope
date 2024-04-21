@@ -16,7 +16,6 @@ from sklearn.utils.validation import (
 from sklearn.utils._param_validation import Hidden, Interval, StrOptions
 from numbers import Integral, Real
 from scipy import interpolate
-import cvxpy as cp
 
 
 def check_data(X, y=None, sample_weight=None):

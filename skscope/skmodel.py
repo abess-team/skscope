@@ -602,12 +602,12 @@ class IsotonicRegression(BaseEstimator):
 
         """
         self._validate_params()
-        check_params = dict(accept_sparse=False, ensure_2d=False)
-        X = check_array(
-            X, input_name="X", dtype=[np.float64, np.float32], **check_params
-        )
-        y = check_array(y, input_name="y", dtype=X.dtype, **check_params)
-        check_consistent_length(X, y, sample_weight)
+        # check_params = dict(accept_sparse=False, ensure_2d=False)
+        # X = check_array(
+        #     X, input_name="X", dtype=[np.float64, np.float32], **check_params
+        # )
+        # y = check_array(y, input_name="y", dtype=X.dtype, **check_params)
+        # check_consistent_length(X, y, sample_weight)
 
         X = check_array(X, ensure_2d=False)
         X = X.reshape(-1)

@@ -4,15 +4,18 @@ from jax.scipy.special import logsumexp
 from skscope import ScopeSolver
 from sklearn.base import BaseEstimator
 from sklearn.covariance import LedoitWolf
+from sklearn.metrics import r2_score
 from sklearn.metrics.pairwise import rbf_kernel
 from sklearn.utils.validation import (
     check_array,
     check_random_state,
     check_X_y,
     check_is_fitted,
+    check_consistent_length,
 )
 from sklearn.utils._param_validation import Hidden, Interval, StrOptions
 from numbers import Integral, Real
+from scipy import interpolate
 
 
 def check_data(X, y=None, sample_weight=None):
@@ -543,3 +546,155 @@ class MultivariateFailure(BaseEstimator):
             )
         score = np.mean(tmp * delta)
         return score
+
+class IsotonicRegression(BaseEstimator):
+    r"""
+    Isotonic regression. 
+
+    Parameters
+    -----------
+    sparsity : int, default=5
+        The number of features to be selected, i.e., the sparsity level.
+    """
+
+    _parameter_constraints: dict = {
+        "sparsity": [Interval(Integral, 1, None, closed="left")],
+    }
+
+    def __init__(
+        self, 
+        sparsity=5,
+    ):
+        self.sparsity = sparsity
+
+    def _check_input_data_shape(self, X):
+        if not (X.ndim == 1 or (X.ndim == 2 and X.shape[1] == 1)):
+            msg = (
+                "Isotonic regression input X should be a 1d array or "
+                "2d array with 1 feature"
+            )
+            raise ValueError(msg)
+
+    def fit(
+        self, 
+        X, 
+        y,
+        sample_weight=None,
+    ):  
+        """Fit the model using X, y as training data.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples,) or (n_samples, 1)
+            Training data.
+
+        y : array-like of shape (n_samples,)
+            Training target.
+
+        sample_weight : array-like of shape (n_samples,), default=None
+            Weights. If set to None, all weights will be set to 1 (equal
+            weights).
+
+        Returns
+        -------
+        self : object
+            Returns an instance of self.
+
+        """
+        self._validate_params()
+        # check_params = dict(accept_sparse=False, ensure_2d=False)
+        # X = check_array(
+        #     X, input_name="X", dtype=[np.float64, np.float32], **check_params
+        # )
+        # y = check_array(y, input_name="y", dtype=X.dtype, **check_params)
+        # check_consistent_length(X, y, sample_weight)
+
+        X = check_array(X, ensure_2d=False)
+        X = X.reshape(-1)
+        n = len(y)
+
+        def isotonic_loss(params):
+            return jnp.sum(jnp.square(y - jnp.cumsum(jnp.abs(params))))
+        solver = ScopeSolver(n, sparsity=self.sparsity)
+        self.params = solver.solve(isotonic_loss)
+        y_pred = np.cumsum(np.abs(self.params))
+        self.f_ = interpolate.interp1d(
+                X, y_pred, kind="linear"
+            )
+        return self
+
+
+    def transform(
+        self, 
+        X,
+    ):
+        """Transform new data by linear interpolation.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples,) or (n_samples, 1)
+            Data to transform.
+
+        Returns
+        -------
+        y_pred : ndarray of shape (n_samples,)
+            The transformed data.
+        """
+        X = check_array(X, ensure_2d=False)
+        self._check_input_data_shape(X)
+        X = X.reshape(-1)
+        y_pred = self.f_(X)
+        return y_pred
+
+    def score(self, X, y, sample_weight=None):
+        """Return the coefficient of determination of the prediction.
+
+        The coefficient of determination :math:`R^2` is defined as
+        :math:`(1 - \\frac{u}{v})`, where :math:`u` is the residual
+        sum of squares ``((y_true - y_pred)** 2).sum()`` and :math:`v`
+        is the total sum of squares ``((y_true - y_true.mean()) ** 2).sum()``.
+        The best possible score is 1.0 and it can be negative (because the
+        model can be arbitrarily worse). A constant model that always predicts
+        the expected value of `y`, disregarding the input features, would get
+        a :math:`R^2` score of 0.0.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            Test samples. For some estimators this may be a precomputed
+            kernel matrix or a list of generic objects instead with shape
+            ``(n_samples, n_samples_fitted)``, where ``n_samples_fitted``
+            is the number of samples used in the fitting for the estimator.
+
+        y : array-like of shape (n_samples,) or (n_samples, n_outputs)
+            True values for `X`.
+
+        sample_weight : array-like of shape (n_samples,), default=None
+            Sample weights.
+
+        Returns
+        -------
+        score : float
+            :math:`R^2` of ``self.predict(X)`` w.r.t. `y`.
+        """
+        check_is_fitted(self)
+        
+        y_pred = self.predict(X)
+        score = r2_score(y, y_pred, sample_weight=sample_weight)
+        return score
+
+    def predict(self, X):
+        """Predict new data by linear interpolation.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples,) or (n_samples, 1)
+            Data to transform.
+
+        Returns
+        -------
+        y_pred : ndarray of shape (n_samples,)
+            Transformed data.
+        """
+        y_pred = self.transform(X)
+        return y_pred

@@ -7,6 +7,7 @@ from skscope.skmodel import (
     NonlinearSelection,
     RobustRegression,
     MultivariateFailure,
+    IsotonicRegression,
 )
 from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
@@ -198,3 +199,18 @@ def test_MultivariateFailure():
 
 
 test_MultivariateFailure()
+
+def test_IsotonicRegression():
+    # check_estimator(IsotonicRegression())
+    np.random.seed(0)
+    n = 200
+    X = np.arange(n) + 1
+    y = 2 * np.log1p(np.arange(n)) + np.random.normal(size=n)
+    model = IsotonicRegression(sparsity=10)
+    model = model.fit(X, y)
+    score = model.score(X, y)
+    assert score >= 0.8
+    X_new = model.transform(X)
+    print("IsotonicRegression passed test!")
+
+test_IsotonicRegression()

@@ -547,9 +547,10 @@ class MultivariateFailure(BaseEstimator):
         score = np.mean(tmp * delta)
         return score
 
+
 class IsotonicRegression(BaseEstimator):
     r"""
-    Isotonic regression. 
+    Isotonic regression.
 
     Parameters
     -----------
@@ -562,7 +563,7 @@ class IsotonicRegression(BaseEstimator):
     }
 
     def __init__(
-        self, 
+        self,
         sparsity=5,
     ):
         self.sparsity = sparsity
@@ -576,11 +577,11 @@ class IsotonicRegression(BaseEstimator):
             raise ValueError(msg)
 
     def fit(
-        self, 
-        X, 
+        self,
+        X,
         y,
         sample_weight=None,
-    ):  
+    ):
         """Fit the model using X, y as training data.
 
         Parameters
@@ -615,17 +616,15 @@ class IsotonicRegression(BaseEstimator):
 
         def isotonic_loss(params):
             return jnp.sum(jnp.square(y - jnp.cumsum(jnp.abs(params))))
+
         solver = ScopeSolver(n, sparsity=self.sparsity)
         self.params = solver.solve(isotonic_loss)
         y_pred = np.cumsum(np.abs(self.params))
-        self.f_ = interpolate.interp1d(
-                X, y_pred, kind="linear"
-            )
+        self.f_ = interpolate.interp1d(X, y_pred, kind="linear")
         return self
 
-
     def transform(
-        self, 
+        self,
         X,
     ):
         """Transform new data by linear interpolation.
@@ -678,7 +677,7 @@ class IsotonicRegression(BaseEstimator):
             :math:`R^2` of ``self.predict(X)`` w.r.t. `y`.
         """
         check_is_fitted(self)
-        
+
         y_pred = self.predict(X)
         score = r2_score(y, y_pred, sample_weight=sample_weight)
         return score

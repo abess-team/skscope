@@ -200,6 +200,7 @@ def test_MultivariateFailure():
 
 test_MultivariateFailure()
 
+
 def test_IsotonicRegression():
     # check_estimator(IsotonicRegression())
     np.random.seed(0)
@@ -212,5 +213,6 @@ def test_IsotonicRegression():
     assert score >= 0.8
     X_new = model.transform(X)
     print("IsotonicRegression passed test!")
+
 
 test_IsotonicRegression()

@@ -192,7 +192,7 @@ public:
 
     double ic(int train_n, int M, int N, Algorithm *algorithm)
     {
-        double loss = 2 * (algorithm->get_train_loss() - algorithm->lambda_level * algorithm->beta.cwiseAbs2().sum());
+        double loss = (algorithm->get_train_loss() - algorithm->lambda_level * algorithm->beta.cwiseAbs2().sum());
         return this->ic_method(loss, N, algorithm->get_effective_number(), train_n);
     };
 

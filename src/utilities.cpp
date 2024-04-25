@@ -4,10 +4,7 @@
  * Licensed under the MIT License.
  */
 
-
 #include <Eigen/Eigen>
-
-
 
 #include <string.h>
 
@@ -22,14 +19,19 @@ using namespace Eigen;
 
 std::mt19937 GLOBAL_RNG(1);
 
-Eigen::VectorXi find_ind(Eigen::VectorXi &L, Eigen::VectorXi &gindex, Eigen::VectorXi &gsize, int beta_size, int N) {
-    if (L.size() == N) {
+Eigen::VectorXi find_ind(Eigen::VectorXi &L, Eigen::VectorXi &gindex, Eigen::VectorXi &gsize, int beta_size, int N)
+{
+    if (L.size() == N)
+    {
         return Eigen::VectorXi::LinSpaced(beta_size, 0, beta_size - 1);
-    } else {
+    }
+    else
+    {
         int mark = 0;
         Eigen::VectorXi ind = Eigen::VectorXi::Zero(beta_size);
 
-        for (int i = 0; i < L.size(); i++) {
+        for (int i = 0; i < L.size(); i++)
+        {
             ind.segment(mark, gsize(L(i))) =
                 Eigen::VectorXi::LinSpaced(gsize(L(i)), gindex(L(i)), gindex(L(i)) + gsize(L(i)) - 1);
             mark = mark + gsize(L(i));
@@ -38,15 +40,17 @@ Eigen::VectorXi find_ind(Eigen::VectorXi &L, Eigen::VectorXi &gindex, Eigen::Vec
     }
 }
 
-UniversalData X_seg(UniversalData& X, int n, Eigen::VectorXi& ind, int model_type){
+UniversalData X_seg(UniversalData &X, int n, Eigen::VectorXi &ind, int model_type)
+{
     return X.slice_by_para(ind);
 }
 
-
-
-void slice_assignment(Eigen::VectorXd &nums, Eigen::VectorXi &ind, double value) {
-    if (ind.size() != 0) {
-        for (int i = 0; i < ind.size(); i++) {
+void slice_assignment(Eigen::VectorXd &nums, Eigen::VectorXi &ind, double value)
+{
+    if (ind.size() != 0)
+    {
+        for (int i = 0; i < ind.size(); i++)
+        {
             nums(ind(i)) = value;
         }
     }
@@ -55,11 +59,15 @@ void slice_assignment(Eigen::VectorXd &nums, Eigen::VectorXi &ind, double value)
 
 // replace B by C in A
 // to do : binary search
-Eigen::VectorXi diff_union(Eigen::VectorXi A, Eigen::VectorXi &B, Eigen::VectorXi &C) {
+Eigen::VectorXi diff_union(Eigen::VectorXi A, Eigen::VectorXi &B, Eigen::VectorXi &C)
+{
     unsigned int k;
-    for (unsigned int i = 0; i < B.size(); i++) {
-        for (k = 0; k < A.size(); k++) {
-            if (B(i) == A(k)) {
+    for (unsigned int i = 0; i < B.size(); i++)
+    {
+        for (k = 0; k < A.size(); k++)
+        {
+            if (B(i) == A(k))
+            {
                 A(k) = C(i);
                 break;
             }
@@ -69,32 +77,42 @@ Eigen::VectorXi diff_union(Eigen::VectorXi A, Eigen::VectorXi &B, Eigen::VectorX
     return A;
 }
 
-Eigen::VectorXi min_k(Eigen::VectorXd &vec, int k, bool sort_by_value) {
-    Eigen::VectorXi ind = Eigen::VectorXi::LinSpaced(vec.size(), 0, vec.size() - 1);  // [0 1 2 3 ... N-1]
+Eigen::VectorXi min_k(Eigen::VectorXd &vec, int k, bool sort_by_value)
+{
+    Eigen::VectorXi ind = Eigen::VectorXi::LinSpaced(vec.size(), 0, vec.size() - 1); // [0 1 2 3 ... N-1]
     // shuffle index to avoid repeat results when there are several equal values in vec
     std::shuffle(ind.data(), ind.data() + ind.size(), GLOBAL_RNG);
 
-    auto rule = [vec](int i, int j) -> bool { return vec(i) < vec(j); };              // sort rule
+    auto rule = [vec](int i, int j) -> bool
+    { return vec(i) < vec(j); }; // sort rule
     std::nth_element(ind.data(), ind.data() + k, ind.data() + ind.size(), rule);
-    if (sort_by_value) {
+    if (sort_by_value)
+    {
         std::sort(ind.data(), ind.data() + k, rule);
-    } else {
+    }
+    else
+    {
         std::sort(ind.data(), ind.data() + k);
     }
 
     return ind.head(k).eval();
 }
 
-Eigen::VectorXi max_k(Eigen::VectorXd &vec, int k, bool sort_by_value) {
-    Eigen::VectorXi ind = Eigen::VectorXi::LinSpaced(vec.size(), 0, vec.size() - 1);  // [0 1 2 3 ... N-1]
+Eigen::VectorXi max_k(const Eigen::VectorXd &vec, int k, bool sort_by_value)
+{
+    Eigen::VectorXi ind = Eigen::VectorXi::LinSpaced(vec.size(), 0, vec.size() - 1); // [0 1 2 3 ... N-1]
     // shuffle index to avoid repeat results when there are several equal values in vec
     std::shuffle(ind.data(), ind.data() + ind.size(), GLOBAL_RNG);
-    
-    auto rule = [vec](int i, int j) -> bool { return vec(i) > vec(j); };              // sort rule
+
+    auto rule = [vec](int i, int j) -> bool
+    { return vec(i) > vec(j); }; // sort rule
     std::nth_element(ind.data(), ind.data() + k, ind.data() + ind.size(), rule);
-    if (sort_by_value) {
+    if (sort_by_value)
+    {
         std::sort(ind.data(), ind.data() + k, rule);
-    } else {
+    }
+    else
+    {
         std::sort(ind.data(), ind.data() + k);
     }
     return ind.head(k).eval();
@@ -113,27 +131,38 @@ Eigen::VectorXi max_k(Eigen::VectorXd &vec, int k, bool sort_by_value) {
 // }
 
 // complement
-Eigen::VectorXi complement(Eigen::VectorXi &A, int N) {
+Eigen::VectorXi complement(Eigen::VectorXi &A, int N)
+{
     int A_size = A.size();
-    if (A_size == 0) {
+    if (A_size == 0)
+    {
         return Eigen::VectorXi::LinSpaced(N, 0, N - 1);
-    } else if (A_size == N) {
+    }
+    else if (A_size == N)
+    {
         Eigen::VectorXi I(0);
         return I;
-    } else {
+    }
+    else
+    {
         Eigen::VectorXi I(N - A_size);
         int cur_index = 0;
         int A_index = 0;
-        for (int i = 0; i < N; i++) {
-            if (A_index >= A_size) {
+        for (int i = 0; i < N; i++)
+        {
+            if (A_index >= A_size)
+            {
                 I(cur_index) = i;
                 cur_index += 1;
                 continue;
             }
-            if (i != A(A_index)) {
+            if (i != A(A_index))
+            {
                 I(cur_index) = i;
                 cur_index += 1;
-            } else {
+            }
+            else
+            {
                 A_index += 1;
             }
         }
@@ -177,51 +206,62 @@ Eigen::VectorXi complement(Eigen::VectorXi &A, int N) {
 //     }
 // }
 
-void slice(Eigen::VectorXd &nums, Eigen::VectorXi &ind, Eigen::VectorXd &A) {
-    if (ind.size() == 0) {
+void slice(Eigen::VectorXd &nums, Eigen::VectorXi &ind, Eigen::VectorXd &A)
+{
+    if (ind.size() == 0)
+    {
         A = Eigen::VectorXd::Zero(0);
-    } else {
+    }
+    else
+    {
         A = Eigen::VectorXd::Zero(ind.size());
-        for (int i = 0; i < ind.size(); i++) {
+        for (int i = 0; i < ind.size(); i++)
+        {
             A(i) = nums(ind(i));
         }
     }
 }
 
-void slice(Eigen::MatrixXd &nums, Eigen::VectorXi &ind, Eigen::MatrixXd &A) {
+void slice(Eigen::MatrixXd &nums, Eigen::VectorXi &ind, Eigen::MatrixXd &A)
+{
     A = Eigen::MatrixXd::Zero(ind.size(), nums.cols());
-    if (ind.size() != 0) {
-        for (int i = 0; i < ind.size(); i++) {
+    if (ind.size() != 0)
+    {
+        for (int i = 0; i < ind.size(); i++)
+        {
             A.row(i) = nums.row(ind(i));
         }
     }
 }
 
-
-void slice(UniversalData& nums, Eigen::VectorXi& ind, UniversalData& A)
+void slice(UniversalData &nums, Eigen::VectorXi &ind, UniversalData &A)
 {
     A = nums.slice_by_sample(ind);
 }
 
-void slice_restore(Eigen::VectorXd &A, Eigen::VectorXi &ind, Eigen::VectorXd &nums, int axis) {
-    if (ind.size() == 0) {
+void slice_restore(Eigen::VectorXd &A, Eigen::VectorXi &ind, Eigen::VectorXd &nums, int axis)
+{
+    if (ind.size() == 0)
+    {
         nums = Eigen::VectorXd::Zero(nums.size());
-    } else {
+    }
+    else
+    {
         nums = Eigen::VectorXd::Zero(nums.size());
-        for (int i = 0; i < ind.size(); i++) {
+        for (int i = 0; i < ind.size(); i++)
+        {
             nums(ind(i)) = A(i);
         }
     }
     return;
 }
 
-void coef_set_zero(int p, int M, Eigen::VectorXd& beta, Eigen::VectorXd& coef0) {
+void coef_set_zero(int p, int M, Eigen::VectorXd &beta, Eigen::VectorXd &coef0)
+{
     beta = Eigen::VectorXd::Zero(p);
     coef0 = Eigen::VectorXd::Zero(M);
     return;
 }
-
-
 
 // Eigen::SparseMatrix<double> array_product(Eigen::SparseMatrix<double> &A, Eigen::VectorXd &B, int axis)
 // {
@@ -231,9 +271,6 @@ void coef_set_zero(int p, int M, Eigen::VectorXd& beta, Eigen::VectorXd& coef0) 
 //     }
 //     return A;
 // }
-
-
-
 
 // void matrix_sqrt(Eigen::MatrixXd &A, Eigen::MatrixXd &B)
 // {
@@ -263,7 +300,6 @@ void coef_set_zero(int p, int M, Eigen::VectorXd& beta, Eigen::VectorXd& coef0) 
 //         //    adjoint_eigen_solver.eigenvectors().transpose();
 //     }
 // }
-
 
 // void set_nonzeros(Eigen::MatrixXd &X, Eigen::MatrixXd &x)
 // {
@@ -323,20 +359,20 @@ void coef_set_zero(int p, int M, Eigen::VectorXd& beta, Eigen::VectorXd& coef0) 
 //     return ((l2 == 0 || l1 / l2 > 1e+10) ? true : false);
 // }
 
-
-void init_spdlog(int console_log_level, int file_log_level, const char* log_file_name)
+void init_spdlog(int console_log_level, int file_log_level, const char *log_file_name)
 {
     std::vector<spdlog::sink_ptr> sinks;
 
-    if(console_log_level != SPDLOG_LEVEL_OFF){
+    if (console_log_level != SPDLOG_LEVEL_OFF)
+    {
         auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
         console_sink->set_level(spdlog::level::level_enum(console_log_level));
         console_sink->set_pattern("[%T.%e][%s:%#, %!][%^%l%$]: %v");
         sinks.push_back(console_sink);
     }
 
-
-    if(file_log_level != SPDLOG_LEVEL_OFF){
+    if (file_log_level != SPDLOG_LEVEL_OFF)
+    {
         auto rotating_sink = std::make_shared<spdlog::sinks::rotating_file_sink_mt>(log_file_name, 1024 * 1024 * 10, 10);
         rotating_sink->set_level(spdlog::level::level_enum(file_log_level));
         rotating_sink->set_pattern("[%Y/%m/%d][%T.%e][elapsed %o][Process %P Thread %t][%s:%#, %!][%^%l%$]: %v");

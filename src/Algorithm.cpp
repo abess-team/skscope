@@ -241,8 +241,8 @@ void Algorithm::get_A(UniversalData &X, MatrixXd &y, VectorXi &A, VectorXi &I, i
         }
 
         // If A_U not change, U will not change and we can stop.
-        if (A_U.size() == 0 || A_U.maxCoeff() == T0 - 1)
-            break;
+        // if (A_U.size() == 0 || A_U.maxCoeff() == T0 - 1)
+        //    break;
 
         // Update & Restore beta, A from U
         slice_restore(beta_U, U_ind, beta);
@@ -346,7 +346,7 @@ bool Algorithm::splicing(UniversalData &X, MatrixXd &y, VectorXi &A, VectorXi &I
         s2 = s2.head(k).eval();
     }
 
-    if (train_loss - best_loss <= tau)
+    if (train_loss <= best_loss)
         return false;
 
     train_loss = best_loss;
@@ -369,6 +369,10 @@ VectorXi Algorithm::inital_screening(UniversalData &X, MatrixXd &y, VectorXd &be
         // variable initialization
         int beta_size = X.cols();
         bd = VectorXd::Zero(N);
+        if (A.size() == 0)
+        {
+            A = max_k(beta.cwiseAbs(), this->sparsity_level);
+        }
 
         // calculate beta & d & h
         VectorXi A_ind = find_ind(A, g_index, g_size, beta_size, N);
@@ -452,6 +456,7 @@ bool Algorithm::primary_model_fit(UniversalData &active_data, MatrixXd &y, Vecto
 void Algorithm::sacrifice(UniversalData &data, UniversalData &XA, MatrixXd &y, VectorXd &para, VectorXd &beta_A, VectorXd &aux_para, VectorXi &A, VectorXi &I, VectorXd &weights, VectorXi &g_index, VectorXi &g_size, int g_num, VectorXi &A_ind, VectorXd &sacrifice, VectorXi &U, VectorXi &U_ind, int num)
 {
     SPDLOG_DEBUG("sacrifice begin");
+    SPDLOG_DEBUG("active set is {}", A.transpose());
     VectorXd gradient_full;
     MatrixXd hessian_full;
     if (this->use_hessian)

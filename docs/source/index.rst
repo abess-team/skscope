@@ -30,18 +30,18 @@
       The quick example demonstrates the basic usage of ``skscope``, which is remarkably straightforward. All you need is programming an objective function.
 
    .. grid-item-card::
-      :link: gallery/index.html
-
-      :fas:`list;pst-color-primary` **Examples Gallery**
-      ^^^
-      Comprehensive and hands-on examples that covers various machine learnings problems including regression analysis, survival analysis, graphical model, trend filtering, finance data analysis, and more. 
-
-   .. grid-item-card::
       :link: feature/index.html
 
       :fas:`palette;pst-color-primary` **Software Features**
       ^^^
       Introduce the advanced features provided by ``skscope``, including the implemented iterative algorithms, practical helpful variants, toolkits for data science, and tips for improving computational efficiency.
+
+   .. grid-item-card::
+      :link: gallery/index.html
+
+      :fas:`list;pst-color-primary` **Examples Gallery**
+      ^^^
+      Comprehensive and hands-on examples that covers various machine learnings problems including regression analysis, survival analysis, graphical model, trend filtering, finance data analysis, and more. 
 
    .. grid-item-card::
       :link: autoapi/index.html
@@ -65,18 +65,19 @@
 
    userguide/index
 
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-
-   gallery/index
-
 
 .. toctree::
    :maxdepth: 1
    :hidden:
 
    feature/index
+   
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   gallery/index
 
 
 .. toctree::

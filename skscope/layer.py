@@ -93,7 +93,7 @@ class LinearConstraint(Identity):
     @jax.jit
     def transform_params(self, params):
         x = jnp.dot(params, self.coef)
-        return params / jnp.where(x == 0.0, 1.0, x)
+        return params / jnp.where(jnp.abs(x) < 1e-5, 1.0, x)
 
     def tree_flatten(self):
         children = (self.coef,)
@@ -133,7 +133,7 @@ class SimplexConstraint(Identity):
     def transform_params(self, params):
         p = jnp.abs(params)
         x = jnp.dot(p, self.coef)
-        return p / jnp.where(x == 0.0, 1.0, x)
+        return p / jnp.where(jnp.abs(x) < 1e-5, 1.0, x)
 
     def tree_flatten(self):
         children = (self.coef,)

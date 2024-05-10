@@ -8,7 +8,7 @@ from sklearn.base import BaseEstimator
 from sklearn.model_selection import KFold
 import numpy as np
 import jax
-from .numeric_solver import convex_solver_nlopt
+from .numeric_solver import convex_solver_LBFGS
 import math
 from . import utilities
 
@@ -32,7 +32,7 @@ class BaseSolver(BaseEstimator):
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``BaseSolver`` will call this function to solve the convex optimization problem in each iteration.
-        It should have the same interface as ``skscope.convex_solver_nlopt``.
+        It should have the same interface as ``skscope.convex_solver_LBFGS``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
@@ -78,7 +78,7 @@ class BaseSolver(BaseEstimator):
         sample_size=1,
         *,
         preselect=[],
-        numeric_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_LBFGS,
         max_iter=100,
         group=None,
         ic_method=None,
@@ -194,9 +194,7 @@ class BaseSolver(BaseEstimator):
             if self.group.ndim > 1:
                 raise ValueError("Group should be an 1D array of integers.")
             if self.group.size != self.dimensionality:
-                raise ValueError(
-                    "The length of group should be equal to dimensionality."
-                )
+                raise ValueError("The length of group should be equal to dimensionality.")
             group_num = len(np.unique(self.group))
             if self.group[0] != 0:
                 raise ValueError("Group should start from 0.")
@@ -207,20 +205,14 @@ class BaseSolver(BaseEstimator):
 
         # preselect
         self.preselect = np.unique(np.array(self.preselect, dtype="int32"))
-        if self.preselect.size > 0 and (
-            self.preselect[0] < 0 or self.preselect[-1] >= group_num
-        ):
+        if self.preselect.size > 0 and (self.preselect[0] < 0 or self.preselect[-1] >= group_num):
             raise ValueError("preselect should be between 0 and dimensionality.")
 
         # default sparsity level
         force_min_sparsity = self.preselect.size
         default_max_sparsity = max(
             force_min_sparsity,
-            (
-                group_num
-                if group_num <= 5
-                else int(group_num / np.log(np.log(group_num)) / np.log(group_num))
-            ),
+            (group_num if group_num <= 5 else int(group_num / np.log(np.log(group_num)) / np.log(group_num))),
         )
 
         # sparsity
@@ -242,9 +234,7 @@ class BaseSolver(BaseEstimator):
             if self.sparsity.size == 1 and self.ic_method is None:
                 self.ic_method = utilities.AIC
             elif self.sparsity.size > 1 and self.ic_method is None:
-                raise ValueError(
-                    "ic_method should be provided for choosing sparsity level with information criterion."
-                )
+                raise ValueError("ic_method should be provided for choosing sparsity level with information criterion.")
             elif self.sample_size <= 1:
                 raise ValueError("sample_size should be given when using ic_method.")
         elif self.cv > 1:
@@ -253,9 +243,9 @@ class BaseSolver(BaseEstimator):
             if self.split_method is None:
                 raise ValueError("split_method should be provided when cv > 1.")
             if self.cv_fold_id is None:
-                kf = KFold(
-                    n_splits=self.cv, shuffle=True, random_state=self.random_state
-                ).split(np.zeros(self.sample_size))
+                kf = KFold(n_splits=self.cv, shuffle=True, random_state=self.random_state).split(
+                    np.zeros(self.sample_size)
+                )
 
                 self.cv_fold_id = np.zeros(self.sample_size)
                 for i, (_, fold_id) in enumerate(kf):
@@ -265,13 +255,9 @@ class BaseSolver(BaseEstimator):
                 if self.cv_fold_id.ndim > 1:
                     raise ValueError("cv_fold_id should be an 1D array of integers.")
                 if self.cv_fold_id.size != self.sample_size:
-                    raise ValueError(
-                        "The length of cv_fold_id should be equal to sample_size."
-                    )
+                    raise ValueError("The length of cv_fold_id should be equal to sample_size.")
                 if len(set(self.cv_fold_id)) != self.cv:
-                    raise ValueError(
-                        "The number of different elements in cv_fold_id should be equal to cv."
-                    )
+                    raise ValueError("The number of different elements in cv_fold_id should be equal to cv.")
 
         sparsity = self.sparsity
         group = self.group
@@ -316,9 +302,7 @@ class BaseSolver(BaseEstimator):
         else:
             init_support_set = np.array(init_support_set, dtype="int32")
             if init_support_set.ndim > 1:
-                raise ValueError(
-                    "The initial active set should be an 1D array of integers."
-                )
+                raise ValueError("The initial active set should be an 1D array of integers.")
             if init_support_set.min() < 0 or init_support_set.max() >= p:
                 raise ValueError("init_support_set contains wrong index.")
 
@@ -326,9 +310,7 @@ class BaseSolver(BaseEstimator):
         if init_params is None:
             random_init = False
             if len(layers) > 0:
-                random_init = np.any(
-                    np.array([layer.random_initilization for layer in layers])
-                )
+                random_init = np.any(np.array([layer.random_initilization for layer in layers]))
             if random_init:
                 init_params = np.random.RandomState(self.random_state).randn(p)
             else:
@@ -336,9 +318,7 @@ class BaseSolver(BaseEstimator):
         else:
             init_params = np.array(init_params, dtype=float)
             if init_params.shape != (p,):
-                raise ValueError(
-                    "The length of init_params should be equal to dimensionality."
-                )
+                raise ValueError("The length of init_params should be equal to dimensionality.")
 
         if self.cv == 1:
             is_first_loop: bool = True
@@ -385,9 +365,7 @@ class BaseSolver(BaseEstimator):
                         preselect,
                         group,
                     )  # warm start: use results of previous sparsity as initial value
-                    cv_eval[s] += loss_fn(
-                        init_params, self.split_method(data, test_index)
-                    )
+                    cv_eval[s] += loss_fn(init_params, self.split_method(data, test_index))
                 cache_init_support_set[s] = init_support_set
                 cache_init_params[s] = init_params
             best_sparsity = min(cv_eval, key=cv_eval.get)
@@ -477,9 +455,7 @@ class BaseSolver(BaseEstimator):
         if sparsity == 0:
             return np.zeros_like(init_params), np.array([], dtype=int)
         if sparsity < preselect.size:
-            raise ValueError(
-                "The number of always selected variables is larger than the sparsity."
-            )
+            raise ValueError("The number of always selected variables is larger than the sparsity.")
         group_num = len(np.unique(group))
         group_indices = [np.where(group == i)[0] for i in range(group_num)]
 
@@ -504,9 +480,7 @@ class BaseSolver(BaseEstimator):
                     yield curr_selection
                 else:
                     for i in range(start, p - s + 1):
-                        yield from helper(
-                            i + 1, s - 1, np.append(curr_selection, universal_set[i])
-                        )
+                        yield from helper(i + 1, s - 1, np.append(curr_selection, universal_set[i]))
 
             yield from helper(0, s, preselect)
 
@@ -518,9 +492,7 @@ class BaseSolver(BaseEstimator):
             inactive_set[support_set] = False
             params[inactive_set] = 0.0
             params[support_set] = init_params[support_set]
-            loss, params = self._numeric_solver(
-                loss_fn, value_and_grad, params, support_set, data
-            )
+            loss, params = self._numeric_solver(loss_fn, value_and_grad, params, support_set, data)
             if loss < result["objective_value"]:
                 result["params"] = params.copy()
                 result["support_set"] = support_set
@@ -561,18 +533,13 @@ class BaseSolver(BaseEstimator):
         """
         if not isinstance(params, np.ndarray) or params.ndim != 1:
             raise ValueError("params should be a 1D np.ndarray.")
-        if (
-            not isinstance(optim_variable_set, np.ndarray)
-            or optim_variable_set.ndim != 1
-        ):
+        if not isinstance(optim_variable_set, np.ndarray) or optim_variable_set.ndim != 1:
             raise ValueError("optim_variable_set should be a 1D np.ndarray.")
 
         if optim_variable_set.size == 0:
             return loss_fn(params, data)
 
-        return self.numeric_solver(
-            loss_fn, value_and_grad, params, optim_variable_set, data
-        )
+        return self.numeric_solver(loss_fn, value_and_grad, params, optim_variable_set, data)
 
     def get_result(self):
         r"""

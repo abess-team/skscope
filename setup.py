@@ -100,9 +100,7 @@ class CMakeBuild(build_ext):
 
             # Multi-config generators have a different way to specify configs
             if not single_config:
-                cmake_args += [
-                    f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"
-                ]
+                cmake_args += [f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{cfg.upper()}={extdir}"]
                 build_args += ["--config", cfg]
 
         if sys.platform.startswith("darwin"):
@@ -150,8 +148,7 @@ setup(
     install_requires=[
         "numpy",
         "scikit-learn>=1.2.2",
-        "jax[cpu]",
-        "nlopt",
+        "jax",
         "scipy",
     ],
     license="MIT",

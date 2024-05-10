@@ -56,6 +56,14 @@ Here are lots of examples, you can follow the examples to do what you want to do
       ^^^
 
 
+   .. grid-item-card::
+      :link: SparsityLevelSelection/index.html
+      :img-bottom: image/ic.png
+
+      **Sparsity Level Selection**
+      ^^^
+
+
 .. toctree::
     :titlesonly:
     :glob:
@@ -67,4 +75,4 @@ Here are lots of examples, you can follow the examples to do what you want to do
     FusionModels/index
     GraphicalModels/index
     Miscellaneous/index   
-
+    SparsityLevelSelection/index

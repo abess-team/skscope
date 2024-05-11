@@ -148,7 +148,7 @@ setup(
     install_requires=[
         "numpy",
         "scikit-learn>=1.2.2",
-        "jax",
+        "jax[cpu]",
         "scipy",
     ],
     license="MIT",

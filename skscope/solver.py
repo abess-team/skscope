@@ -11,7 +11,7 @@ import numpy as np
 import jax
 from jax import numpy as jnp
 from . import _scope, utilities
-from .numeric_solver import convex_solver_nlopt
+from .numeric_solver import convex_solver_LBFGS
 
 
 class ScopeSolver(BaseEstimator):
@@ -33,7 +33,7 @@ class ScopeSolver(BaseEstimator):
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``ScopeSolver`` will call this function to solve the convex optimization problem in each iteration.
-        It should have the same interface as ``skscope.convex_solver_nlopt``.
+        It should have the same interface as ``skscope.convex_solver_LBFGS``.
     max_iter : int, default=20
         Maximum number of iterations taken for converging.
     ic_method : callable, optional
@@ -122,7 +122,7 @@ class ScopeSolver(BaseEstimator):
         sample_size=1,
         *,
         preselect=[],
-        numeric_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_LBFGS,
         max_iter=20,
         ic_method=None,
         cv=1,
@@ -699,7 +699,7 @@ class HTPSolver(BaseSolver):
         Step size of gradient descent.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``HTPSolver`` will call this function to solve the convex optimization problem in each iteration.
-        It should have the same interface as ``skscope.convex_solver_nlopt``.
+        It should have the same interface as ``skscope.convex_solver_LBFGS``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
@@ -750,7 +750,7 @@ class HTPSolver(BaseSolver):
         *,
         preselect=[],
         step_size=0.005,
-        numeric_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_LBFGS,
         max_iter=100,
         group=None,
         ic_method=None,
@@ -860,7 +860,7 @@ class IHTSolver(HTPSolver):
         Step size of gradient descent.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``IHTSolver`` will call this function to solve the convex optimization problem in each iteration.
-        It should have the same interface as ``skscope.convex_solver_nlopt``.
+        It should have the same interface as ``skscope.convex_solver_LBFGS``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
@@ -980,7 +980,7 @@ class GraspSolver(BaseSolver):
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``GraspSolver`` will call this function to solve the convex optimization problem in each iteration.
-        It should have the same interface as ``skscope.convex_solver_nlopt``.
+        It should have the same interface as ``skscope.convex_solver_LBFGS``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
@@ -1141,7 +1141,7 @@ class FobaSolver(BaseSolver):
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``FobaSolver`` will call this function to solve the convex optimization problem in each iteration.
-        It should have the same interface as ``skscope.convex_solver_nlopt``.
+        It should have the same interface as ``skscope.convex_solver_LBFGS``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
@@ -1194,7 +1194,7 @@ class FobaSolver(BaseSolver):
         foba_threshold_ratio=0.5,
         strict_sparsity=True,
         preselect=[],
-        numeric_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_LBFGS,
         max_iter=100,
         group=None,
         ic_method=None,
@@ -1416,7 +1416,7 @@ class ForwardSolver(FobaSolver):
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``ForwardSolver`` will call this function to solve the convex optimization problem in each iteration.
-        It should have the same interface as ``skscope.convex_solver_nlopt``.
+        It should have the same interface as ``skscope.convex_solver_LBFGS``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
@@ -1464,7 +1464,7 @@ class ForwardSolver(FobaSolver):
         threshold=0.0,
         strict_sparsity=True,
         preselect=[],
-        numeric_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_LBFGS,
         max_iter=100,
         group=None,
         ic_method=None,
@@ -1564,7 +1564,7 @@ class OMPSolver(ForwardSolver):
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``OMPSolver`` will call this function to solve the convex optimization problem in each iteration.
-        It should have the same interface as ``skscope.convex_solver_nlopt``.
+        It should have the same interface as ``skscope.convex_solver_LBFGS``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
@@ -1615,7 +1615,7 @@ class OMPSolver(ForwardSolver):
         threshold=0.0,
         strict_sparsity=True,
         preselect=[],
-        numeric_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_LBFGS,
         max_iter=100,
         group=None,
         ic_method=None,

@@ -8,7 +8,7 @@ from sklearn.base import BaseEstimator
 from sklearn.model_selection import KFold
 import numpy as np
 import jax
-from .numeric_solver import convex_solver_nlopt
+from .numeric_solver import convex_solver_LBFGS
 import math
 from . import utilities
 
@@ -32,7 +32,7 @@ class BaseSolver(BaseEstimator):
         An array contains the indexes of variables which must be selected.
     numeric_solver : callable, optional
         A solver for the convex optimization problem. ``BaseSolver`` will call this function to solve the convex optimization problem in each iteration.
-        It should have the same interface as ``skscope.convex_solver_nlopt``.
+        It should have the same interface as ``skscope.convex_solver_LBFGS``.
     max_iter : int, default=100
         Maximum number of iterations taken for converging.
     group : array of shape (dimensionality,), default=range(dimensionality)
@@ -78,7 +78,7 @@ class BaseSolver(BaseEstimator):
         sample_size=1,
         *,
         preselect=[],
-        numeric_solver=convex_solver_nlopt,
+        numeric_solver=convex_solver_LBFGS,
         max_iter=100,
         group=None,
         ic_method=None,

@@ -72,6 +72,5 @@ Dependencies
 The current minimum dependencies to run ``skscope`` are:
 
 - ``numpy``
-- ``nlopt``
 - ``scikit-learn>=1.2.2``
-- ``"jax[cpu]"``
+- ``jax[cpu]``

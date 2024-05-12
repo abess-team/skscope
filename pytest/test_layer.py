@@ -55,7 +55,9 @@ solvers_ids = (
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_linear_constraint(model, solver_creator):
-    solver = solver_creator(model["n_features"], model["n_informative"], random_state=42)
+    solver = solver_creator(
+        model["n_features"], model["n_informative"], random_state=42
+    )
     solver.solve(
         model["loss"],
         jit=True,
@@ -71,7 +73,9 @@ def test_linear_constraint(model, solver_creator):
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_non_negative(model, solver_creator):
-    solver = solver_creator(model["n_features"], model["n_informative"], random_state=42)
+    solver = solver_creator(
+        model["n_features"], model["n_informative"], random_state=42
+    )
     solver.solve(
         model["loss"],
         jit=True,
@@ -87,7 +91,9 @@ def test_non_negative(model, solver_creator):
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_simplex_constraint(model, solver_creator):
-    solver = solver_creator(model["n_features"], model["n_informative"], random_state=42)
+    solver = solver_creator(
+        model["n_features"], model["n_informative"], random_state=42
+    )
     solver.solve(
         model["loss"],
         jit=True,
@@ -104,7 +110,9 @@ def test_simplex_constraint(model, solver_creator):
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_box_constraint(model, solver_creator):
-    solver = solver_creator(model["n_features"], model["n_informative"], random_state=42)
+    solver = solver_creator(
+        model["n_features"], model["n_informative"], random_state=42
+    )
     solver.solve(
         model["loss"],
         jit=True,
@@ -121,7 +129,9 @@ def test_box_constraint(model, solver_creator):
 @pytest.mark.parametrize("model", models, ids=models_ids)
 @pytest.mark.parametrize("solver_creator", solvers, ids=solvers_ids)
 def test_offset_sparse(model, solver_creator):
-    solver = solver_creator(model["n_features"], model["n_informative"], random_state=42)
+    solver = solver_creator(
+        model["n_features"], model["n_informative"], random_state=42
+    )
     solver.solve(
         model["loss"],
         jit=True,
@@ -131,4 +141,7 @@ def test_offset_sparse(model, solver_creator):
         ],
     )
 
-    assert np.sum(solver.get_estimated_params() == -1.0) == model["n_features"] - model["n_informative"]
+    assert (
+        np.sum(solver.get_estimated_params() == -1.0)
+        == model["n_features"] - model["n_informative"]
+    )

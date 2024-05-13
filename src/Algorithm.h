@@ -115,7 +115,15 @@ public:
 
     void update_tau(int n, int p)
     {
-        this->tau = 0.0;
+        if (n == 1)
+        {
+            this->tau = 0.0;
+        }
+        else
+        {
+            this->tau =
+                0.01 * (double)this->sparsity_level * log((double)p) * log(log((double)n)) / (double)n;
+        }
     }
 
     bool get_warm_start() { return this->warm_start; }

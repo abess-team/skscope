@@ -320,10 +320,10 @@ bool Algorithm::splicing(UniversalData &X, MatrixXd &y, VectorXi &A, VectorXi &I
 
     for (int k = C_max; k >= 1;)
     {
-        //SPDLOG_INFO("exchange num is {}", k);
+        // SPDLOG_INFO("exchange num is {}", k);
         A_exchange = diff_union(A, s1, s2);
         A_ind_exchage = find_ind(A_exchange, g_index, g_size, (this->beta).rows(), N);
-        X_A_exchage = X.slice_by_para(A_ind_exchage); 
+        X_A_exchage = X.slice_by_para(A_ind_exchage);
         beta_A_exchange = beta(A_ind_exchage);
         coef0_A_exchange = coef0;
         bool success = this->primary_model_fit(X_A_exchage, y, weights, beta_A_exchange, coef0_A_exchange,
@@ -356,7 +356,7 @@ bool Algorithm::splicing(UniversalData &X, MatrixXd &y, VectorXi &A, VectorXi &I
     coef0 = best_coef0_A_exchange;
     if (this->is_dynamic_exchange_num)
         C_max = best_exchange_num;
-    //SPDLOG_INFO("best exchange num is {}", best_exchange_num);
+    // SPDLOG_INFO("best exchange num is {}", best_exchange_num);
     return true;
 };
 
@@ -444,7 +444,7 @@ bool Algorithm::primary_model_fit(UniversalData &active_data, MatrixXd &y, Vecto
 
     bool success = result > 0;
     if(!success){
-        SPDLOG_WARN("nlopt failed to optimize, state: {} ", nlopt_result_to_string(result));
+        SPDLOG_WARN("failed to optimize, state: {} ", nlopt_result_to_string(result));
     }
     */
 }
@@ -454,10 +454,12 @@ void Algorithm::sacrifice(UniversalData &data, UniversalData &XA, MatrixXd &y, V
     SPDLOG_DEBUG("sacrifice begin");
     VectorXd gradient_full;
     MatrixXd hessian_full;
-    if (this->use_hessian){
+    if (this->use_hessian)
+    {
         data.gradient_and_hessian(para, gradient_full, hessian_full);
     }
-    else{
+    else
+    {
         data.loss_and_gradient(para, gradient_full);
         hessian_full = MatrixXd::Identity(para.size(), para.size());
     }

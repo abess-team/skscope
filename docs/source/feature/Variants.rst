@@ -168,16 +168,16 @@ where
 
 - :math:`f(\theta)` is the objective function; 
 
-All solvers in :ref:`skscope <skscope_package>` use `nlopt <https://nlopt.readthedocs.io/en/latest/>`_ as the default numeric optimization solver for this problem. 
+All solvers in :ref:`skscope <skscope_package>` use `L-BFGS-B` algorithm in `scipy.optimize <https://docs.scipy.org/doc/scipy/reference/optimize.minimize-lbfgsb.html>`_ as the default numeric optimization solver for this problem. 
 
 In some cases, there may be additional constraints on the intrinsic structure of :math:`\theta`, which can be formulated as a set :math:`\mathcal{C}`:
 
 .. math::
     \arg\min_{\theta \in R^s, \theta \in \mathcal{C}} f(\theta).
 
-A typical example is the Gaussian graphical model for continuous random variables, which constrains :math:`\theta` on symmetric positive-definite spaces (see this example `<../userguide/examples/GraphicalModels/sparse-gaussian-precision-matrix.html>`__). Although ``nlopt`` cannot solve this problem, ``skscope`` provides a flexible interface that allows for its replacement. Specifically, users can change the default numerical optimization solver by properly setting the ``numeric_solver`` in the solver. 
+A typical example is the Gaussian graphical model for continuous random variables, which constrains :math:`\theta` on symmetric positive-definite spaces (see this example `<../userguide/examples/GraphicalModels/sparse-gaussian-precision-matrix.html>`__). Although the default numeric solver cannot solve this problem, ``skscope`` provides a flexible interface that allows for its replacement. Specifically, users can change the default numerical optimization solver by properly setting the ``numeric_solver`` in the solver. 
 
-    > Notice that, the accepted input of ``numeric_solver`` should have the same interface as ``skscope.numeric_solver.convex_solver_nlopt``.
+    > Notice that, the accepted input of ``numeric_solver`` should have the same interface as ``skscope.numeric_solver.convex_solver_LBFGS``.
 
 
 .. code-block:: python

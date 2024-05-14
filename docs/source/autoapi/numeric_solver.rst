@@ -17,7 +17,7 @@ Functions
 
 .. autoapisummary::
 
-    skscope.numeric_solver.convex_solver_nlopt
+    skscope.numeric_solver.convex_solver_LBFGS
 
 .. autoapimodule:: skscope.numeric_solver
     :members: 

@@ -283,7 +283,7 @@ class BaseSolver(BaseEstimator):
                 for i in range(len(layers) - 1):
                     assert layers[i].out_features == layers[i + 1].in_features
                 assert layers[-1].out_features == self.dimensionality
-            loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit, layers)
+            loss_, grad_, hess_ = BaseSolver._set_objective(objective, gradient, jit, layers)
             p = layers[0].in_features
             for layer in layers[::-1]:
                 sparsity = layer.transform_sparsity(sparsity)
@@ -291,7 +291,9 @@ class BaseSolver(BaseEstimator):
                 preselect = layer.transform_preselect(preselect)
         else:
             p = self.dimensionality
-            loss_, grad_ = BaseSolver._set_objective(objective, gradient, jit)
+            loss_, grad_, hess_ = BaseSolver._set_objective(objective, gradient, jit)
+
+        self.hess_ = hess_
 
         def loss_fn(params, data):
             value = loss_(params, data)
@@ -461,7 +463,13 @@ class BaseSolver(BaseEstimator):
         if jit:
             grad_ = jax.jit(grad_)
 
-        return loss_, grad_
+        def hess_(params, data):
+            return jax.hessian(loss_)(params, data)
+
+        if jit:
+            hess_ = jax.jit(hess_)
+
+        return loss_, grad_, hess_
 
     def _solve(
         self,

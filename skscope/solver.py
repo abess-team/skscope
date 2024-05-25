@@ -627,7 +627,9 @@ class ScopeSolver(BaseEstimator):
         return objective
 
     def __set_objective_py(self, objective, gradient, hessian, jit, layers=[]):
-        loss_, grad_, hess_ = BaseSolver._set_objective(objective, gradient, jit, layers)
+        loss_, grad_, hess_ = BaseSolver._set_objective(
+            objective, gradient, jit, layers
+        )
 
         # hess
         if hessian is None:
@@ -798,7 +800,7 @@ class HTPSolver(BaseSolver):
                 group,
             )
         # init
-        params = init_params 
+        params = init_params
         best_suppport_group_tuple = None
         best_loss = np.inf
         results = {}  # key: tuple of ordered support set, value: params
@@ -1643,7 +1645,6 @@ class OMPSolver(ForwardSolver):
         self.use_gradient = True
 
 
-
 class PDASSolver(BaseSolver):
     r"""
     Solve the best subset selection problem with the subset size :math:`k` by Primal-dual active set (PDAS) algorithm.
@@ -1701,6 +1702,7 @@ class PDASSolver(BaseSolver):
     Wen C H, Zhang A J, Quan S J, Wang X Q. BeSS: An R Package for Best Subset Selection in Linear, Logistic and Cox Proportional Hazards Models[J]. Journal of Statistical Software, 2020, 94(4): 1-24.
 
     """
+
     def __init__(
         self,
         dimensionality,
@@ -1715,7 +1717,7 @@ class PDASSolver(BaseSolver):
         cv_fold_id=None,
         split_method=None,
         random_state=None,
-        ):
+    ):
         super().__init__(
             dimensionality=dimensionality,
             sparsity=sparsity,
@@ -1739,8 +1741,8 @@ class PDASSolver(BaseSolver):
         init_params,
         data,
         preselect,
-        group
-        ):
+        group,
+    ):
         if sparsity <= preselect.size:
             return super()._solve(
                 sparsity,
@@ -1752,7 +1754,7 @@ class PDASSolver(BaseSolver):
                 preselect,
                 group,
             )
-        
+
         support_set_group = np.union1d(preselect, init_support_set)
         group_num = len(np.unique(group))
         group_indices = [np.where(group == i)[0] for i in range(group_num)]
@@ -1761,7 +1763,9 @@ class PDASSolver(BaseSolver):
             all_support = np.arange(group_num)
             diff_support = np.setdiff1d(all_support, support_set_group)
             rng = np.random.default_rng(seed=self.random_state)
-            support_set_group = np.union1d(rng.choice(diff_support, diff_num), support_set_group)
+            support_set_group = np.union1d(
+                rng.choice(diff_support, diff_num), support_set_group
+            )
             support = np.concatenate([group_indices[i] for i in support_set_group])
 
         for n_iters in range(self.max_iter):
@@ -1773,17 +1777,18 @@ class PDASSolver(BaseSolver):
             h = np.diag(np.array(self.hess_(params, data)))
             g[support] = 0
             gamma = -g / h
-            delta = 1/2 * h * np.square(params + gamma)
+            delta = 1 / 2 * h * np.square(params + gamma)
             score = np.array(
-                [
-                    np.sum(delta[group_indices[i]])
-                    for i in range(group_num)
-                ]
+                [np.sum(delta[group_indices[i]]) for i in range(group_num)]
             )
             score[preselect] = np.inf
             support_set_group_new = np.argpartition(score, -sparsity)[-sparsity:]
-            support_new = np.concatenate([group_indices[i] for i in support_set_group_new])
-            are_equal = np.all(np.isin(support_set_group, support_set_group_new)) and np.all(np.isin(support_set_group_new, support_set_group))
+            support_new = np.concatenate(
+                [group_indices[i] for i in support_set_group_new]
+            )
+            are_equal = np.all(
+                np.isin(support_set_group, support_set_group_new)
+            ) and np.all(np.isin(support_set_group_new, support_set_group))
             if are_equal:
                 return params, support_new
             else:

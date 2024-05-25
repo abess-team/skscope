@@ -16,6 +16,7 @@ from .solver import (
     FobaSolver,
     ForwardSolver,
     OMPSolver,
+    PDASSolver,
 )
 from .base_solver import BaseSolver
 from .numeric_solver import convex_solver_LBFGS
@@ -34,4 +35,5 @@ __all__ = [
     "PortfolioSelection",
     "NonlinearSelection",
     "RobustRegression",
+    "PDASSolver",
 ]

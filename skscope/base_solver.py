@@ -283,7 +283,9 @@ class BaseSolver(BaseEstimator):
                 for i in range(len(layers) - 1):
                     assert layers[i].out_features == layers[i + 1].in_features
                 assert layers[-1].out_features == self.dimensionality
-            loss_, grad_, hess_ = BaseSolver._set_objective(objective, gradient, jit, layers)
+            loss_, grad_, hess_ = BaseSolver._set_objective(
+                objective, gradient, jit, layers
+            )
             p = layers[0].in_features
             for layer in layers[::-1]:
                 sparsity = layer.transform_sparsity(sparsity)

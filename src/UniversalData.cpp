@@ -122,7 +122,8 @@ void UniversalData::gradient_and_hessian(const VectorXd &effective_para, VectorX
 
 double UniversalData::optimize(VectorXd &effective_para)
 {
-    if (effective_para.size() == 0){
+    if (effective_para.size() == 0)
+    {
         return model->loss(VectorXd::Zero(this->model_size), *this->data);
     }
     auto value_and_grad = [this](const VectorXd &complete_para, pybind11::object data) -> pair<double, VectorXd>

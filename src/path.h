@@ -8,7 +8,6 @@
 
 #include <Eigen/Eigen>
 
-
 #include <vector>
 
 #include "Algorithm.h"
@@ -18,7 +17,8 @@
 
 void sequential_path_cv(Data &data, Algorithm *algorithm,
                         Metric *metric, Parameters &parameters, bool early_stop, int k,
-                        Eigen::VectorXi &A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init, Result &result) {
+                        Eigen::VectorXi &A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init, Result &result)
+{
     int p = data.p;
     int N = data.g_num;
     int M = data.M;
@@ -34,12 +34,15 @@ void sequential_path_cv(Data &data, Algorithm *algorithm,
     int train_n = 0, test_n = 0;
 
     // train & test data
-    if (!metric->is_cv) {
+    if (!metric->is_cv)
+    {
         train_x = data.x;
         train_y = data.y;
         train_weight = data.weight;
         train_n = data.n;
-    } else {
+    }
+    else
+    {
         train_mask = metric->train_mask_list[k];
         test_mask = metric->test_mask_list[k];
         slice(data.x, train_mask, train_x);
@@ -62,7 +65,8 @@ void sequential_path_cv(Data &data, Algorithm *algorithm,
     Eigen::MatrixXd effective_number_matrix(sequence_size, 1);
     Eigen::VectorXd bd_init;
 
-    for (int ind = 0; ind < sequence_size; ind++) {
+    for (int ind = 0; ind < sequence_size; ind++)
+    {
         algorithm->update_sparsity_level(parameters.sequence(ind).support_size);
         algorithm->update_lambda_level(parameters.sequence(ind).lambda);
         algorithm->update_beta_init(beta_init);
@@ -72,17 +76,21 @@ void sequential_path_cv(Data &data, Algorithm *algorithm,
 
         algorithm->fit(train_x, train_y, train_weight, g_index, g_size, train_n, p, N);
 
-        if (algorithm->warm_start) {
+        if (algorithm->warm_start)
+        {
             beta_init = algorithm->get_beta();
             coef0_init = algorithm->get_coef0();
             bd_init = algorithm->get_bd();
         }
 
         // evaluate the beta
-        if (metric->is_cv) {
+        if (metric->is_cv)
+        {
             test_loss_matrix(ind) =
                 metric->loss_function(test_x, test_y, test_weight, g_index, g_size, test_n, p, N, algorithm);
-        } else {
+        }
+        else
+        {
             ic_matrix(ind) = metric->ic(train_n, M, N, algorithm);
         }
 
@@ -121,10 +129,10 @@ void sequential_path_cv(Data &data, Algorithm *algorithm,
     result.effective_number_matrix = effective_number_matrix;
 }
 
-
 void gs_path(Data &data, vector<Algorithm *> algorithm_list,
              Metric *metric, Parameters &parameters, Eigen::VectorXi &A_init, Eigen::VectorXd beta_init, Eigen::VectorXd coef0_init,
-             vector<Result> &result_list) {
+             vector<Result> &result_list)
+{
     int s_min = parameters.s_min;
     int s_max = parameters.s_max;
     int sequence_size = s_max - s_min + 5;
@@ -139,7 +147,8 @@ void gs_path(Data &data, vector<Algorithm *> algorithm_list,
     vector<Eigen::MatrixXd> test_loss_matrix(Kfold);
     vector<Eigen::Matrix<VectorXd, -1, -1>> bd_matrix(Kfold);
     vector<Eigen::MatrixXd> effective_number_matrix(Kfold);
-    for (int k = 0; k < Kfold; k++) {
+    for (int k = 0; k < Kfold; k++)
+    {
         beta_matrix[k].resize(sequence_size, 1);
         coef0_matrix[k].resize(sequence_size, 1);
         train_loss_matrix[k].resize(sequence_size, 1);
@@ -148,7 +157,6 @@ void gs_path(Data &data, vector<Algorithm *> algorithm_list,
         bd_matrix[k].resize(sequence_size, 1);
         effective_number_matrix[k].resize(sequence_size, 1);
     }
-
 
     Eigen::VectorXd bd_init;
     // gs only support the first lambda
@@ -159,9 +167,11 @@ void gs_path(Data &data, vector<Algorithm *> algorithm_list,
     int right = round(0.382 * s_min + 0.618 * s_max);
     bool fit_l = true, fit_r = (left != right);
     double loss_l = 0, loss_r = 0;
-    while (true) {
+    while (true)
+    {
         // cout<<" ==> gs: "<<s_min<<" - "<<s_max<<endl;
-        if (fit_l) {
+        if (fit_l)
+        {
             fit_l = false;
             fit_arg.support_size = left;
             Eigen::VectorXd loss_list = metric->fit_and_evaluate_in_metric(algorithm_list, data, fit_arg);
@@ -169,7 +179,8 @@ void gs_path(Data &data, vector<Algorithm *> algorithm_list,
 
             // record: left
             support_size_list(++ind) = left;
-            for (int k = 0; k < Kfold; k++) {
+            for (int k = 0; k < Kfold; k++)
+            {
                 beta_matrix[k](ind) = algorithm_list[k]->beta;
                 coef0_matrix[k](ind) = algorithm_list[k]->coef0;
                 train_loss_matrix[k](ind) = algorithm_list[k]->get_train_loss();
@@ -182,7 +193,8 @@ void gs_path(Data &data, vector<Algorithm *> algorithm_list,
             }
         }
 
-        if (fit_r) {
+        if (fit_r)
+        {
             fit_r = false;
             fit_arg.support_size = right;
             Eigen::VectorXd loss_list = metric->fit_and_evaluate_in_metric(algorithm_list, data, fit_arg);
@@ -190,7 +202,8 @@ void gs_path(Data &data, vector<Algorithm *> algorithm_list,
 
             // record: pos 2
             support_size_list(++ind) = right;
-            for (int k = 0; k < Kfold; k++) {
+            for (int k = 0; k < Kfold; k++)
+            {
                 beta_matrix[k](ind) = algorithm_list[k]->beta;
                 coef0_matrix[k](ind) = algorithm_list[k]->coef0;
                 train_loss_matrix[k](ind) = algorithm_list[k]->get_train_loss();
@@ -204,20 +217,24 @@ void gs_path(Data &data, vector<Algorithm *> algorithm_list,
         }
 
         // update split point
-        if (loss_l < loss_r) {
+        if (loss_l < loss_r)
+        {
             s_max = right;
             right = left;
             loss_r = loss_l;
             left = round(0.618 * s_min + 0.382 * s_max);
             fit_l = true;
-        } else {
+        }
+        else
+        {
             s_min = left;
             left = right;
             loss_l = loss_r;
             right = round(0.382 * s_min + 0.618 * s_max);
             fit_r = true;
         }
-        if (left == right) break;
+        if (left == right)
+            break;
     }
     // cout<<"left==right | s_min = "<<s_min<<" | s_max = "<<s_max<<endl;
 
@@ -225,7 +242,8 @@ void gs_path(Data &data, vector<Algorithm *> algorithm_list,
     // Eigen::VectorXd best_coef0;
     // double best_train_loss = 0;
     double best_loss = DBL_MAX;
-    for (int s = s_min; s <= s_max; s++) {
+    for (int s = s_min; s <= s_max; s++)
+    {
         fit_arg.support_size = s;
         fit_arg.beta_init = beta_init;
         fit_arg.coef0_init = coef0_init;
@@ -233,11 +251,13 @@ void gs_path(Data &data, vector<Algorithm *> algorithm_list,
         Eigen::VectorXd loss_list = metric->fit_and_evaluate_in_metric(algorithm_list, data, fit_arg);
         double loss = loss_list.mean();
 
-        if (loss < best_loss) {
+        if (loss < best_loss)
+        {
             // record
             support_size_list(++ind) = s;
             best_loss = loss;
-            for (int k = 0; k < Kfold; k++) {
+            for (int k = 0; k < Kfold; k++)
+            {
                 beta_matrix[k](ind) = algorithm_list[k]->beta;
                 coef0_matrix[k](ind) = algorithm_list[k]->coef0;
                 train_loss_matrix[k](ind) = algorithm_list[k]->get_train_loss();
@@ -252,7 +272,8 @@ void gs_path(Data &data, vector<Algorithm *> algorithm_list,
     }
 
     ind++;
-    for (int k = 0; k < Kfold; k++) {
+    for (int k = 0; k < Kfold; k++)
+    {
         result_list[k].beta_matrix = beta_matrix[k].block(0, 0, ind, 1);
         result_list[k].coef0_matrix = coef0_matrix[k].block(0, 0, ind, 1);
         result_list[k].train_loss_matrix = train_loss_matrix[k].block(0, 0, ind, 1);
@@ -267,5 +288,3 @@ void gs_path(Data &data, vector<Algorithm *> algorithm_list,
     parameters.lambda_list = parameters.lambda_list.head(1).eval();
     parameters.build_sequence();
 }
-
-

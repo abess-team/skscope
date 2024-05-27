@@ -7,10 +7,8 @@
 
 #include <Eigen/Eigen>
 
-
 #include <algorithm>
 #include <cfloat>
-
 
 #include "Data.h"
 #include "utilities.h"
@@ -18,9 +16,9 @@
 using namespace std;
 using namespace Eigen;
 
-
 Eigen::VectorXi screening(Data &data, std::vector<Algorithm *> algorithm_list,
-                          int screening_size, int &beta_size, double lambda, Eigen::VectorXi &A_init) {
+                          int screening_size, int &beta_size, double lambda, Eigen::VectorXi &A_init)
+{
     int n = data.n;
     int M = data.M;
     int g_num = data.g_num;
@@ -36,7 +34,8 @@ Eigen::VectorXi screening(Data &data, std::vector<Algorithm *> algorithm_list,
     Eigen::VectorXd coef0_init;
     Eigen::VectorXd bd_init;
 
-    for (int i = 0; i < g_num; i++) {
+    for (int i = 0; i < g_num; i++)
+    {
         int p_tmp = g_size(i);
         Eigen::VectorXi index = Eigen::VectorXi::LinSpaced(p_tmp, g_index(i), g_index(i) + p_tmp - 1);
         UniversalData x_tmp = X_seg(data.x, n, index, algorithm_list[0]->model_type);
@@ -65,17 +64,19 @@ Eigen::VectorXi screening(Data &data, std::vector<Algorithm *> algorithm_list,
     Eigen::VectorXi new_g_size(screening_size);
 
     int new_p = 0;
-    for (int i = 0; i < screening_size; i++) {
+    for (int i = 0; i < screening_size; i++)
+    {
         new_p += g_size(screening_A(i));
         new_g_size(i) = g_size(screening_A(i));
     }
 
     new_g_index(0) = 0;
-    for (int i = 0; i < screening_size - 1; i++) {
+    for (int i = 0; i < screening_size - 1; i++)
+    {
         new_g_index(i + 1) = new_g_index(i) + g_size(screening_A(i));
     }
 
-    Eigen::VectorXi screening_A_ind = find_ind(screening_A, g_index, g_size, beta_size, g_num); 
+    Eigen::VectorXi screening_A_ind = find_ind(screening_A, g_index, g_size, beta_size, g_num);
     UniversalData x_A = X_seg(data.x, 0, screening_A_ind, 0);
 
     Eigen::VectorXd new_x_mean, new_x_norm;
@@ -91,20 +92,22 @@ Eigen::VectorXi screening(Data &data, std::vector<Algorithm *> algorithm_list,
     data.g_size = new_g_size;
     beta_size = new_p;
 
-    if (always_select.size() != 0) {
+    if (always_select.size() != 0)
+    {
         Eigen::VectorXi new_always_select(always_select.size());
         int j = 0;
-        for (int i = 0; i < always_select.size(); i++) {
-            while (always_select(i) != screening_A(j)) j++;
+        for (int i = 0; i < always_select.size(); i++)
+        {
+            while (always_select(i) != screening_A(j))
+                j++;
             new_always_select(i) = j;
         }
         int algorithm_list_size = static_cast<int>(algorithm_list.size());
-        for (int i = 0; i < algorithm_list_size; i++) {
+        for (int i = 0; i < algorithm_list_size; i++)
+        {
             algorithm_list[i]->always_select = new_always_select;
         }
     }
 
     return screening_A_ind;
 }
-
-

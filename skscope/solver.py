@@ -102,10 +102,10 @@ class ScopeSolver(BaseEstimator):
         The value of objective function on the solution.
     support_set :array of int
         The indices of selected variables, sorted in ascending order.
-    cv_test_loss :float
-        If cv=1, it stores the score under chosen information criterion. If cv>1, it stores the test objective under cross-validation.
-    cv_train_loss :float
-        The objective on training data.
+    information_criterion: float
+        The value of information criterion.
+    cross_validation_loss: float
+        The mean loss of cross-validation.
 
     References
     ----------

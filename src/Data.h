@@ -6,7 +6,6 @@
 
 #pragma once
 
-
 #include <Eigen/Eigen>
 #include <vector>
 
@@ -14,9 +13,9 @@
 using namespace std;
 using namespace Eigen;
 
-
-class Data {
-   public:
+class Data
+{
+public:
     UniversalData x;
     Eigen::MatrixXd y;
     Eigen::VectorXd weight;
@@ -34,7 +33,8 @@ class Data {
     Data() = default;
 
     Data(UniversalData &x, Eigen::MatrixXd &y, int normalize_type, Eigen::VectorXd &weight, Eigen::VectorXi &g_index, bool sparse_matrix,
-         int beta_size) {
+         int beta_size)
+    {
         this->x = x;
         this->y = y;
         this->normalize_type = normalize_type;
@@ -49,10 +49,9 @@ class Data {
         this->g_index = g_index;
         this->g_num = g_index.size();
         Eigen::VectorXi temp = Eigen::VectorXi::Zero(this->g_num);
-        for (int i = 0; i < g_num - 1; i++) temp(i) = g_index(i + 1);
+        for (int i = 0; i < g_num - 1; i++)
+            temp(i) = g_index(i + 1);
         temp(g_num - 1) = beta_size;
         this->g_size = temp - g_index;
     };
-
 };
-

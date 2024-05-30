@@ -241,7 +241,7 @@ void Algorithm::get_A(UniversalData &X, MatrixXd &y, VectorXi &A, VectorXi &I, i
         }
 
         // If A_U not change, U will not change and we can stop.
-        if (A_U.size() == 0 || A_U.maxCoeff() == T0 - 1)
+        if (this->U_size < N && (A_U.size() == 0 || A_U.maxCoeff() == T0 - 1))
             break;
 
         // Update & Restore beta, A from U
@@ -366,6 +366,8 @@ VectorXi Algorithm::inital_screening(UniversalData &X, MatrixXd &y, VectorXd &be
 {
     if (bd.size() == 0)
     {
+        SPDLOG_DEBUG("init active set is ", A.transpose());
+        SPDLOG_DEBUG("init params is ", beta.transpose());
         // variable initialization
         int beta_size = X.cols();
         bd = VectorXd::Zero(N);

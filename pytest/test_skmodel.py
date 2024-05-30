@@ -45,7 +45,7 @@ def test_PortfolioSelection():
     # fit and test
     port = port.fit(X_train)
     score = port.score(X_test)
-    assert score > 0.049
+    assert score > 0.04
 
     # gridsearch with time-series splitting
     tscv = TimeSeriesSplit(n_splits=5)

@@ -16,5 +16,3 @@ inline int omp_get_num_procs() { return 1; }
 inline void omp_set_num_threads(int nthread) {}
 inline void omp_set_dynamic(int flag) {}
 #endif
-
-

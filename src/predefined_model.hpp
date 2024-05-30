@@ -4,7 +4,6 @@
  * Licensed under the MIT License.
  */
 
-
 #pragma once
 
 #include <pybind11/eigen.h>
@@ -24,18 +23,18 @@ struct QuadraticData
 };
 
 template <class T>
-T quadratic_loss(const Matrix<T, -1, 1> &x, pybind11::object const& ex_data)
+T quadratic_loss(const Matrix<T, -1, 1> &x, pybind11::object const &ex_data)
 {
-    QuadraticData* data = ex_data.cast<QuadraticData*>();
+    QuadraticData *data = ex_data.cast<QuadraticData *>();
     return T(0.5 * x.transpose() * data->Q * x) + T(data->p.dot(x));
 }
-Eigen::VectorXd quadratic_grad(const Eigen::VectorXd &x, pybind11::object const& ex_data)
+Eigen::VectorXd quadratic_grad(const Eigen::VectorXd &x, pybind11::object const &ex_data)
 {
-    QuadraticData* data = ex_data.cast<QuadraticData*>();
+    QuadraticData *data = ex_data.cast<QuadraticData *>();
     return data->Q * x + data->p;
 }
-Eigen::MatrixXd quadratic_hess(const Eigen::VectorXd &x, pybind11::object const& ex_data)
+Eigen::MatrixXd quadratic_hess(const Eigen::VectorXd &x, pybind11::object const &ex_data)
 {
-    QuadraticData* data = ex_data.cast<QuadraticData*>();
+    QuadraticData *data = ex_data.cast<QuadraticData *>();
     return data->Q;
 }

@@ -44,7 +44,7 @@ def convex_solver_LBFGS(
     def jac(x):
         init_params[optim_variable_set] = x
         _, grad = value_and_grad(init_params, data)
-        return grad[optim_variable_set]
+        return np.array(grad[optim_variable_set], np.float64)
 
     res = minimize(fun, init_params[optim_variable_set], method="L-BFGS-B", jac=jac)
     init_params[optim_variable_set] = res.x

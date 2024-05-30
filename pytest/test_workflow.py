@@ -13,6 +13,7 @@ from skscope import (
     FobaSolver,
     ForwardSolver,
     OMPSolver,
+    PDASSolver,
 )
 import pytest
 from create_test_model import CreateTestModel
@@ -35,6 +36,7 @@ solvers = (
     foba_gdt_solver,
     ForwardSolver,
     OMPSolver,
+    PDASSolver,
 )
 solvers_ids = (
     "scope",
@@ -46,6 +48,7 @@ solvers_ids = (
     "FOBA_gdt",
     "Forward",
     "OMP",
+    "PDASSolver",
 )
 
 

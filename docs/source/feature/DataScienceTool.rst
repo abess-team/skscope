@@ -113,7 +113,7 @@ Here is an example using SIC to find the optimal support size.
         ic_method=LinearSIC,     ## use SIC to evaluate sparsity levels
     )
     solver.solve(
-        lambda params: jnp.sum(X @ params - y)),
+        lambda params: jnp.sum((X @ params - y)**2),
         jit = True,
     )
     print(solver.get_result())

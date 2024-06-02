@@ -47,5 +47,51 @@ The runtime comparison on the JIT mode is on or off shows that, JIT generally sp
     > Note that JIT need additional requirements on the programming of objective function. More details can be found in `JAX documentation <https://jax.readthedocs.io/en/latest/jax-101/02-jitting.html#>`_.
 
 
+Support Sparse Matrices
+--------------------------------------------------
+
+``skscope`` supports input matrices as sparse matrices. Below, we provide an example of linear regression to demonstrate this functionality. First, we import the necessary libraries and filter out warnings for cleaner output.
+
+.. code-block:: python
+
+    import numpy as np
+    import jax.numpy as jnp
+    from jax.experimental import sparse
+    from skscope import ScopeSolver
+    import scipy.sparse as sp
+
+    import warnings
+    warnings.filterwarnings('ignore')
+
+Next, we generate a random sparse matrix using ``scipy.sparse``, convert it to a dense matrix with ``JAX``, and then convert it to a BCOO format sparse matrix. We also create a target vector based on a predefined vector with some added noise.
+
+.. code-block:: python
+
+    n, p = 150, 30
+    np.random.seed(0)
+    random_sparse_matrix = sp.random(n, p, density=0.1, format='coo')
+    dense_matrix = jnp.array(random_sparse_matrix.toarray())
+    X = sparse.BCOO.fromdense(dense_matrix)
+    beta = np.zeros(p)
+    beta[:3] = [1, 2, 3]
+    y = X @ beta + np.random.normal(0, 0.1, n)
+
+We define a simple ordinary least squares (OLS) loss function to be minimized by ``ScopeSolver``.
+
+.. code-block:: python
+
+    def ols_loss(params):
+        loss = jnp.mean((y - X @ params) ** 2)
+        return loss
+
+Finally, we initialize the ``ScopeSolver``, specifying the number of features to select, and solve for the optimal parameters.
+
+.. code-block:: python
+
+    solver = ScopeSolver(p, sparsity=3)
+    params_skscope = solver.solve(ols_loss, jit=True)
+
+Then, we can get ``params_skscope`` as the result of the subset selection.
+
 .. Build with C++
 .. -------------------

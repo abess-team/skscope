@@ -8,7 +8,7 @@ In addition to standard sparsity-constrained optimization (SCO) problems, ``sksc
 Group-structured parameters
 ----------------------------
 
-In certain cases, we may encounter group-structured parameters where all parameters are divided into non-overlapping groups. Examples of such scenarios include group variable selection under linear model `[1]`_, `multitask learning <../userguide/examples/GeneralizedLinearModels/multiple-response-linear-regression.html>`__, and so on. 
+In certain cases, we may encounter group-structured parameters where all parameters are divided into non-overlapping groups. Examples of such scenarios include group variable selection under linear model `[1]`_, `multitask learning <../gallery/GeneralizedLinearModels/multiple-response-linear-regression.html>`__, and so on. 
 
 When dealing with group-structured parameters, we treat each parameter group as a unit, selecting or deselecting all the parameters in the group simultaneously. This problem is referred to as group SCO (GSCO).
 
@@ -174,8 +174,8 @@ In some cases, there may be additional constraints on the intrinsic structure of
 
 .. math::
     \arg\min_{\theta \in R^s, \theta \in \mathcal{C}} f(\theta).
-
-A typical example is the Gaussian graphical model for continuous random variables, which constrains :math:`\theta` on symmetric positive-definite spaces (see this example `<../userguide/examples/GraphicalModels/sparse-gaussian-precision-matrix.html>`__). Although the default numeric solver cannot solve this problem, ``skscope`` provides a flexible interface that allows for its replacement. Specifically, users can change the default numerical optimization solver by properly setting the ``numeric_solver`` in the solver. 
+                                                                                                                                                            
+A typical example is the Gaussian graphical model for continuous random variables, which constrains :math:`\theta` on symmetric positive-definite spaces (see this example `gaussian precision matrix <../gallery/GraphicalModels/sparse-gaussian-precision-matrix.html>`__). Although the default numeric solver cannot solve this problem, ``skscope`` provides a flexible interface that allows for its replacement. Specifically, users can change the default numerical optimization solver by properly setting the ``numeric_solver`` in the solver. 
 
     > Notice that, the accepted input of ``numeric_solver`` should have the same interface as ``skscope.numeric_solver.convex_solver_LBFGS``.
 

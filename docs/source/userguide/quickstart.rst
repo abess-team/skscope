@@ -147,7 +147,7 @@ Further reading
 
 - `JAX library <https://jax.readthedocs.io/en/latest/index.html>`__
 
-- A bunch of `machine learning methods <examples/index.html>`__ implemented on the ``skscope``
+- A bunch of `machine learning methods <gallery/index.html>`__ implemented on the ``skscope``
 
 - More `advanced features <../feature/index.html>`__ implemented in ``skscope`` 
 

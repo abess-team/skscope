@@ -12,4 +12,5 @@ Generalized Linear Models
     gamma-regression
     multiple-response-linear-regression
     multinomial-logistic-regression
+    poisson-identity-link
     .. Inverse-gaussian-regression

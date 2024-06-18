@@ -52,17 +52,6 @@ Note that ``--recurse-submodules`` is required since there are some submodules i
 
 Thanks to the editable mode with the flag ``-e``, we needn't re-build the package :ref:`skscope <skscope_package>` when the source python code changes. 
 
-If the dependence packages has been installed, we can build the package faster by  
-
-.. code-block:: Bash
-
-    python setup.py develop
-
-where the function of the flag ``develop`` is similar with ``-e`` of command ``pip``.
-
-This command will not check or prepare the required environment, so it can save a lot of time. 
-Thus, we can use ``pip`` with first building and ``python`` with re-building.
-
 
 
 

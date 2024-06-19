@@ -125,7 +125,7 @@ Document the Solver
 The contribution is almost done. The remaining thing is add a document for this solver. A new solver need a brief introduction and some examples. Also note that the style of Python document is similar to `numpydoc <https://numpydoc.readthedocs.io/en/latest/format.html>`__.
 
 The development of Python API's documentation mainly relies on
-`Sphinx <https://pypi.org/project/Sphinx/>`__, `sphinx-gallery <https://pypi.org/project/sphinx-gallery/>`__ (support markdown for Sphinx), `sphinx-rtd-theme <https://pypi.org/project/sphinx-rtd-theme/>`__
+`Sphinx <https://pypi.org/project/Sphinx/>`__, `sphinx-gallery <https://pypi.org/project/sphinx-gallery/>`__ (support markdown for Sphinx), `pydata-sphinx-theme <https://pydata-sphinx-theme.readthedocs.io>`__
 (support “Read the Docs” theme for Sphinx) and so on. Please make sure all packages in :code:`docs/requirements.txt` have been installed by:
 
    .. code:: bash

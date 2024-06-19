@@ -194,9 +194,9 @@ A typical example is the Gaussian graphical model for continuous random variable
 This feature significantly expands the application range of ``skscope`` by allowing it to cooperate with other powerful optimization toolkits in Python.
 We will briefly introduce some examples:
 
-- ``cvxpy``: an open source Python-embedded modeling language for convex optimization problems. Its `official website <https://www.cvxpy.org/>`__ provides powerful features (such as semi-definite programs).
+- ``cvxpy``: an open source Python-embedded modeling language for convex optimization problems. Its `official website <https://www.cvxpy.org>`__ provides powerful features (such as semi-definite programs).
 
-- ``scipy.optimize``: includes solvers for nonlinear problems, linear programming, constrained and nonlinear least-squares, root finding, and curve fitting. Its documentation can be found `here <https://docs.scipy.org/doc/scipy/reference/optimize.html/>`__.
+- ``scipy.optimize``: includes solvers for nonlinear problems, linear programming, constrained and nonlinear least-squares, root finding, and curve fitting. Its documentation can be found `here <https://docs.scipy.org/doc/scipy/reference/optimize.html>`__.
 
 Reference
 ---------------------------------------------------------

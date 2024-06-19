@@ -147,7 +147,7 @@ Further reading
 
 - `JAX library <https://jax.readthedocs.io/en/latest/index.html>`__
 
-- A bunch of `machine learning methods <gallery/index.html>`__ implemented on the ``skscope``
+- A bunch of `machine learning methods <../gallery/index.html>`__ implemented on the ``skscope``
 
 - More `advanced features <../feature/index.html>`__ implemented in ``skscope`` 
 
@@ -158,4 +158,4 @@ Footnotes
 
 .. [*] If you know nothing about ``numpy``, we can turn to `this introduction <https://numpy.org/doc/stable/user/whatisnumpy.html>`__.
 
-.. [*] We skip the algorithmic detail about ``scopeSolver``. Please turn the paper "sparsity-constrained optimization via splicing iteration" if your are interested in. 
+.. [*] We skip the algorithmic detail about ``scopeSolver``. Please turn to the paper "sparsity-constrained optimization via splicing iteration" if your are interested in. 

@@ -1,7 +1,7 @@
-Appendix: Architecture of **abess**
+Appendix: Architecture of **skscope**
 ===================================
 
-In this page, we briefly introduce our core code of ``abess``, which is summarized in the Figure below. 
+In this page, we briefly introduce our core code of ``skscope``, which is summarized in the Figure below. 
 
 .. image:: figure/architecture-scope.png 
 

@@ -47,10 +47,29 @@ The runtime comparison on the JIT mode is on or off shows that, JIT generally sp
     > Note that JIT need additional requirements on the programming of objective function. More details can be found in `JAX documentation <https://jax.readthedocs.io/en/latest/jax-101/02-jitting.html#>`_.
 
 
+Support GPU device
+--------------------------------------------------
+
+``skscope`` does not exclude the use of GPU devices for computation. 
+In fact, when users correctly install the matching JAX with the physical device, they can use GPU for computation without any additional commands.
+
+    > JAX runs transparently on the GPU or TPU (falling back to CPU if you don't have one).
+
+In order to ensure universality, ``skscope`` relies on the only CPU version of the JAX. 
+Therefore, for users who want to use GPUs, they only need to follow the `instructions <https://jax.readthedocs.io/en/latest/installation.html>`_ 
+and correctly install the JAX version that matches the physical device. For example:
+
+.. code-block:: Bash
+
+    pip install -U "jax[cuda12]"
+
+
+
 Support Sparse Matrices
 --------------------------------------------------
 
-``skscope`` supports input matrices as sparse matrices. Below, we provide an example of linear regression to demonstrate this functionality. First, we import the necessary libraries and filter out warnings for cleaner output.
+Thanks to ``jax``, ``skscope`` supports input matrices as sparse matrices. Although using sparse matrices increases the time required for automatic differentiation, 
+it can significantly reduce memory usage. Below, we provide an example of linear regression to demonstrate this functionality. First, we import the necessary libraries and filter out warnings for cleaner output.
 
 .. code-block:: python
 

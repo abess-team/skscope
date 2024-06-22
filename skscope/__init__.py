@@ -4,7 +4,7 @@
 # Copyright (C) 2023 abess-team
 # Licensed under the MIT License.
 
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 __author__ = "Zezhi Wang, Jin Zhu," "Peng Chen," "Junxian Zhu, Xueqin Wang"
 
 

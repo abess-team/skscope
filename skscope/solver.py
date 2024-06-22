@@ -256,7 +256,8 @@ class ScopeSolver(BaseEstimator):
         if not isinstance(log_file_name, str):
             raise ValueError("log_file_name must be a string")
 
-        _scope.init_spdlog(console_log_level, file_log_level, log_file_name)
+        if console_log_level < 6 or file_log_level < 6:
+            _scope.init_spdlog(console_log_level, file_log_level, log_file_name)
 
     def solve(
         self,

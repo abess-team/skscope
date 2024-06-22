@@ -32,9 +32,7 @@ solvers_ids = ("scope", "Base")  # , "GraHTP", "GraSP", "IHT")
 def test_numeric_solver(model, solver_creator):
     from skscope.numeric_solver import convex_solver_BFGS
 
-    solver = solver_creator(
-        model["n_features"], model["n_informative"], numeric_solver=convex_solver_BFGS
-    )
+    solver = solver_creator(model["n_features"], model["n_informative"], numeric_solver=convex_solver_BFGS)
     solver.solve(model["loss"], jit=True)
 
     assert set(model["support_set"]) == set(solver.get_support())
@@ -169,9 +167,7 @@ def test_scope_hessian():
 
 
 def test_scope_dynamic_max_exchange_num():
-    solver = ScopeSolver(
-        linear["n_features"], linear["n_informative"], is_dynamic_max_exchange_num=False
-    )
+    solver = ScopeSolver(linear["n_features"], linear["n_informative"], is_dynamic_max_exchange_num=False)
     solver.solve(linear["loss"], jit=True)
 
     assert set(linear["support_set"]) == set(solver.support_set)
@@ -188,7 +184,6 @@ def test_scope_args():
         path_type="gs",
         important_search=1,
         preselect=[linear["support_set"][0]],
-        console_log_level="error",
     )
     solver.solve(linear["loss"], jit=True)
 
@@ -200,6 +195,5 @@ def test_scope_args():
         sample_size=linear["n_samples"],
         cv=2,
         split_method=lambda data, indeices: (data[0][indeices], data[1][indeices]),
-        file_log_level="error",
     )
     solver.solve(linear["loss_data"], data=linear["data"])

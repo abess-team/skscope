@@ -162,6 +162,24 @@ All solvers (except `IHTSolver`) in `skscope` consistently outperformed `cvxpy` 
 
 ![](docs/source/contribute/figure/architecture-scope.png)
 
+## Citation
+
+If you use `skscope` or reference our tutorials in a presentation or publication, we would appreciate citations of our library.
+
+The corresponding BibteX entry:
+
+```
+@misc{wang2024skscopefastsparsityconstrainedoptimization,
+      title={skscope: Fast Sparsity-Constrained Optimization in Python}, 
+      author={Zezhi Wang and Jin Zhu and Peng Chen and Huiyang Peng and Xiaoke Zhang and Anran Wang and Yu Zheng and Junxian Zhu and Xueqin Wang},
+      year={2024},
+      eprint={2403.18540},
+      archivePrefix={arXiv},
+      primaryClass={stat.ML},
+      url={https://arxiv.org/abs/2403.18540}, 
+}
+```
+
 ## Contributions
 
 <div align="center">

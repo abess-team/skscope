@@ -121,7 +121,15 @@ Here is an example using SIC to find the optimal support size.
 
 Please note that the effectiveness of information criterion heavily depends on the implementation of the objective function. Even for the same model, different objective function implementations often correspond to different IC implementations. Before usage, carefully check whether the objective function and the information criterion implementations match.
 
-The difference between SIC and LinearSIC: ``utilities.SIC`` assumes that the objective function is the negative logarithmic likelihood function of a statistical model; ``utilities.LinearSIC`` assumes that the objective function is the sum of squared residuals, specifically adapted to linear models.
+
+- In ``skscope.utilities``, we implemented a special information criterion named ``utilities.LinearSIC``. It's used to select the sparsity level in linear model and is equivalent to using ic type='gic' in `abess <https://abess.readthedocs.io/en/latest/Python-package/linear/Linear.html#abess.linear.LinearRegression>`_.
+
+- The difference between SIC and LinearSIC: ``utilities.SIC`` assumes that the objective function is the negative logarithmic likelihood function of a statistical model; ``utilities.LinearSIC`` assumes that the objective function is the sum of squared residuals, specifically adapted to linear models.
+
+- GIC (Generalized information criterion) refers to SIC in ``skscope.utilities``, i.e., the functions of ``utilities.GIC`` and ``utilities.SIC`` are completely identical, and ``utilities.LinearGIC`` and ``utilities.LinearSIC`` are the same.
+
+
+
 
 Cross Validation
 ^^^^^^^^^^^^^^^^^^^^

@@ -22,3 +22,12 @@ User Guide
 
   quickstart
 
+.. toctree::
+  .. :caption: Quick Start for Practitioner
+
+  quickstart_practitioner
+
+.. toctree::
+  .. :caption: Quick Start for Developer
+
+  quickstart_developer

@@ -95,16 +95,31 @@ There is another way to evaluate sparsity levels, which is information criterion
      - Bayesian information criterion
      - `[2]`_
    * - ``EBIC``
-     - extend Bayesian information criterion
+     - Extend Bayesian information criterion
      - `[3]`_
    * - ``LinearSIC``
-     - special information criterion
+     - Special information criterion
      - `[4]`_
    * - ``GIC``
      - Generalized information criterion
      - `[5]`_
 
-- In ``skscope.utilities``, we implemented a special information criterion named ``utilities.LinearSIC``. It's used to select the sparsity level in linear model and is equivalent to using ``ic_type='gic'`` in `abess <https://abess.readthedocs.io/en/latest/Python-package/linear/Linear.html#abess.linear.LinearRegression>`_.
+
+Why ``LinearSIC`` is Necessary
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When discussing information criteria, we often involve the likelihood function of the model. For instance, the classic AIC formula is :math:`AIC = -2\log(L) + 2k`, where :math:`k`` is the number of effective parameters and :math:`L` is the value of the likelihood function. In the context of maximum likelihood estimation, the objective function to be optimized is typically set as the negative log-likelihood, i.e., :math:`loss = -\log(L)`. This is the modeling approach we encourage, and the information criteria implemented in skscope, including ``AIC``, ``BIC``, ``GIC``, and ``EBIC``, are based on this assumption.
+
+However, the most commonly used linear models in machine learning do not follow this approach; they typically use the mean squared error (MSE) as the loss function. This difference in setting renders many of the aforementioned information criteria in skscope potentially inapplicable. To facilitate sparsity selection for users employing linear models, we provide a special version of GIC for linear models, named ``LinearSIC``. The prefix "Linear" indicates that this information criterion is used for linear models, and "SIC" is derived from the literature `[4]`_.
+
+In summary, to achieve the same effect as using ``ic_type='gic'`` in abess `<https://abess.readthedocs.io/en/latest/Python-package/linear/Linear.html#abess.linear.LinearRegression>`_:
+
+- For linear models using MSE as the loss function, use ``LinearSIC``.
+- For other models using negative log-likelihood as the loss function, use ``GIC``.
+
+
+Usage
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If sparsity is list and ``cv=None``, the solver will use information criterions to evaluate the sparsity level. 
 The input parameter ``ic_method`` in the solvers of skscope can be used to choose the information criterion. It should be a method to compute information criterion which has the same parameters with this example:

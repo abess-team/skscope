@@ -19,14 +19,20 @@ Specifically, the submodule ``skscope.skmodel`` in :ref:`skscope <skscope_packag
 
    * - **skmodel**
      - **Description**
+     - **Document**
    * - PortfolioSelection
      - Construct sparse Markowitz portfolio
+     - `Portfolio selection <../gallery/Miscellaneous/portfolio-selection.html>`_
    * - NonlinearSelection
      - Select relevant features with nonlinear effect
+     - `Non-linear feature selection via HSIC-SCOPE <../gallery/Miscellaneous/hsic-splicing.html>`_
    * - RobustRegression
      - A robust regression dealing with outliers
+     - `Robust regression <../gallery/LinearModelAndVariants/robust-regression.html>`_
    * - MultivariateFailure
      - Multivariate failure time model in survival analysis
+     - `Multivariate failure time model <../gallery/SurvivalModels/multivariate-failure-time-model.html>`_
    * - IsotonicRegression
      - Fit the data with a non-decreasing curve
+     - `Isotonic Regression <../gallery/LinearModelAndVariants/isotonic-regression.html>`_
 

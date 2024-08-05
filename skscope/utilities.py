@@ -31,11 +31,7 @@ def check_y_survival(y_or_event, *args, allow_all_censored=False):
     if len(args) == 0:
         y = y_or_event
 
-        if (
-            not isinstance(y, np.ndarray)
-            or y.dtype.fields is None
-            or len(y.dtype.fields) != 2
-        ):
+        if not isinstance(y, np.ndarray) or y.dtype.fields is None or len(y.dtype.fields) != 2:
             raise ValueError(
                 "y must be a structured array with the first field"
                 " being a binary class event indicator and the second field"
@@ -51,9 +47,7 @@ def check_y_survival(y_or_event, *args, allow_all_censored=False):
 
     event = check_array(y_event, ensure_2d=False)
     if not np.issubdtype(event.dtype, np.bool_):
-        raise ValueError(
-            f"elements of event indicator must be boolean, but found {event.dtype}"
-        )
+        raise ValueError(f"elements of event indicator must be boolean, but found {event.dtype}")
 
     if not (allow_all_censored or np.any(event)):
         raise ValueError("all samples are censored")
@@ -66,9 +60,7 @@ def check_y_survival(y_or_event, *args, allow_all_censored=False):
 
         yt = check_array(yt, ensure_2d=False)
         if not np.issubdtype(yt.dtype, np.number):
-            raise ValueError(
-                f"time must be numeric, but found {yt.dtype} for argument {i + 2}"
-            )
+            raise ValueError(f"time must be numeric, but found {yt.dtype} for argument {i + 2}")
 
         return_val.append(yt)
 
@@ -171,43 +163,6 @@ def BIC(
     return 2 * objective_value + effective_params_num * np.log(train_size)
 
 
-def SIC(
-    objective_value: float,
-    dimensionality: int,
-    effective_params_num: int,
-    train_size: int,
-):
-    """
-    Calculate the Special Information Criterion (SIC) for a given model.
-
-    Parameters:
-    - objective_value (float): The value of the objective function (e.g., negative log-likelihood) for the model.
-    - dimensionality (int): The number of dimensions (features) in the model.
-    - effective_params_num (int): The number of effective parameters in the model.
-    - train_size (int): The size of the training dataset.
-
-    Returns:
-    - float: The SIC value, which is a measure of the relative quality of the model for a given set of data.
-      Lower SIC values indicate a better model.
-
-    Note:
-    When using information criteria (IC) functions, it is crucial to pay attention to different loss functions
-    for the same model. The correct IC implementation may vary. This function assumes the loss function is the
-    negative log-likelihood of the model. For example:
-
-    def logistic_loss(params):
-        xbeta = X @ params
-        return jnp.sum(jnp.logaddexp(0, xbeta) - y * xbeta)
-
-    If use `mean` rather than `sum` in `logistic_loss`, IC value may be wrong.
-    The SIC is calculated using the formula:
-    SIC = 2 * objective_value + effective_params_num * np.log(np.log(train_size)) * np.log(dimensionality)
-    """
-    return 2 * objective_value + effective_params_num * np.log(
-        np.log(train_size)
-    ) * np.log(dimensionality)
-
-
 def GIC(
     objective_value: float,
     dimensionality: int,
@@ -215,8 +170,7 @@ def GIC(
     train_size: int,
 ):
     """
-    Calculate the Generalized Information Criterion (GIC) for a given model,
-    GIC refers to specical information criterion (SIC) here.
+    Calculate the Generalized Information Criterion (GIC) for a given model.
 
     Parameters:
     - objective_value (float): The value of the objective function (e.g., negative log-likelihood) for the model.
@@ -241,9 +195,7 @@ def GIC(
     The GIC is calculated using the formula:
     GIC = 2 * objective_value + effective_params_num * np.log(np.log(train_size)) * np.log(dimensionality)
     """
-    return 2 * objective_value + effective_params_num * np.log(
-        np.log(train_size)
-    ) * np.log(dimensionality)
+    return 2 * objective_value + effective_params_num * np.log(np.log(train_size)) * np.log(dimensionality)
 
 
 def EBIC(
@@ -278,9 +230,7 @@ def EBIC(
     The E is calculated using the formula:
     EBIC = 2 * objective_value + effective_params_num * (np.log(train_size) + 2 * np.log(dimensionality))
     """
-    return 2 * objective_value + effective_params_num * (
-        np.log(train_size) + 2 * np.log(dimensionality)
-    )
+    return 2 * objective_value + effective_params_num * (np.log(train_size) + 2 * np.log(dimensionality))
 
 
 def LinearSIC(
@@ -292,8 +242,8 @@ def LinearSIC(
     """
     Calculate the Special Information Criterion (SIC) for a linear model.
 
-    The difference between SIC and LinearSIC:
-    SIC assumes that the objective function is the negative logarithmic likelihood function of a statistical model;
+    The difference between GIC and LinearSIC:
+    GIC assumes that the objective function is the negative logarithmic likelihood function of a statistical model;
     LinearSIC assumes that the objective function is the sum of squared residuals, specifically adapted to linear models.
 
     Parameters:
@@ -317,46 +267,6 @@ def LinearSIC(
     The LinearSIC is calculated using the formula:
     LinearSIC = train_size * np.log(objective_value) + 2 * effective_params_num * np.log(np.log(train_size)) * np.log(dimensionality)
     """
-    return train_size * np.log(objective_value) + 2 * effective_params_num * np.log(
-        np.log(train_size)
-    ) * np.log(dimensionality)
-
-
-def LinearGIC(
-    objective_value: float,
-    dimensionality: int,
-    effective_params_num: int,
-    train_size: int,
-):
-    """
-    Calculate the Generalized Information Criterion (GIC) for a linear model,
-    GIC refers to specical information criterion (SIC) here.
-
-    The difference between GIC and LinearGIC:
-    GIC assumes that the objective function is the negative logarithmic likelihood function of a statistical model;
-    LinearGIC assumes that the objective function is the sum of squared residuals, specifically adapted to linear models.
-
-    Parameters:
-    - objective_value (float): The value of the objective function (e.g., negative log-likelihood) for the model.
-    - dimensionality (int): The number of dimensions (features) in the model.
-    - effective_params_num (int): The number of effective parameters in the model.
-    - train_size (int): The size of the training dataset.
-
-    Returns:
-    - float: The LinearGIC value, which is a measure of the relative quality of the model for a given set of data.
-      Lower LinearGIC values indicate a better model.
-
-    Note:
-    When using information criteria (IC) functions, it is crucial to pay attention to different loss functions
-    for the same model. The correct IC implementation may vary. This function assumes the loss function is the
-    negative log-likelihood of the model. For example:
-
-    def linear_loss(params):
-        return jnp.sum(jnp.square(y - X @ params))
-
-    The LinearGIC is calculated using the formula:
-    LinearGIC = train_size * np.log(objective_value) + 2 * effective_params_num * np.log(np.log(train_size)) * np.log(dimensionality)
-    """
-    return train_size * np.log(objective_value) + 2 * effective_params_num * np.log(
-        np.log(train_size)
-    ) * np.log(dimensionality)
+    return train_size * np.log(objective_value) + 2 * effective_params_num * np.log(np.log(train_size)) * np.log(
+        dimensionality
+    )

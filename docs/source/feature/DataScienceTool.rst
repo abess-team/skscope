@@ -80,13 +80,38 @@ Information Criterion
 
 Information criterion is a statistical measure used to assess the goodness of fit of a model while penalizing model complexity. It helps in selecting the optimal model from a set of competing models. In the context of sparsity-constrained optimization, information criterion can be used to evaluate different sparsity levels and identify the most suitable support size.
 There is another way to evaluate sparsity levels, which is information criterion. The smaller the information criterion, the better the model. 
-There are four types of information criterion can be implemented in ``skscope.utilities``: Akaike information criterion `[1]`_, Bayesian information criterion (BIC, `[2]`_), extend BIC `[3]`_, and special information criterion (SIC `[4]`_). 
+
+
+.. list-table:: Some information criterions implemented in the module ``skscope.utilities``.
+   :header-rows: 1
+
+   * - **``skscope.utilities``**
+     - **Description**
+     - **Literature**
+   * - ``AIC``
+     - Akaike information criterion
+     - `[1]`_
+   * - ``BIC``
+     - Bayesian information criterion
+     - `[2]`_
+   * - ``EBIC``
+     - extend Bayesian information criterion
+     - `[3]`_
+   * - ``LinearSIC``
+     - special information criterion
+     - `[4]`_
+   * - ``GIC``
+     - Generalized information criterion
+     - `[5]`_
+
+- In ``skscope.utilities``, we implemented a special information criterion named ``utilities.LinearSIC``. It's used to select the sparsity level in linear model and is equivalent to using ``ic_type='gic'`` in `abess <https://abess.readthedocs.io/en/latest/Python-package/linear/Linear.html#abess.linear.LinearRegression>`_.
+
 If sparsity is list and ``cv=None``, the solver will use information criterions to evaluate the sparsity level. 
 The input parameter ``ic_method`` in the solvers of skscope can be used to choose the information criterion. It should be a method to compute information criterion which has the same parameters with this example:
 
 .. code-block:: python
 
-    def SIC(
+    def GIC(
         objective_value: float,
         dimensionality: int,
         effective_params_num: int,
@@ -122,21 +147,13 @@ Here is an example using SIC to find the optimal support size.
 Please note that the effectiveness of information criterion heavily depends on the implementation of the objective function. Even for the same model, different objective function implementations often correspond to different IC implementations. Before usage, carefully check whether the objective function and the information criterion implementations match.
 
 
-- In ``skscope.utilities``, we implemented a special information criterion named ``utilities.LinearSIC``. It's used to select the sparsity level in linear model and is equivalent to using ic type='gic' in `abess <https://abess.readthedocs.io/en/latest/Python-package/linear/Linear.html#abess.linear.LinearRegression>`_.
-
-- The difference between SIC and LinearSIC: ``utilities.SIC`` assumes that the objective function is the negative logarithmic likelihood function of a statistical model; ``utilities.LinearSIC`` assumes that the objective function is the sum of squared residuals, specifically adapted to linear models.
-
-- GIC (Generalized information criterion) refers to SIC in ``skscope.utilities``, i.e., the functions of ``utilities.GIC`` and ``utilities.SIC`` are completely identical, and ``utilities.LinearGIC`` and ``utilities.LinearSIC`` are the same.
-
-
-
 
 Cross Validation
 ^^^^^^^^^^^^^^^^^^^^
 
 Cross-validation is a technique used to assess the performance and generalization capability of a machine learning model. It involves partitioning the available data into multiple subsets, or folds, to train and test the model iteratively.
 
-To utilizing cross validation `[5]`_, there are some requirements:
+To utilizing cross validation `[6]`_, there are some requirements:
     
 1. The objective function must take data as input.
     
@@ -188,4 +205,6 @@ Reference
 
 - _`[4]` Zhu, J., Wen, C., Zhu, J., Zhang, H., & Wang, X. (2020). A polynomial algorithm for best-subset selection problem. Proceedings of the National Academy of Sciences, 117(52), 33117-33123.
 
-- _`[5]` Hastie, T., Tibshirani, R., Friedman, J. H., & Friedman, J. H. (2009). The elements of statistical learning: data mining, inference, and prediction (Vol. 2, pp. 1-758). New York: springer.
+- _`[5]` Junxian Zhu, Jin Zhu, Borui Tang, Xuanyu Chen, Hongmei Lin, Xueqin Wang (2023). Best-Subset Selection in Generalized Linear Models: A Fast and Consistent Algorithm via Splicing Technique. https://arxiv.org/abs/2308.00251.
+
+- _`[6]` Hastie, T., Tibshirani, R., Friedman, J. H., & Friedman, J. H. (2009). The elements of statistical learning: data mining, inference, and prediction (Vol. 2, pp. 1-758). New York: springer.

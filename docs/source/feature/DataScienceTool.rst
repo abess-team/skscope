@@ -78,8 +78,7 @@ Information Criterion
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Information criterion is a statistical measure used to assess the goodness of fit of a model while penalizing model complexity. It helps in selecting the optimal model from a set of competing models. In the context of sparsity-constrained optimization, information criterion can be used to evaluate different sparsity levels and identify the most suitable support size.
-There is another way to evaluate sparsity levels, which is information criterion. The smaller the information criterion, the better the model. 
+Information criterion is a statistical measure used to assess the goodness of fit of a model while penalizing model complexity. It helps in selecting the optimal model from a set of competing models. In the context of sparsity-constrained optimization (particularly the optimization problem in data science), information criterion can be used to evaluate different sparsity levels and identify the most suitable support size. The smaller the information criterion, the better the model. 
 
 
 .. list-table:: Some information criterions implemented in the module ``skscope.utilities``.
@@ -97,11 +96,11 @@ There is another way to evaluate sparsity levels, which is information criterion
    * - ``EBIC``
      - Extend Bayesian information criterion
      - `[3]`_
-   * - ``LinearSIC``
-     - Special information criterion
-     - `[4]`_
    * - ``GIC``
      - Generalized information criterion
+     - `[4]`_
+   * - ``LinearSIC``
+     - Special information criterion
      - `[5]`_
 
 

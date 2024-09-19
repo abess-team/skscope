@@ -171,11 +171,9 @@ The corresponding BibteX entry:
 ```
 @misc{wang2024skscopefastsparsityconstrainedoptimization,
       title={skscope: Fast Sparsity-Constrained Optimization in Python}, 
-      author={Zezhi Wang and Jin Zhu and Peng Chen and Huiyang Peng and Xiaoke Zhang and Anran Wang and Yu Zheng and Junxian Zhu and Xueqin Wang},
+      author={Zezhi Wang and Junxian Zhu and Xueqin Wang and Jin Zhu and Huiyang Peng and Peng Chen and Anran Wang and Xiaoke Zhang},
       year={2024},
-      eprint={2403.18540},
-      archivePrefix={arXiv},
-      primaryClass={stat.ML},
+      journal={Journal of Machine Learning Research},
       url={https://arxiv.org/abs/2403.18540}, 
 }
 ```

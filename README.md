@@ -169,12 +169,15 @@ If you use `skscope` or reference our tutorials in a presentation or publication
 The corresponding BibteX entry:
 
 ```
-@misc{wang2024skscopefastsparsityconstrainedoptimization,
-      title={skscope: Fast Sparsity-Constrained Optimization in Python}, 
-      author={Zezhi Wang and Junxian Zhu and Xueqin Wang and Jin Zhu and Huiyang Peng and Peng Chen and Anran Wang and Xiaoke Zhang},
-      year={2024},
-      journal={Journal of Machine Learning Research},
-      url={https://arxiv.org/abs/2403.18540}, 
+@article{JMLR:v25:23-1574,
+  author  = {Zezhi Wang and Junxian Zhu and Xueqin Wang and Jin Zhu and Huiyang Pen and Peng Chen and Anran Wang and Xiaoke Zhang},
+  title   = {skscope: Fast Sparsity-Constrained Optimization in Python},
+  journal = {Journal of Machine Learning Research},
+  year    = {2024},
+  volume  = {25},
+  number  = {290},
+  pages   = {1--9},
+  url     = {http://jmlr.org/papers/v25/23-1574.html}
 }
 ```
 
